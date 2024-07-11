@@ -1,0 +1,5 @@
+/home/blacker/Desktop/MicroServiceApp/ApiGateway/src/main/java/com/wholesaled/apigateway/ApiGatewayApplication.java
+/home/blacker/Desktop/MicroServiceApp/ApiGateway/src/main/java/com/wholesaled/apigateway/config/AuthenticationFilter.java
+/home/blacker/Desktop/MicroServiceApp/ApiGateway/src/main/java/com/wholesaled/apigateway/config/GatewayConfig.java
+/home/blacker/Desktop/MicroServiceApp/ApiGateway/src/main/java/com/wholesaled/apigateway/config/JwtUtil.java
+/home/blacker/Desktop/MicroServiceApp/ApiGateway/src/main/java/com/wholesaled/apigateway/config/RouterValidator.java

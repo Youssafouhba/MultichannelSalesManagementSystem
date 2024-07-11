@@ -1,0 +1,30 @@
+server:
+    port: 8080
+
+spring:
+    application:
+        name: api-gateway
+    cloud:
+        gateway:
+            discovery:
+                locator:
+                    enabled: true
+
+        routes:
+            -   id: auth-client-service
+                uri: https://localhost:9000/
+                predicates:
+                - Path="/api/auth/**"
+            -   id: messaging-service
+                uri: https://localhost:9001/
+                predicates:
+                - Path="/api/messaging/**"
+
+  
+
+
+
+                    
+    
+jwt:
+    secret: 31bR29G5KVtBdCIspV11aPM7PnaOq8js
