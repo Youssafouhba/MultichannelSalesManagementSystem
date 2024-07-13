@@ -12,6 +12,13 @@ import { FontSize,Padding, Color, FontFamily } from "../GlobalStyles";
 
 const products = [
   {
+    imageUrl: require("../assets/rectangle-95.png"),
+    price: 9,
+    title: `BrittLite© DC 24V 28355mm/8mm 120L Full Spectrum`,
+    new: `NEW`,
+    stock: 100
+  },
+  {
     imageUrl: require("../assets/rectangle-96.png"),
     price: 9,
     title: `BrittLite© DC 24V 28355mm/8mm 120L Full Spectrum`,
