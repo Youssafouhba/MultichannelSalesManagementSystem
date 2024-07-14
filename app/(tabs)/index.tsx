@@ -1,26 +1,14 @@
-import { Image, StyleSheet, Platform } from 'react-native';
-
-import { HelloWave } from '@/components/HelloWave';
-import ParallaxScrollView from '@/components/ParallaxScrollView';
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
 import { StatusBar } from 'expo-status-bar';
+import React from 'react';
+import { View, Text } from 'react-native';
+import tw from 'tailwind-react-native-classnames';
+import LoginScreen from '@/screens/LoginScreen';
 
 export default function HomeScreen() {
   return (
-    <ThemedView style={styles.continer}>
-      <ThemedText style={styles.continer}>  hello world </ThemedText>
-      <StatusBar style='auto' />
-    </ThemedView>
+    <View style={tw`flex-1 bg-white`}>
+      <StatusBar style="auto" />
+      <LoginScreen/>
+    </View>
   );
 }
-
-const styles = StyleSheet.create({
-  continer: {
-    flex: 1,
-    color: 'red',
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center'
-  },
-});
