@@ -4,6 +4,7 @@ import tw from 'tailwind-react-native-classnames';
 import * as ImagePicker from 'expo-image-picker';
 import axios from 'axios';
 import { grayscale } from '@cloudinary/url-gen/actions/effect';
+import RNPickerSelect from 'react-native-picker-select';
 
 interface Product {
   name: string;
@@ -12,6 +13,7 @@ interface Product {
   stock: number;
   size: number;
   imageUrls: { Url: string }[];
+  category: String;
 }
 
 const API_BASE_URL = 'http://192.168.42.159:8080'; // Utilisez l'adresse IP de votre machine si vous utilisez un émulateur
@@ -24,8 +26,13 @@ const AddProductScreen = () => {
   const [price, setPrice] = useState('');
   const [stock, setStock] = useState('');
   const [size, setSize] = useState('');
+  const [category,setCategory] = useState('');
   const [images, setImages] = useState<string[]>([]);
-
+  const categories = [
+    { label: 'Ceiling Light Fixtures', value: 'Ceiling Light Fixtures' },
+    { label: 'Lighting Fixtures', value: 'Lighting Fixtures' },
+    { label: 'Light Ropes & Strings', value: 'Light Ropes & Strings' },
+  ];
   const pickImage = async () => {
     let result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
@@ -87,7 +94,8 @@ const AddProductScreen = () => {
         price: parseFloat(price),
         stock: parseInt(stock, 10),
         size: parseInt(size, 10),
-        imageUrls: imageUrls
+        imageUrls: imageUrls,
+        category: category 
       };
 
       const response = await axios.post(`${API_BASE_URL}/Products`,product, {
@@ -111,6 +119,7 @@ const AddProductScreen = () => {
       Alert.alert('Erreur', 'Échec de l\'ajout du produit. Veuillez réessayer.');
     }
   };
+
 
   const renderImageItem = ({ item, index }) => (
     <View style={tw`mr-2 mb-2`}>
@@ -136,48 +145,58 @@ const AddProductScreen = () => {
       </View>
       
       <View style={tw`mt-4`}>
+      <Text style={tw`font-medium mb-2`}>Title :</Text>
         <TextInput
           style={tw`border h-12 rounded-lg px-3 text-lg mb-4`}
-          placeholder="Title"
+          placeholder="Enter The Product Title..."
           value={title}
           onChangeText={setTitle}
         />
+        <Text style={tw`font-medium mb-2`}>Description:</Text>
         <TextInput
           editable
           multiline
-          numberOfLines={4}
-          maxLength={200}
+          numberOfLines={10}
+          maxLength={2000}
           style={tw`border rounded-lg px-3 py-2 text-lg mb-4`}
-          placeholder="Description"
+          placeholder="Enter The Product Description..."
           textAlignVertical="top"
           value={description}
           onChangeText={setDescription}
         />
+        <Text style={tw`font-medium mb-2`}>Price :</Text>
         <View style={tw`flex-row items-center mb-4`}>
           <TextInput
             style={tw`flex-1 border h-12 rounded-lg px-3 text-lg`}
-            placeholder="Price"
+            placeholder="Enter The Price..."
             keyboardType="numeric"
             value={price}
             onChangeText={setPrice}
           />
           <Text style={tw`ml-2 text-lg`}>£</Text>
         </View>
+        <Text style={tw`font-medium mb-2`}>Stock :</Text>
         <TextInput
           style={tw`border h-12 rounded-lg px-3 text-lg mb-4`}
-          placeholder="Stock"
+          placeholder="Enter The Stock Quantity..."
           keyboardType="numeric"
           value={stock}
           onChangeText={setStock}
         />
-        <TextInput
-          style={tw`border h-12 rounded-lg px-3 text-lg mb-4`}
-          placeholder="Size"
-          keyboardType="numeric"
-          value={size}
-          onChangeText={setSize}
+        <Text style={tw`font-medium`}>Category :</Text>
+       <RNPickerSelect
+          onValueChange={(value) => setCategory(value)}
+          items={categories}
+          style={{
+            inputAndroid: tw`border h-12 rounded-lg px-3 text-lg mb-4`,
+            inputIOS: tw`border h-12 rounded-lg px-3 text-lg mb-4`,
+          }}
+          placeholder={{
+            label: 'Select a category...',
+            value: null,
+          }}
         />
-            <View style={tw`mt-4`}>
+        <View style={tw`mt-4`}>
         <Text style={tw`text-lg font-medium mb-2`}>Product Images</Text>
         <TouchableOpacity 
           style={tw`bg-blue-500 p-2 rounded-lg mb-2`}
