@@ -1,135 +1,147 @@
-import * as React from "react";
-import { Platform } from 'react-native';
+import React, { useEffect, useState } from "react";
+import { View, Text, Pressable, StyleSheet, FlatList, Dimensions } from "react-native";
 import { Image } from "expo-image";
-import { useTailwind } from 'tailwind-rn';
-import { ScrollView , StyleSheet, Text, View,Pressable,TouchableOpacity,Alert,Dimensions } from "react-native";
-import GroupComponent from "../components/GroupComponent";
-import SearchBoxContainer from "../components/SearchBoxContainer";
-import Footer from "@/components/Footer";
-import { FontSize,Color,FontFamily,Padding } from "@/GlobalStyles";
-import tw from 'tailwind-react-native-classnames';
 import { useFonts } from 'expo-font';
-
-import * as SplashScreen from 'expo-splash-screen';
-import { useEffect } from 'react';
 import axios from "axios";
+import tw from 'tailwind-react-native-classnames';
+import { API_BASE_URL } from "@/constants/GlobalsVeriables";
+import { Product } from "@/constants/Classes";
+import GroupComponent from "../components/GroupComponent";
 
-
-interface Product {
-    name: string;
-    description: string;
-    price: number;
-    stock: number;
-    size: number;
-    imageUrls: { Url: string }[];
-    category: String;
-  }
-  
-const API_BASE_URL = 'http://192.168.42.159:8080'; 
-const products = [
-    {
-      imageUrl: require("../assets/rectangle-96.png"),
-      price: 9,
-      title: `BrittLite© DC 24V 28355mm/8mm 120L Full Spectrum`,
-      new: `NEW`,
-      stock: 100
-    },
-    {
-      imageUrl: require("../assets/rectangle-97.png"),
-      price: 9,
-      title: `BrittLite© DC 24V 28355mm/8mm 120L Full Spectrum`,
-      new: `NEW`,
-      stock: 100
-    },
-    {
-      imageUrl: require("../assets/rectangle-98.png"),
-      price: 9,
-      title: `BrittLite© DC 24V 28355mm/8mm 120L Full Spectrum`,
-      new: `NEW`,
-      stock: 100
-    },
-    {
-      imageUrl: require("../assets/rectangle-99.png"),
-      price: 9,
-      title: `BrittLite© DC 24V 28355mm/8mm 120L Full Spectrum`,
-      new: `NEW`,
-      stock: 100
-    },
-    {
-      imageUrl: require("../assets/rectangle-98.png"),
-      price: 9,
-      title: `BrittLite© DC 24V 28355mm/8mm 120L Full Spectrum`,
-      new: `NEW`,
-      stock: 100
-    },
-    {
-      imageUrl: require("../assets/rectangle-99.png"),
-      price: 9,
-      title: `BrittLite© DC 24V 28355mm/8mm 120L Full Spectrum`,
-      new: `NEW`,
-      stock: 100
-    },
-    {
-      imageUrl: require("../assets/rectangle-95.png"),
-      price: 7,
-      title: `BORDERLESS 24W CEILING LAMP Cool White\n`,
-      new: ``,
-      stock: 90
-    },
-  ];
+const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
 export default function ProductsService() {
-    const [loaded, error] = useFonts({
-        'KleeOne-Regular': require('../assets/fonts/KleeOne-Regular.ttf'),
-        'kavoonRegular': require('../assets/fonts/Kavoon-Regular.ttf'),
-        'SpaceMono-Regular': require('../assets/fonts/SpaceMono-Regular.ttf'),
-        'VampiroOne-Regular': require('../assets/fonts/VampiroOne-Regular.ttf')  
-    });
-    
- 
-  return (
-    <View style={tw`flex-row flex-wrap justify-around mt-1 mx-2 my-2`}>
-    { products.map((item,index)=>
-    (
-     <View key={index} style={tw`mt-3`}>
-       <Pressable onPress={() => handleImagePress(item.title)} style={{width: 160,height: 230}}>
-         <Image
-           style={{height: 160,width: 160,borderRadius: 12}}
-           source={item.imageUrl}
-         />
-         <View style={tw`top-1`}>
-           <View style={tw`flex-row justify-between`}>
-               <View style={tw`flex-row ml-2`}>
-               <Text style={[tw`text-lg font-medium`, { fontFamily: 'kavoonRegular' }]}>{item.price}</Text>
-                 <Text style={tw`left-1`}>£</Text>
-               </View>
-               <Text style={[tw`mr-3`,{fontFamily: 'kavoonRegular',fontSize: 11}]}>{item.stock} in stock</Text>     
-           </View>
-           <Text style={[styles.brittliteDc24v,{fontFamily: 'KleeOne-Regular'}]}>{item.title}</Text>
-         </View>
-       </Pressable>
-       {
-         item.new? <Image
-           style={{height: 80,width: 80,borderRadius: 12,position: "absolute",top: -9,left: -9}}
-           source={require("../assets/new.png")}
-       />: ''
-       }
-     </View>
-)
-)}
-</View>
-  )
-}
-const styles = StyleSheet.create({
-    brittliteDc24v: {
-      color: Color.colorBlack,
-      fontFamily: FontFamily.kavoonRegular,
-      fontSize: 10,
-      fontWeight: "600"
-    },
-    
-    Pressable: {
-      width: '100%',
-      alignItems: 'center'
-    },
+  const [products, setProducts] = useState<Product[]>([]);
+  const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
+
+  const [loaded, error] = useFonts({
+    'KleeOne-Regular': require('../assets/fonts/KleeOne-Regular.ttf'),
+    'kavoonRegular': require('../assets/fonts/Kavoon-Regular.ttf'),
+    'SpaceMono-Regular': require('../assets/fonts/SpaceMono-Regular.ttf'),
+    'VampiroOne-Regular': require('../assets/fonts/VampiroOne-Regular.ttf')  
   });
+  
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const response = await axios.get<Product[]>(`${API_BASE_URL}/Products`);
+        setProducts(response.data);
+        setFilteredProducts(response.data)
+      } catch (error) {
+        console.error("Error fetching products:", error);
+      }
+    };
+    fetchProducts();
+  }, []);
+
+  const isNew = (postedDate: string | Date): boolean => {
+    const now = new Date();
+    const posted = new Date(postedDate);
+    const diffInDays = (now.getTime() - posted.getTime()) / (1000 * 3600 * 24);
+    return diffInDays <= 7;
+  }
+
+  const renderProduct = ({ item }: { item: Product }) => (
+    <View style={styles.productContainer}>
+      <Pressable style={styles.productInnerContainer}>
+        <Image
+          style={styles.productImage}
+          source={{ uri: item.imageUrls[0]?.url || require("@/assets/rectangle-94.png") }}
+        />
+        <View style={tw`mt-1`}>
+          <View style={tw`flex-row justify-between`}>
+            <View style={tw`flex-row`}>
+              <Text style={[tw`text-sm font-medium`, styles.priceText]}>{item.price}</Text>
+              <Text style={tw`text-xs ml-1`}>£</Text>
+            </View>
+            <Text style={[styles.stockText]}>{item.stock} in stock</Text>     
+          </View>
+          <Text style={styles.productName} numberOfLines={1} ellipsizeMode="tail">{item.name}</Text>
+        </View>
+      </Pressable>
+      {isNew(item.postedDate) && (
+        <Image
+          style={styles.newBadge}
+          source={require("../assets/badge_143875.png")}
+        />
+      )}
+    </View>
+  );
+
+  if (!loaded) {
+    return <Text>Loading fonts...</Text>;
+  }
+
+  const filterProducts = (category: string | null) => {
+    if (category === "New designs") {
+      const filtered = products.filter(product => isNew(product.postedDate));
+      setFilteredProducts(filtered);
+    } else {
+      setFilteredProducts(products);
+    }
+  };
+
+  const renderHeader = () => (
+    <GroupComponent onCategorySelect={filterProducts} />
+  );
+
+  return (
+    <View style={styles.container}>
+      <FlatList
+        ListHeaderComponent={renderHeader}
+        data={filteredProducts.slice(0, 6)}
+        renderItem={renderProduct}
+        keyExtractor={(item) => item.id.toString()}
+        numColumns={3}
+        contentContainerStyle={styles.listContent}
+        scrollEnabled={false}
+      />
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    height: screenHeight - 200, // Adjust this value based on your header and footer sizes
+    width: '100%',
+  },
+  listContent: {
+    paddingHorizontal: 8,
+  },
+  productContainer: {
+    width: (screenWidth - 32) / 3, // 32 is total horizontal padding (8 * 4)
+    marginBottom: 8,
+    marginRight: 8,
+  },
+  productInnerContainer: {
+    width: '100%',
+    aspectRatio: 0.75, // Adjust this value to fit your design
+  },
+  productImage: {
+    width: '100%',
+    aspectRatio: 1,
+    borderRadius: 8,
+  },
+  priceText: {
+    fontFamily: 'kavoonRegular',
+  },
+  stockText: {
+    fontFamily: 'kavoonRegular',
+    fontSize: 9,
+  },
+  productName: {
+    fontFamily: 'KleeOne-Regular',
+    fontSize: 10,
+    fontWeight: "600",
+    color: 'black',
+  },
+  newBadge: {
+    height: 30,
+    width: 30,
+    zIndex: 1000,
+    borderRadius: 8,
+    position: "absolute",
+    top: 4,
+    right: 4,
+  },
+});

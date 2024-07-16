@@ -6,19 +6,10 @@ import axios from 'axios';
 import { grayscale } from '@cloudinary/url-gen/actions/effect';
 import RNPickerSelect from 'react-native-picker-select';
 
-interface Product {
-  name: string;
-  description: string;
-  price: number;
-  stock: number;
-  size: number;
-  imageUrls: { Url: string }[];
-  category: String;
-}
 
-const API_BASE_URL = 'http://192.168.42.159:8080'; // Utilisez l'adresse IP de votre machine si vous utilisez un émulateur
-const CLOUDINARY_URL = `https://api.cloudinary.com/v1_1/dlkvn0fpz/image/upload`;
-const UPLOAD_PRESET = 'd1zmuabv';
+import { API_BASE_URL,CLOUDINARY_URL,UPLOAD_PRESET } from '../constants/GlobalsVeriables';
+import { Product } from "@/constants/Classes";
+
 
 const AddProductScreen = () => {
   const [title, setTitle] = useState('');
@@ -95,7 +86,9 @@ const AddProductScreen = () => {
         stock: parseInt(stock, 10),
         size: parseInt(size, 10),
         imageUrls: imageUrls,
-        category: category 
+        category: category,
+        id: '',
+        postedDate: new Date,
       };
 
       const response = await axios.post(`${API_BASE_URL}/Products`,product, {

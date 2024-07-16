@@ -11,7 +11,7 @@ const SearchBoxContainer = () => {
   return (
     <View style={[styles.header]}>
       <View style={[styles.rectangleParent, styles.frameFlexBox1]}>
-        <Image
+      <Image
           style={styles.frameChild}
           contentFit="cover"
           source={require("../assets/rectangle-111.png")}

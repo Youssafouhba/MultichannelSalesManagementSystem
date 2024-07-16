@@ -14,5 +14,5 @@
     "**/*.tsx",
     ".expo/types/**/*.ts",
     "expo-env.d.ts"
-, "app/(tabs)/index.tsx", "screens/LoginScreen.tsx"  ]
+, "app/(tabs)/index.tsx", "screens/LoginScreen.tsx", "components/GroupComponent.tsx"  ]
 }

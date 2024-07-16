@@ -36,8 +36,8 @@ const ModeLightStateEnabled = ({
 const styles = StyleSheet.create({
   textTypo: {
     textAlign: "left",
-    color: Color.colorsBlue,
-    fontFamily: FontFamily.robotoBold,
+    color: Color.colorize_gray,
+    fontFamily: 'kavoonRegular',
     fontWeight: "600",
     lineHeight: 18,
     fontSize: FontSize.size_lg,

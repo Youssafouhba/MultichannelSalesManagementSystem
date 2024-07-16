@@ -1,3 +1,5 @@
+import { colorize } from "@cloudinary/url-gen/actions/effect";
+
 /* fonts */
 export const FontFamily = {
   kleeOneRegular: "KleeOne-Regular",
@@ -25,6 +27,7 @@ export const Color = {
   colorRed: "#ed1515",
   colorFirebrick: "#af1818",
   colorGray_100: "#828282",
+  colorize_gray: "#adb5bd",
   borderNeutralSecondary: "#767676",
   backgroundBrandDefault: "#2c2c2c",
   textDefaultDefault: "#1e1e1e",
@@ -39,6 +42,7 @@ export const StyleVariable = {
   space200: 8,
   space300: 12,
   radius200: 8,
+  radius400: 20,
 };
 /* Paddings */
 export const Padding = {

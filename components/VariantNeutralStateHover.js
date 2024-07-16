@@ -14,31 +14,31 @@ const VariantNeutralStateHover = ({
   hasIconStart = false,
   hasIconEnd = false,
   variantNeutralStateHoverPosition,
-  variantNeutralStateHoverBackgroundColor,
   variantNeutralStateHoverBorderColor,
+  variantNeutralStateHoverBorderRaduis,
   variantNeutralStateHoverTop,
   variantNeutralStateHoverLeft,
   variantNeutralStateHoverWidth,
-}) => {
+  variantNeutralStateHoverHieght,
+}) => { /**  color: Color.colorize_gray, */
   const variantNeutralStateHoverStyle = useMemo(() => {
     return {
-      ...getStyleValue("position", variantNeutralStateHoverPosition),
-      ...getStyleValue(
-        "backgroundColor",
-        variantNeutralStateHoverBackgroundColor
-      ),
+      ...getStyleValue("position", variantNeutralStateHoverPosition),    
       ...getStyleValue("borderColor", variantNeutralStateHoverBorderColor),
+      ...getStyleValue("borderRadius", variantNeutralStateHoverBorderRaduis),
       ...getStyleValue("top", variantNeutralStateHoverTop),
       ...getStyleValue("left", variantNeutralStateHoverLeft),
       ...getStyleValue("width", variantNeutralStateHoverWidth),
+      ...getStyleValue("height", variantNeutralStateHoverHieght),
     };
   }, [
     variantNeutralStateHoverPosition,
-    variantNeutralStateHoverBackgroundColor,
     variantNeutralStateHoverBorderColor,
+    variantNeutralStateHoverBorderRaduis,
     variantNeutralStateHoverTop,
     variantNeutralStateHoverLeft,
     variantNeutralStateHoverWidth,
+    variantNeutralStateHoverHieght
   ]);
 
   return (
@@ -48,7 +48,15 @@ const VariantNeutralStateHover = ({
       {hasIconStart && (
         <Image style={styles.iconLayout} contentFit="cover" source={star} />
       )}
-      <Text style={styles.button}>{label}</Text>
+      <Text 
+      style={{ 
+        fontSize: FontSize.singleLineBodyBase_size,
+        lineHeight: 16,
+        fontFamily: 'kavoonRegular',
+        textAlign: "left",
+        marginLeft: 2,
+
+        }}>{label}</Text>
       {hasIconEnd && (
         <Image
           style={[styles.xIcon, styles.iconLayout]}
@@ -69,10 +77,9 @@ const styles = StyleSheet.create({
   button: {
     fontSize: FontSize.singleLineBodyBase_size,
     lineHeight: 16,
-    fontFamily: FontFamily.singleLineBodyBase,
-    color: Color.textDefaultDefault,
+    fontFamily: 'kavoonRegular',
     textAlign: "left",
-    marginLeft: 8,
+    marginLeft: 2,
   },
   xIcon: {
     marginLeft: 8,
@@ -87,6 +94,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     padding: StyleVariable.space300,
+    paddingLeft: 1,
+    paddingRight: 1,
     overflow: "hidden",
   },
 });

@@ -3,6 +3,7 @@ import React from 'react';
 import { View, Text } from 'react-native';
 import tw from 'tailwind-react-native-classnames';
 import LoginScreen from '@/screens/LoginScreen';
+import AddProductScreen from '@/components/AddProductScreen';
 
 export default function HomeScreen() {
   return (
