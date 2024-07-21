@@ -88,7 +88,7 @@ const AddProductScreen = () => {
         imageUrls: imageUrls,
         category: category,
         id: '',
-        postedDate: new Date,
+        postedDate: '',
       };
 
       const response = await axios.post(`${API_BASE_URL}/Products`,product, {

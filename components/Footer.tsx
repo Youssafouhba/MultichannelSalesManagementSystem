@@ -1,71 +1,77 @@
-import * as React from "react";
+import React, { useEffect } from 'react';
 import { Image } from "expo-image";
-import { StyleSheet, Text, View,Pressable,Alert,TouchableOpacity, } from "react-native";
-import VariantNeutralStateHover from "./VariantNeutralStateHover";
-import ModeLightStateEnabled from "./ModeLightStateEnabled";
-import { FontSize, FontFamily, Color } from "../GlobalStyles";
+
+import { TabBarIcon } from '@/components/navigation/TabBarIcon';
+import { Colors } from '@/constants/Colors';
+import { useColorScheme } from '@/hooks/useColorScheme';
+import { StyleSheet, Text, View,Pressable,Alert,TouchableOpacity,Dimensions} from "react-native";
+import { FontSize, FontFamily, Color, styles } from "../GlobalStyles";
 import tw from 'tailwind-react-native-classnames';
 
+import { Tabs } from 'expo-router';
 
-const icons = [
-  {url: require("../assets/home.png")},
-  {url: require("../assets/chat-bubble2.png")},
-  {url: require("../assets/iconmonstrshoppingcart2-12.png")},
-  {url: require("../assets/cardgf.gif")},
-  {url: require("../assets/bell1.png")},
-]
-export default function Footer() {
+
+interface FooterProps {
+  totalItems: number;
+}
+
+
+export const Footer: React.FC<FooterProps> = ({ totalItems}) => {
+
+  const [pressed,setPressed] = React.useState<boolean>(false)
+  const [actualIcon,setActuelIcon] = React.useState<string>('home')
+  const [numberofprd,setNumberOfprd] = React.useState<number>(totalItems)
+  const [numberofnot,setNumberOfnot] = React.useState<number>(120)
+  const icons = [
+    {url: require("../assets/home.png"),name: 'home',value: 0,setvalue: 0},
+    {url: require("../assets/images/icons8-message-50 (2).png"),name: 'message',value: 0,setvalue: 0},
+    {url: require("../assets/images/icons8-stock-50.png"),name: 'card',value: totalItems,setvalue: setNumberOfprd},
+    {url: require("../assets/images/icons8-compte-48.png"),name: 'account',value: 0,setvalue: 0},
+    {url: require("../assets/images/icons8-notification-50.png"),name: 'notification',value: numberofnot,setvalue: setNumberOfnot},
+  ]
+
+  useEffect(()=> {
+    console.log(totalItems)
+  })
   return (
     <View 
-    style={[ {
-      position: 'absolute',
-      bottom: 0,
-      left: 0,
-      right: 0,
-      width: '100%',
-      height: 40,
-      paddingTop: 20,
-      backgroundColor: Color.colorWhite,
-      flexDirection: 'row',
-      justifyContent: 'space-around',
-      alignItems: 'center',
-      borderTopColor: '#ccc',
-    }]}>
+    style={[styles.footer]}>
     {
       icons.map((item,index)=>(
+        
         <TouchableOpacity
         key={index}
         style={styles.touchableopacity}
         activeOpacity={0.2}
-        onPress={() => {}}
+        onPress={() => {
+          setActuelIcon(item.name);
+          navigation.navigate('Cart')
+        }}
         >
         <Image
             style={styles.iconLayout}
             contentFit="cover"
+            tintColor={actualIcon!=item.name?"rgb(50, 50, 50)":"orangered"}
+            priority={'high'}
+            focusable={true}
             source={item.url}
         />
+
+        {
+          (item.name==='notification' || item.name==='card')? (
+            <View style={[styles.notification,item.value >= 10 && styles.over,item.value >= 99 && styles.over100]}>
+              <Text style={[styles.notnumber]}>
+              { item.value >= 100 ? (
+              <Text>99+</Text>
+              ): item.value}
+              </Text>
+            </View>
+          ):``
+        }
 
         </TouchableOpacity> 
       ))
     }
      </View>
   )
-}
-
-const styles = StyleSheet.create({
-    iconLayout: {
-        height: "100%",
-        width: "100%",
-      },
-    touchableopacity: {
-      width: '5%',
-      aspectRatio:1,
-      alignItems:'center',
-      justifyContent:'center'
-    },
-    Pressable: {
-      width: '100%',
-      alignItems: 'center'
-    },
-  });
-  
+}  
