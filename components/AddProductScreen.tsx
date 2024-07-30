@@ -7,11 +7,13 @@ import { grayscale } from '@cloudinary/url-gen/actions/effect';
 import RNPickerSelect from 'react-native-picker-select';
 
 
-import { API_BASE_URL,CLOUDINARY_URL,UPLOAD_PRESET } from '../constants/GlobalsVeriables';
+import {CLOUDINARY_URL,UPLOAD_PRESET } from '../constants/GlobalsVeriables';
 import { Product } from "@/constants/Classes";
+import { useAppContext } from './AppContext';
 
 
 const AddProductScreen = () => {
+  const { state, dispatch } = useAppContext();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [price, setPrice] = useState('');
@@ -19,6 +21,10 @@ const AddProductScreen = () => {
   const [size, setSize] = useState('');
   const [category,setCategory] = useState('');
   const [images, setImages] = useState<string[]>([]);
+  var cartItems = state.cartItems || {};
+  var isLoggedIn = state.JWT_TOKEN !=='';
+  var token = state.JWT_TOKEN;
+
   const categories = [
     { label: 'Ceiling Light Fixtures', value: 'Ceiling Light Fixtures' },
     { label: 'Lighting Fixtures', value: 'Lighting Fixtures' },
@@ -75,6 +81,20 @@ const AddProductScreen = () => {
     }
   };
 
+  const apiHandler = async (url, payload, token) => {
+    try {
+      const response = await axios.post(`${state.API_BASE_URL_ADMIN}${url}`, payload, {
+        headers: {
+          Authorization: `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI0MiIsImlhdCI6MTcyMTA3NDA2NywidXNlcmlkIjo0MiwiZW1haWwiOiJhbGtoc3BhbWVyckBnbWFpbC5jb20iLCJyb2xlIjpbIlN1cGVyQWRtaW4iXX0.omkORJ7wcRh0072FhNUT8SdmxWD_LDzubNZgCYLQUfA`
+        }
+      });
+      console.log(response);
+      return response;
+    } catch (error) {
+      return error.response;
+    }
+  }
+
   const submitProduct = async () => {
     try {
       const imageUrls = await uploadImagesToCloudinary();
@@ -83,7 +103,8 @@ const AddProductScreen = () => {
         name: title,
         description,
         price: parseFloat(price),
-        stock: parseInt(stock, 10),
+        priceAfterDiscount: 0,
+        quantityInStock: parseInt(stock, 10),
         size: parseInt(size, 10),
         imageUrls: imageUrls,
         category: category,
@@ -91,13 +112,9 @@ const AddProductScreen = () => {
         postedDate: '',
       };
 
-      const response = await axios.post(`${API_BASE_URL}/Products`,product, {
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
+      const response = await apiHandler(`/Stock/Management/products/`,product,token);
 
-      console.log('Product submitted successfully:', response.data);
+      console.log('Product submitted successfully:', response);
 
       // Réinitialiser le formulaire après la soumission
       setImages([]);
@@ -229,3 +246,4 @@ const AddProductScreen = () => {
 };
 
 export default AddProductScreen;
+

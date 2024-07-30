@@ -52,7 +52,6 @@ const VariantNeutralStateHover = ({
       style={{ 
         fontSize: FontSize.singleLineBodyBase_size,
         lineHeight: 16,
-        fontFamily: 'kavoonRegular',
         textAlign: "left",
         marginLeft: 2,
 
@@ -88,7 +87,7 @@ const styles = StyleSheet.create({
     borderRadius: StyleVariable.radius200,
     backgroundColor: Color.backgroundNeutralTertiaryHover,
     borderStyle: "solid",
-    borderColor: Color.borderNeutralSecondary,
+    borderColor: 'blue',
     borderWidth: 1,
     flexDirection: "row",
     alignItems: "center",

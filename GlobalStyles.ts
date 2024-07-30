@@ -4,7 +4,6 @@ import {screenHeight,screenWidth} from '@/constants/GlobalsVeriables'
 
 /* fonts */
 export const FontFamily = {
-  presetsBody2: "Inter-Regular",
   kiwiMaruRegular: "KiwiMaru-Regular",
   kleeOneRegular: "KleeOne-Regular",
   kavoonRegular: "Kavoon-Regular",
@@ -14,9 +13,6 @@ export const FontFamily = {
   langarRegular: "Langar-Regular",
   kiteOneRegular: "KiteOne-Regular",
   robotoRegular: "Roboto-Regular",
-  interRegular: "Inter-Regular",
-  interMedium: "Inter-Medium",
-  interSemiBold: "Inter-SemiBold",
 };
 /* font sizes */
 export const FontSize = {
@@ -30,6 +26,7 @@ export const FontSize = {
 };
 /* Colors */
 export const Color = {
+  mainbackgroundcolor: '#faffff',
   colorGray: "#828282",
   colorGainsboro_100: "#e6e6e6",
   colorGainsboro_200: "#e0e0e0",
@@ -51,6 +48,7 @@ export const Color = {
   colorWhitesmoke_50: 'rgba(204,214,221,1.00)',
   colorGainsboro: "#e0e0e0",
   colorsBlue: "#007aff",
+  COLORALICEBLUE: "aliceblue",
   backgroundNeutralTertiaryHover: "#cdcdcd",
 };
 /* Style Variables */
@@ -69,7 +67,7 @@ export const Padding = {
   p_5xs: 8,
   p_12xs: 1,
   p_base: 16,
-  p_smi: 13,
+  p_smi: 2,
 };
 /* border radiuses */
 export const Border = {
@@ -80,8 +78,8 @@ export const Border = {
 
 export const patio = screenHeight/screenWidth
 export const footer_h=screenHeight*0.063
-//export const productlistheight=screenHeight-264
-export const productlistheight=screenHeight-244
+export const productlistheight=screenHeight-264
+//export const productlistheight=screenHeight-244
 
 
 
@@ -99,13 +97,14 @@ export const ceillingcalstyles = StyleSheet.create({
     height: '42%',
   },
     rsltvalue: {
-        fontFamily: 'kavoonRegular',
+        //fontFamily: 'kavoonRegular',
+        fontWeight: 500,
         fontSize: FontSize.size_lg,
     },
     textresult: {
         fontSize: FontSize.size_sm,
         lineHeight: 20,
-        fontFamily: 'Roboto-Bold',
+        //fontFamily: 'Roboto-Bold',
         fontWeight: 'bold',
         color: Color.colorBlack,
         textAlign: "left",
@@ -119,7 +118,7 @@ export const ceillingcalstyles = StyleSheet.create({
   },
   inputBorder: {
     borderColor: Color.colorWhitesmoke_50,
-    fontFamily: 'KleeOne-Regular',
+   // fontFamily: 'KleeOne-Regular',
   },
   labelText: {
     fontFamily: 'KleeOne-Regular',
@@ -127,7 +126,7 @@ export const ceillingcalstyles = StyleSheet.create({
   matCalculatorText: {
     fontSize: FontSize.size_xl,
     lineHeight: 24,
-    fontFamily: 'kavoonRegular',
+    //fontFamily: 'kavoonRegular',
     color: Color.colorBlack,
     textAlign: "left",
     height: 20,
@@ -135,14 +134,11 @@ export const ceillingcalstyles = StyleSheet.create({
   ResultText: {
     fontSize: FontSize.size_xl,
     lineHeight: 24,
-    fontFamily: 'kavoonRegular',
+    //fontFamily: 'kavoonRegular',
     color: Color.colorLimegreen,
     textAlign: "left",
     height: 24,
     marginBottom: 5,
-  },
-  reslt: {
-   
   },
   xImage: {
     height: 18,
@@ -177,15 +173,13 @@ export const getStyles = (screenWidth: number, screenHeight: number) => {
  }
  */
  return StyleSheet.create( 
+
   {
+    
     container: {
       width: '100%',
-      backgroundColor: '#fafaff',
+      backgroundColor: Color.mainbackgroundcolor,
     },
-    scrollView: {
-      width: screenWidth,
-      height: productlistheight,
-   },
    infosarea: {
     marginHorizontal: 2,
    },
@@ -195,9 +189,10 @@ export const getStyles = (screenWidth: number, screenHeight: number) => {
            marginVertical: 4
        },
        gridContainer:{
-           paddingHorizontal: 4,
-           paddingVertical: 4,
-           paddingBottom: 50,
+          //backgroundColor: Color.colorBlack,
+          paddingHorizontal: 8,
+          paddingVertical: 4,
+          paddingBottom: 10,
        },
        product: {
            backgroundColor: 'white',
@@ -219,29 +214,39 @@ export const getStyles = (screenWidth: number, screenHeight: number) => {
      color: '#333',
    },
    fullWidthProduct: {
-     width: '100%', // Make the product take full width when in "New designs" category
+     width: '100%',
+     //marginVertical: 7,
+     height: ((screenHeight*0.59)/3),//nwe
    },
    productWrapper: {
+      backgroundColor: Color.mainbackgroundcolor,
       width: '50%',
-      marginVertical: 4,
+      height: ((screenHeight*0.59)/2),//nwe
+      marginTop: 3,
    },
+   scrollView: {
+    width: screenWidth,
+    height: (screenHeight*0.61),
+    backgroundColor: Color.mainbackgroundcolor,
+ },
    productInnerContainer: {
      borderRadius: 8,
      overflow: 'hidden',
      backgroundColor: '#fff',
      padding: 2,
-     height: productlistheight/3-10,//new
-     marginHorizontal: 4,
-   },
+     height: '100%',//new
+    marginHorizontal: 4
+    },
    fullproductInnerContainer: {
     flexDirection: 'row',
-    height: productlistheight/4-9,//new
+   
   },
    productImage: {
      width: '100%',
-     height: '70%',
+     height: '65%',//nwe
      borderRadius: 8,
    },
+   productdesc: {height: '35%',width: '100%',left: 1},
    fullproductImage: {
     height: '100%',
     width: '50%'
@@ -256,31 +261,33 @@ export const getStyles = (screenWidth: number, screenHeight: number) => {
      marginBottom: 2,
    },
    priceText: {
-     fontFamily: 'kavoonRegular',
-     fontSize: 12,
+     ///fontFamily: 'kavoonRegular',
+     //fontSize: 12,
      color: Color.colorRed,
    },
    stockText: {
-     fontFamily: 'kavoonRegular',
+     //fontFamily: 'kavoonRegular',
      fontSize: 10,
    },
    productName: {
-     fontFamily: 'KleeOne-Regular',
-     fontSize: 11,
-     fontWeight: "600",
+     //fontFamily: 'GermaniaOne-Regular',
+     fontSize: 12,
+     fontWeight: "500",
      color: 'black',
+     marginLeft: 4,
    },
    newBadge: {
      height: 30,
      width: 30,
      position: "absolute",
-     top: 8,
-     right: 13,
+     top: 6,
+     left: 8,
    },
    fullnewBadge: {
     top: 6,
-    left: '41%',
-  }
+    left: 10,
+  },
+  
  }
  );
    
@@ -290,7 +297,7 @@ export const groupecomponentstyles = StyleSheet.create({
   texto: {
     fontSize: 13,
     lineHeight: 16,
-    fontFamily: 'kavoonRegular',
+    //fontFamily: 'kavoonRegular',
     textAlign: "center",
     color: Color.colorize_gray,
   },
@@ -307,19 +314,6 @@ export const groupecomponentstyles = StyleSheet.create({
     overflow: "hidden",
     height: 50,
   },
-  suggestionsPosition: {
-    left: 0,
-    top: 0,
-  },
-  suggestions: {
-    fontSize: FontSize.size_xl,
-    lineHeight: 24,
-    fontFamily: 'kavoonRegular',
-    color: Color.colorBlack,
-    textAlign: "left",
-    width: 115,
-    height: 24,
-  },
   selectedButtonText: {
     color: Color.colorWhite,
   },
@@ -335,10 +329,11 @@ export const headerstyles = StyleSheet.create({
   header: {
     width: '100%',
     position: 'relative',
+    top: screenHeight*0.02,
     paddingVertical: 2,
     paddingHorizontal: 15,
     backgroundColor: Color.colorWhite,
-    marginVertical: 4,
+    marginVertical: 8,
     alignItems: 'center',
     zIndex: 10000,
   },
@@ -361,7 +356,7 @@ export const headerstyles = StyleSheet.create({
   },
   frame2: {
     width: '100%',
-    marginTop: 22,
+    marginTop: '20%',
     justifyContent: "center",
     alignItems: "center",
     overflow: "hidden",
@@ -371,7 +366,7 @@ export const headerstyles = StyleSheet.create({
     borderStyle: "solid",
     borderColor: Color.colorGainsboro,
     borderWidth: 1,
-    width: '90%',
+    width: '80%',
     paddingLeft: Padding.p_xs,
     paddingVertical: Padding.p_5xs,
     height: 41,
@@ -451,6 +446,14 @@ export const styles = StyleSheet.create({
 });
 ////card sectio///
 export const cardstyles = StyleSheet.create({
+  backButton: {
+    backgroundColor: 'white',
+    width: 30,
+    height: 30,
+    borderRadius: 50,
+    padding: 4,
+    overflow: 'hidden'
+  },
   cart: 
   {
     width: '100%',
@@ -459,7 +462,7 @@ export const cardstyles = StyleSheet.create({
     paddingHorizontal: 10,
     marginVertical: 2,
     alignItems: 'center',
-    backgroundColor: Color.colorMainforBg, //// new
+    backgroundColor: Color.mainbackgroundcolor, //// new
     flex: 1,
     height: screenHeight,
     overflow: "hidden",
@@ -476,27 +479,8 @@ export const cardstyles = StyleSheet.create({
     width: 50,
     height: 30,
   },
-  cartheader: {
-    width: '60%',
-    alignItems: 'center',
-    fontFamily: FontFamily.kavoonRegular,
-    //backgroundColor: 'red', //// new
-    top: screenHeight*0.08,
-    left: -screenWidth*0.20 ,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  cartText:
-  {
-    fontSize: FontSize.size_lg,
-    fontFamily: FontFamily.kavoonRegular,
-    textShadowColor: "rgba(0, 0, 0, 0.25)",
-    textShadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    textShadowRadius: 4,
-  },
+ 
+ 
   yourCart: {
     textAlign: "left",
     color: Color.colorBcolorRedlack,
@@ -512,28 +496,48 @@ export const cardstyles = StyleSheet.create({
     height: 16,
   },
   CardsProduct: {
-    top: screenHeight*0.15,
+    backgroundColor: Color.mainbackgroundcolor,
+    top: screenHeight*0.03,
     width: '100%',
-    height: productlistheight,
+    height: screenHeight*0.70,
     
+  },
+  CheckoutProduct: {
+    width: screenWidth,
+    height: screenHeight,
+  },
+  checkoutheader: {
+    top: screenHeight*0.08,
+    left: screenWidth*0.05,
+  },
+  Checkoutbody: {
+    top: screenHeight*0.09,
+    height: screenHeight*0.74,
+  },
+  frame: {
+    top: screenHeight*0.05,
   },
   productImage: 
   {
-    height: '40%',
+    height: '100%',
+    width: '30%'
   },
   CardsProductWrapper: 
   {
     borderRadius: 8,
     overflow: 'hidden',
-    marginVertical: 7,
+    borderBottomColor: 'white',
+    borderBottomWidth: 2,
+    marginTop: ((screenHeight*0.51)/8)/8,
     backgroundColor: '#fff',
     padding: 2,
+    height: (screenHeight*0.66)/4,
   },
   productText:
   {
-    fontFamily: 'KiteOne-Regular',
+    //fontFamily: 'KiteOne-Regular',
     color: Color.colorBlack,
-    fontSize: FontSize.size_3xs,
+    
     lineHeight: 14,
   },
   textFlexBox: {
@@ -630,11 +634,8 @@ export const cardstyles = StyleSheet.create({
     marginLeft: 8,
   },
   button: {
-    //position: "absolute",
-    //marginTop: 318,
-    //marginLeft: -85.5,
-    top: '37%',
-    //left: "50%",
+    top: screenHeight*0.75,
+    position: "absolute",
     borderRadius: StyleVariable.radius200,
     backgroundColor: Color.colorLimegreen_200,
     borderStyle: "solid",
@@ -651,6 +652,16 @@ export const cardstyles = StyleSheet.create({
 // login section
 
 export const authstyles = StyleSheet.create({
+  contentContainerStyle:
+  {
+    flexGrow: 1,
+    height: screenHeight*0.8,
+  },
+  register: {
+    backgroundColor: Color.colorWhite,
+    justifyContent:'center',
+    alignItems:'center'
+  },
   labelFlexBox: {
     overflow: "hidden",
     flex: 1,
@@ -688,7 +699,6 @@ export const authstyles = StyleSheet.create({
     fontSize: FontSize.size_lg,
     lineHeight: 27,
     fontWeight: "600",
-    fontFamily: FontFamily.interSemiBold,
     color: Color.colorBlack,
     textAlign: "center",
   },
@@ -696,7 +706,6 @@ export const authstyles = StyleSheet.create({
     alignItems: "center",
   },
   label: {
-    fontFamily: FontFamily.interRegular,
     color: Color.colorGray,
     overflow: "hidden",
     flex: 1,
@@ -723,7 +732,6 @@ export const authstyles = StyleSheet.create({
   },
   confirme: {
     fontWeight: "500",
-    fontFamily: FontFamily.interMedium,
     color: Color.colorWhite,
   },
   button: {
@@ -773,6 +781,9 @@ export const authstyles = StyleSheet.create({
   },
 });
 
+
+
+
 // register section
 
 export const registerstyles = StyleSheet.create({
@@ -787,7 +798,6 @@ export const registerstyles = StyleSheet.create({
     textAlign: "left",
   },
   labelTypo: {
-    fontFamily: FontFamily.interRegular,
     fontSize: FontSize.size_sm,
   },
   nameBorder: {
@@ -809,8 +819,6 @@ export const registerstyles = StyleSheet.create({
   createNewAccountPosition: {
     textAlign: "center",
     color: Color.colorBlack,
-    left: 0,
-    position: "absolute",
   },
   signUp: {
     color: Color.colorWhite,
@@ -821,8 +829,7 @@ export const registerstyles = StyleSheet.create({
   },
   frame: {
     backgroundColor: Color.colorBlack,
-    width: '88%',
-    marginLeft: 26,
+    width: '100%',
     height: 40,
     paddingVertical: 0,
     paddingHorizontal: Padding.p_base,
@@ -843,19 +850,20 @@ export const registerstyles = StyleSheet.create({
     marginTop: 25,
   },
   nameParent: {
+    top: 60,
     width: '100%',
     justifyContent: "flex-end",
     paddingHorizontal: 20,
     paddingVertical: 6,
   },
   here: {
-    fontSize: FontSize.size_sm,
+    fontSize: FontSize.size_lg,
     lineHeight: 24,
     color: "#f04949",
     textAlign: "left",
   },
   secondaryButton: {
-    width: 46,
+    width: 60,
     justifyContent: "center",
     alignItems: "center",
     borderRadius: Border.br_5xs,
@@ -863,17 +871,16 @@ export const registerstyles = StyleSheet.create({
 
   },
   alreadyRegisteredLog: {
-    top: 4,
     lineHeight: 21,
-    fontFamily: FontFamily.interRegular,
-    fontSize: FontSize.size_sm,
+    fontSize: FontSize.size_xl,
   },
   createNewAccount: {
-    top: -104,
-    fontSize: 32,
+    width: '50%',
+    marginLeft: '25%',
+    marginVertical: 8,
+    fontSize: 25,
     lineHeight: 48,
-    fontWeight: "600",
-    fontFamily: FontFamily.interSemiBold,
+    fontWeight: "500",
   },
   secondaryButtonParent: {
     marginLeft: -111.5,
@@ -887,4 +894,48 @@ export const registerstyles = StyleSheet.create({
     overflow: "hidden",
     backgroundColor: Color.colorWhite,
   },
+  });
+
+
+  export const verifstyles = StyleSheet.create({
+    childLayout: {
+      height: 63,
+      width: 301,
+    },
+    homePosition: {
+      left: 0,
+      position: "absolute",
+    },
+    iphone1415ProMax1Child: {
+      top: 403,
+      left: 65,
+      position: "absolute",
+    },
+    homeIndicator1: {
+      marginLeft: -67,
+      bottom: 8,
+      left: "50%",
+      borderRadius: Border.br_81xl,
+      backgroundColor: Color.colorBlack,
+      width: 134,
+      height: 5,
+      position: "absolute",
+    },
+    homeIndicatorChild: {
+      top: 0,
+      height: 63,
+      width: 301,
+    },
+    homeIndicator: {
+      top: 898,
+      width: 430,
+      height: 34,
+    },
+    iphone1415ProMax1: {
+      backgroundColor: Color.colorWhite,
+      flex: 1,
+      width: "100%",
+      height: 932,
+      overflow: "hidden",
+    },
   });

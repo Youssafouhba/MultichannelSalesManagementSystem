@@ -17,8 +17,6 @@ const GroupComponent: React.FC<GroupComponentProps> = ({ onCategorySelect }) => 
   const handleImagePress = (label: string) => {
     const newLabel = label===selectedLabel? selectedLabel: label;
     console.log(newLabel)
-    //console.log(selectedLabel)
-    //console.log(label);
     setSelectedLabel(newLabel);
     onCategorySelect(newLabel);
   };
@@ -41,7 +39,8 @@ const GroupComponent: React.FC<GroupComponentProps> = ({ onCategorySelect }) => 
         <Text
           style={[
             styles.texto,
-            selectedLabel === label && styles.selectedButtonText
+            selectedLabel === label && styles.selectedButtonText,
+            tw`text-base font-normal text-sm`
           ]}
         >
           {label}
@@ -51,26 +50,22 @@ const GroupComponent: React.FC<GroupComponentProps> = ({ onCategorySelect }) => 
   );
 
   return (
-    <View style={[tw`w-full`,{backgroundColor: '#fafaff'}]}>
-      <View style={tw`flex-row justify-between items-center text-center pl-2 pr-2`}>
-        <View>
-          <Pressable onPress={() => handleImagePress("suggestions")}>
-            <Text style={[styles.suggestions, styles.suggestionsPosition]}>
+    <View style={[tw`w-full`,{backgroundColor: Color.mainbackgroundcolor,height: '18%'}]}>
+      <View style={[tw`flex-row justify-between items-center text-center mx-2 pl-2 pr-2`,]}>
+        <Pressable onPress={() => handleImagePress("suggestions")}>
+          <Text style={[tw`text-base text-gray-900 font-normal text-lg`]}>
               {`suggestions `}
-            </Text>
-          </Pressable>
-        </View>
-        <View>
-          <Pressable onPress={() => handleImagePress("View All")} >
-            <ModeLightStateEnabled
-              label="View All"
-              showText={false}
-              modeLightStateEnabledPosition={undefined}
-              modeLightStateEnabledTop={undefined}
-              modeLightStateEnabledLeft={undefined}
-            />
-          </Pressable>
-        </View>
+          </Text>
+        </Pressable>
+        <Pressable onPress={() => handleImagePress("View All")} >
+          <ModeLightStateEnabled
+            label="View All"
+            showText={false}
+            modeLightStateEnabledPosition={undefined}              
+            modeLightStateEnabledTop={undefined}
+            modeLightStateEnabledLeft={undefined}
+          />
+        </Pressable>
       </View>
       <View style={tw`flex-row justify-around my-2`}>
         {renderCategoryButton("Best Seller")}

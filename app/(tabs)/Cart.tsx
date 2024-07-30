@@ -1,200 +1,341 @@
-import * as React from "react";
-import { useEffect, useState, useMemo } from "react";
-import { Image } from "expo-image";
-import { StyleSheet, Text, View,Pressable ,Alert,TouchableOpacity, FlatList} from "react-native";
-import Button1 from "../../components/Button1";
-import { Product } from "@/constants/Classes";
-import { Color, FontSize, FontFamily,productlistheight } from "../../GlobalStyles";
-import { cardstyles as styles } from "../../GlobalStyles";
-import tw from 'tailwind-react-native-classnames';
-import { useFonts } from 'expo-font';
+import React, { useEffect, useState, useMemo } from "react";
+import { View, Image, Text, FlatList, Pressable, TouchableOpacity, Alert } from "react-native";
+import { useAppContext } from "@/components/AppContext";
+import { Card, CartElement, Product } from "@/constants/Classes";
+import { Color } from "@/GlobalStyles";
+import StarRating from "@/components/StarRating";
+import tw from "tailwind-react-native-classnames";
+import { StyleSheet } from "react-native";
+import { router } from "expo-router";
 import axios from "axios";
-import { API_BASE_URL } from "@/constants/GlobalsVeriables";
-import { Footer } from "@/components/Footer";
+import { Ionicons } from "@expo/vector-icons";
+import { sessionManager } from "@/components/sessionManager";
+import { jwtDecode } from "jwt-decode";
+import CustomAlert from "@/components/CustomAlert"
+import ModernCustomAlert from "@/components/ModernCustomAlert";
 
-import { cartItemsNumber } from "@/constants/GlobalsVeriables";
 
-import { TabBarIcon } from '@/components/navigation/TabBarIcon';
-var cartPItems: {[key: string]: number} ={}
 const Cart = () => {
-  
-  const [products, setProducts] = useState<Product[]>([]);
-  const [totalItems, setTotalItems] = useState<number>(0);
- 
-  const [cartItems, setCartItems] = useState<{[key: string]: number}>({});
-  const [sumCheckout, setSumCheckout] = useState<number>(0);
-  const [actualId,setActualId] = useState<string>()
-  const [loaded, error] = useFonts({
-    'KleeOne-Regular': require('@/assets/fonts/KleeOne-Regular.ttf'),
-    'kavoonRegular': require('@/assets/fonts/Kavoon-Regular.ttf'),
-    'SpaceMono-Regular': require('@/assets/fonts/SpaceMono-Regular.ttf'),
-    'VampiroOne-Regular': require('@/assets/fonts/VampiroOne-Regular.ttf'),
-    'GermaniaOne-Regular': require('@/assets/fonts/GermaniaOne-Regular.ttf'),
-    'Langar-Regular': require('@/assets/fonts/Langar-Regular.ttf'),
-    'KiteOne-Regular': require('@/assets/fonts/KiteOne-Regular.ttf'),
-  });
+  const { state, dispatch } = useAppContext();
+  const [sumCheckout, setSumCheckout] = useState(0);
+  const [alertVisible, setAlertVisible] = useState(false);
+  var cartItems = state.cartItems || {};
+  var isLoggedIn = state.JWT_TOKEN !=='';
+  var token = state.JWT_TOKEN;
+
+
   useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        const response = await axios.get<Product[]>(`${API_BASE_URL}/Products`);
-        setProducts(response.data);
-        // Initialize cart items
-        const initialCart = response.data.reduce((acc, product) => {
-          acc[product.id] = 1; // Start with 1 item for each product
-          return acc;
-        }, {} as {[key: string]: number});
-        setCartItems(initialCart);
-        cartPItems = cartItems
-      } catch (error) {
-        console.error("Error fetching products:", error);
-      }
-    };
-    fetchProducts();
+    checkLoginStatus();
   }, []);
+
+  const checkLoginStatus = async () => {
+    console.log(state.JWT_TOKEN)
+  };
+
   useEffect(() => {
-    // Calculate sum and total items whenever cartItems or products change
-    const total = products.reduce((sum, product) => {
-      return sum + (cartItems[product.id] || 0) * product.price;
+    const total = Object.entries(cartItems).reduce((sum, [productId, item]) => {
+      const product = state.products.find(p => p.id === parseInt(productId));
+      console.log(product)
+      return sum + (product ? product.price * item.quantity : 0);
     }, 0);
-
-    const itemCount = Object.values(cartItems).reduce((count, quantity) => count + quantity, 0);
-
     setSumCheckout(total);
-    setTotalItems(itemCount);
-    
-  }, [products, cartItems]);
+  }, [cartItems, state.products]);
 
-
-  
   const updateItemQuantity = (productId: string, change: number) => {
-    setCartItems(prev => {
-      const newQuantity = Math.max(0, (prev[productId] || 0) + change);
-      if (newQuantity === 0) {
-        const { [productId]: _, ...rest } = prev;
-        console.log(prev)
-        return rest;
-      }
-      console.log(prev)
-      return { ...prev, [productId]: newQuantity };
-    });
+    const currentQuantity = cartItems[productId]?.quantity || 0;
+    const newQuantity = Math.max(0, currentQuantity + change);
+  
+    if (newQuantity === 0) {
+      removeItem(productId);
+    } else {
+      dispatch({
+        type: 'UPDATE_CART_ITEM_QUANTITY',
+        payload: { productId, quantity: newQuantity }
+      });
+    }
   };
 
   const removeItem = (productId: string) => {
-    setCartItems(prev => {
-      const { [productId]: _, ...rest } = prev;
-      
-      return rest;
-    });
-    console.log('rest')
+    dispatch({ type: 'REMOVE_FROM_CART', payload: productId });
   };
-  
-  const renderCartElement = ({item}: {item: Product}) => (
-    <View>
-      <Pressable style={[tw`flex-row`, styles.CardsProductWrapper]} onPress={() => {}}>
-        <View style={[styles.productImage]}>
+
+  const renderCartElement = ({ item }: { item: Product }) => {
+    const quantity = cartItems[item.id]?.quantity || 0;
+    
+    return (
+      <Pressable style={[styles.cardWrapper, tw`flex-row`]} onPress={() => {}}>
+        <View style={styles.productImageContainer}>
           <Image
-            style={[tw`w-20 h-20 rounded-lg`]}
-            contentFit="cover"
-            source={{uri: item.imageUrls[0]?.url}}
+            style={styles.productImage}
+            source={{ uri: item.imageUrls[0]?.url }}
           />
         </View>
-        <View style={[tw`flex-row w-40 ml-4 mt-2`]}>
-          <View>
-            <Text
-              style={[styles.productText]}
-              numberOfLines={2}
-            >
+        <View style={styles.productDetails}>
+          <View style={styles.priceQuantityContainer}>
+            <View style={styles.priceContainer}>
+              <Text style={styles.totalPrice}>£ {(item.price * quantity).toFixed(2)}</Text>
+              <Text style={styles.unitPrice}>£ {item.price.toFixed(2)}</Text>
+            </View>
+            <View style={styles.quantityContainer}>
+              <TouchableOpacity
+                style={styles.quantityButton}
+                onPress={() => updateItemQuantity(item.id, -1)}>
+                <Image
+                  style={styles.quantityIcon}
+                  tintColor={'orangered'}
+                  source={require("@/assets/minus.png")}
+                />
+              </TouchableOpacity>
+              <Text style={styles.quantityText}>{quantity}</Text>
+              <TouchableOpacity
+                style={styles.quantityButton}
+                onPress={() => updateItemQuantity(item.id, +1)}>
+                <Image
+                  style={styles.quantityIcon}
+                  source={require("@/assets/plus.png")}
+                />
+              </TouchableOpacity>
+            </View>
+          </View>
+          <View style={styles.productNameContainer}>
+            <Text style={styles.productName} numberOfLines={2} ellipsizeMode="tail">
               {item.name}
             </Text>
-            <Text style={[tw`mt-3`, {fontFamily: 'Langar-Regular', color: Color.colorDarkblue, fontSize: FontSize.size_mini, lineHeight: 14}]}>
-              {(cartItems[item.id] || 0) * item.price}£
-            </Text>
           </View>
-          <View style={[tw`flex-row top-7 -right-16 absolute`]}>
-            <TouchableOpacity
-              onPress={() => updateItemQuantity(item.id, -1)}>
+          <View style={styles.productInfoContainer}>
+            <StarRating rating={4.5} />
+            <Text style={styles.salesText}>| +1000 vendus</Text>
+            <Pressable style={styles.deleteButton} onPress={() => removeItem(item.id)}>
               <Image
-                style={[tw`w-3 h-4`]}
-                contentFit="cover"
-                source={require("@/assets/minus.png")}
+                style={styles.deleteIcon}
+                source={require("@/assets/delete.png")}
               />
-            </TouchableOpacity>
-            <Text style={[tw`w-6 h-8 -mt-2 pt-1 ml-3`]}>{cartItems[item.id] || 0}</Text>
-            <TouchableOpacity
-              onPress={() => updateItemQuantity(item.id, 1)}>
-              <Image
-                style={[tw`w-4 h-4 left-1`]}
-                contentFit="cover"
-                source={require("@/assets/plus.png")}
-              />
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              onPress={() => removeItem(item.id)}
-              style={[tw`-top-9`]}
-              >
-              <Image
-                style={[tw`h-4 w-4 left-4 rounded-lg`]}
-                tintColor={Color.colorGray_100}
-                source={require("@/assets/images/icons8-effacer-48.png")}
-              />
-            </TouchableOpacity>
+            </Pressable>
           </View>
         </View>
       </Pressable>
-    </View>
-  );
+    );
+  };
 
   const renderCheckoutButton = () => (
-    <Pressable style={styles.button}>
+    <Pressable style={styles.checkoutButton} onPress={()=>handleCheckout()}>
       <Image
-        style={styles.iconLayout}
-        contentFit="cover"
+        style={styles.checkoutIcon}
         source={require("@/assets/star1.png")}
       />
-      <Text style={styles.button1}>{`Go to checkout . ${sumCheckout.toFixed(2)} £`}</Text>
+      <Text style={styles.checkoutText}>
+        Go to checkout <Text style={styles.checkoutPrice}>£ {sumCheckout.toFixed(2)}</Text>
+      </Text>
       <Image
-        style={[styles.xIcon, styles.iconLayout]}
-        contentFit="cover"
+        style={styles.checkoutIcon}
         source={require("@/assets/x1.png")}
       />
     </Pressable>
   );
 
+
+  const handleCheckout = () => {
+    if (isLoggedIn) {
+      submitCard();
+    } else {
+      setAlertVisible(true);
+    }
+  };
+
+  const handleCancel = () => {
+    setAlertVisible(false);
+  };
+
+  const handleConfirm = () => {
+    setAlertVisible(false);
+    router.push("/LoginPage?id=Cart");
+  };
+
+  
+  const apiHandler = async (url, payload, token) => {
+    try {
+      const response = await axios.post(`${state.API_BASE_URL}${url}`, payload, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+      console.log(response.data);
+      return response;
+    } catch (error) {
+      console.log(error.response.data);
+      return error.response;
+    }
+  }
+  
+
+
+  const submitCard = async () => {
+    try {
+      const Products = state.products.filter((product: Product) => cartItems[product.id]?.quantity > 0);
+      const card: Card = {
+        cartElements: [],
+        total_amount: sumCheckout,
+        id: '',
+      };
+      Products.map((product: Product) => {
+        card.cartElements.push({id: '',quantity: cartItems[product.id]?.quantity,sub_total: cartItems[product.id]?.quantity*product.price,product: product})
+      })
+
+  
+
+      const response = await apiHandler(`/api/Cart/${jwtDecode(token).userid}`,card,token).then(
+      res => {
+        router.push("/Checkout")
+      }
+    );
+  }catch (error) {
+    console.error('Error submitting card:', error);
+    Alert.alert('Erreur', 'Échec de l\'ajout du cart. Veuillez réessayer.');
+  }
+  }
+
   const cartProducts = useMemo(() => {
-    return products.filter(product => cartItems[product.id] > 0);
-  }, [products, cartItems]);
+    return state.products.filter((product: Product) => cartItems[product.id]?.quantity > 0);
+  }, [state.products, cartItems]);
+
 
   return (
-    <View style={styles.cart}>
-      <Image
-        style={styles.cartChild}
-        contentFit="cover"
-        source={require("@/assets/rectangle-111.png")}
+    <View style={styles.container}>
+      <ModernCustomAlert
+        visible={alertVisible}
+        title="Login Required"
+        message="You need to be logged in to proceed to checkout."
+        onCancel={handleCancel}
+        onConfirm={handleConfirm}
       />
-      <View style={[styles.cartheader]}>
-        <View>
-        <TouchableOpacity onPress={() => {}}>
-           <TabBarIcon name={'arrow-back'} color={'black'} />
-        </TouchableOpacity>
-        </View>
-        <View>
-          <Text style={[styles.cartText,{fontFamily: 'kavoonRegular'}]}>Cart</Text>
-        </View>
-      </View>
-      <Text style={[styles.yourCart, styles.cartTypo]}>Your Cart</Text>
-      <View style={[styles.CardsProduct]}>
-        <FlatList
+      {cartProducts.length > 0 ? (
+        <>
+          <FlatList
             data={cartProducts}
             renderItem={renderCartElement}
-            keyExtractor={(item) => item.id.toString()}
+            keyExtractor={(item) => item.id?.toString()}
           />
-      </View>
-      {renderCheckoutButton()} 
+          {renderCheckoutButton()}
+        </>
+      ) : (
+        <View style={[tw`justify-center items-center h-80`]}>
+          <Text style={[tw`text-base`]}>Your cart is empty !</Text>
+          <Image source={require("@/assets/images/icons8-aucun-résultat-48.png")}/>
+        </View>
+      )}
     </View>
   );
 };
 
-
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    paddingTop: 15,
+    backgroundColor: Color.colorWhite,
+  },
+  cardWrapper: {
+    padding: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: Color.COLORALICEBLUE,
+  },
+  productImageContainer: {
+    width: '30%',
+    aspectRatio: 0.8,
+    marginRight: 10,
+  },
+  productImage: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 8,
+  },
+  productDetails: {
+    flex: 1,
+  },
+  priceQuantityContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 10,
+  },
+  priceContainer: {
+    backgroundColor: Color.COLORALICEBLUE,
+    padding: 5,
+    borderRadius: 5,
+  },
+  totalPrice: {
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  unitPrice: {
+    fontSize: 12,
+    color: 'gray',
+  },
+  quantityContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Color.COLORALICEBLUE,
+    borderRadius: 5,
+  },
+  quantityButton: {
+    padding: 5,
+  },
+  quantityIcon: {
+    width: 15,
+    height: 15,
+  },
+  quantityText: {
+    paddingHorizontal: 10,
+    backgroundColor: Color.colorWhite,
+  },
+  productNameContainer: {
+    marginBottom: 5,
+  },
+  productName: {
+    fontSize: 16,
+  },
+  productInfoContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Color.COLORALICEBLUE,
+    padding: 5,
+    borderRadius: 5,
+  },
+  salesText: {
+    fontSize: 12,
+    marginLeft: 5,
+  },
+  deleteButton: {
+    marginLeft: 'auto',
+  },
+  deleteIcon: {
+    width: 20,
+    height: 20,
+  },
+  checkoutButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: Color.COLORALICEBLUE,
+    padding: 10,
+    margin: 10,
+    borderRadius: 5,
+  },
+  checkoutIcon: {
+    width: 20,
+    height: 20,
+    marginHorizontal: 10,
+  },
+  checkoutText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  checkoutPrice: {
+    color: 'orange',
+  },
+  emptyCartText: {
+    textAlign: 'center',
+    marginTop: 20,
+    fontSize: 16,
+  },
+});
 
 export default Cart;

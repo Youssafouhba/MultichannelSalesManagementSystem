@@ -1,40 +1,33 @@
 import * as React from "react";
 import { Image } from "expo-image";
-import { StyleSheet, Text, View,Dimensions } from "react-native";
+import { StyleSheet, Text, View,Dimensions, TextInput } from "react-native";
 import { FontSize, FontFamily, Color, Border, Padding } from "../GlobalStyles";
 import tw from 'tailwind-react-native-classnames';
 import { headerstyles as styles } from "../GlobalStyles";
-const { width } = Dimensions.get('window');
-
-
+import { Ionicons } from '@expo/vector-icons';
+import { useAppContext } from '@/components/AppContext';
+import { useFocusEffect } from "@react-navigation/native";
+import { useCallback } from "react";
 
 const SearchBoxContainer = () => {
+  const { state,dispatch } = useAppContext();
+  var isLoggedIn = state.JWT_TOKEN !=='';
+  const [logen,setLoged] = React.useState(false)
+
   return (
-    <View style={[styles.header]}>
-      <View style={[styles.rectangleParent, styles.frameFlexBox1]}>
-      <Image
-          style={styles.frameChild}
-          contentFit="cover"
-          source={require("../assets/rectangle-111.png")}
-        />
-        <Image
-          style={styles.iconmonstrMenu11}
-          contentFit="cover"
-          source={require("../assets/iconmonstrmenu1-11.png")}
-        />
+    <View style={[{marginTop: '5%',height: 80,width: '100%',justifyContent: "center",alignItems: "center",overflow: "hidden",backgroundColor: Color.mainbackgroundcolor,}]}>
+      <View style={[styles.searchInput]}>
+        <TextInput
+        placeholder="Search..."
+        style={styles.label} numberOfLines={1}>
+        </TextInput>
+        <Ionicons style={[{marginLeft: 12,overflow: "hidden",}]} name='search' size={25} color="gray" />
       </View>
-      <View style={[styles.frame2,tw`mb-1`]}>
-        <View style={[styles.searchInput]}>
-          <Text style={styles.label} numberOfLines={1}>
-            Search
-          </Text>
-          <Image
-            style={styles.searchIcon}
-            contentFit="cover"
-            source={require("../assets/search1.png")}
-          />
-        </View>
-      </View>
+      {logen?(
+         <View style={[{right: '30%',top: 5}]}>
+         <Text style={[tw`text-base text-gray-900 font-normal text-lg`]}>Hi Youssef</Text>
+       </View>
+      ):(``)}
     </View>
   );
 };

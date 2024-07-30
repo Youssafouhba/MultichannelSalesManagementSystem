@@ -10,24 +10,20 @@ import tw from 'tailwind-react-native-classnames';
 import { useFonts } from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
-import ProductsService from "@/Services/ProductsService";
+import ProductsService from "@/screens/ProductsService";
 import Tab from "@/Services/tab";
 const { width, height } = Dimensions.get('window');
 import {screenHeight,screenWidth} from '@/constants/GlobalsVeriables'
 import {footer_h} from '@/GlobalStyles'
+import TabLayout from "@/app/(tabs)/_layout";
 
 const HomePage = () => {
-  useEffect( () =>{
-    const f = () => {
-      console.log(screenHeight),
-      console.log(screenHeight-264)}
-    f()
-  },[])
+  
   return (
-    <SafeAreaView>
+    <View>
       <SearchBoxContainer/>
       <ProductsService/>
-    </SafeAreaView>
+    </View>
   );
 };
 

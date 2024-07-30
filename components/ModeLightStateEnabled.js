@@ -1,5 +1,6 @@
 import React, { useMemo } from "react";
 import { Text, StyleSheet, View } from "react-native";
+import tw from "tailwind-react-native-classnames";
 import { Color, FontFamily, FontSize, Padding } from "../GlobalStyles";
 
 const getStyleValue = (key, value) => {
@@ -27,7 +28,7 @@ const ModeLightStateEnabled = ({
 
   return (
     <View style={[styles.modelightStateenabled, modeLightStateEnabledStyle]}>
-      <Text style={styles.textTypo}>{label}</Text>
+      <Text style={[styles.textTypo,tw`text-base font-normal text-lg`]}>{label}</Text>
       {showText && <Text style={[styles.text, styles.textTypo]}>􀆏</Text>}
     </View>
   );
@@ -36,11 +37,8 @@ const ModeLightStateEnabled = ({
 const styles = StyleSheet.create({
   textTypo: {
     textAlign: "left",
-    color: Color.colorize_gray,
-    fontFamily: 'kavoonRegular',
-    fontWeight: "600",
+    color: Color.colorGray,
     lineHeight: 18,
-    fontSize: FontSize.size_lg,
   },
   text: {
     marginLeft: 3,
