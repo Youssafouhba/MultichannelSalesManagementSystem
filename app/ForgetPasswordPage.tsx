@@ -36,7 +36,6 @@ const ForgerPasswordPage = () => {
         try {
           const response = await axios.post(`${state.API_BASE_URL}/api/auth-client/otp/forgot-password`,{email:mail});
         if (response.status === 200) {
-          console.log(response.data)
           navigation.navigate("OtpVerification",{mail:mail});
         }    
         else{

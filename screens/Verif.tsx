@@ -31,4 +31,23 @@ export default function Verif() {
     );
 };
   
+
+
+{isLoading? (
+  <ScrollView contentContainerStyle={{alignItems: 'center',top: '40%'}} style={[styles.scrollView,{}]}>
+    <LoadingAnimation size={80} color="blue" />
+    <Text style={[tw`text-base text-xs text-gray-400`]}>Loading...</Text>
+  </ScrollView>):
+(
+<SafeAreaView style={styles.scrollView}>
+{category === "Ceilling Calculator" ? (
+  <CeilingCalculator />
+) : filteredProducts.length === 0 ? (
+  <View style={styles.noProductsContainer}>
+    <Text style={styles.noProductsText}>No products found</Text>
+  </View>
+) : (
+  renderProductList()
+)}
+</SafeAreaView>)}
   

@@ -312,7 +312,8 @@ export const groupecomponentstyles = StyleSheet.create({
     justifyContent: "center",
     padding: Padding.p_2,
     overflow: "hidden",
-    height: 50,
+    top: -5,
+    height: 45,
   },
   selectedButtonText: {
     color: Color.colorWhite,

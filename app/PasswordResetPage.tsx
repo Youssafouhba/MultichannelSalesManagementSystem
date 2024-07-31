@@ -9,7 +9,7 @@ import { authstyles } from '../GlobalStyles';
 import * as Animatable from "react-native-animatable";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAppContext } from '@/components/AppContext';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 
 const PasswordResetPage = () => {
   const { state, dispatch } = useAppContext();
@@ -22,8 +22,7 @@ const PasswordResetPage = () => {
   const ref_confirm_password = React.useRef();
 
   const route = useRoute();
-  const email = route.params?.mail|null;
-  const otp = route.params?.otp|null;
+  const {mail,otp} = useLocalSearchParams()
   const [error, setError] = React.useState("");
   
 
@@ -35,7 +34,7 @@ const PasswordResetPage = () => {
   var token = state.JWT_TOKEN
  
   const handleConfirmationPassword = async () => {
-    console.log("Forget password of :"+email);
+    console.log("Forget password of :"+mail);
     console.log("Forget password of :"+otp);
     if(password==""){
         setErrorPassword("Password is required")
@@ -48,7 +47,7 @@ const PasswordResetPage = () => {
       } else {
         setError(""); // Clear the error if they match
         const payload = {
-          email: email,
+          email: mail,
           password: password,
           otp:otp,
         };
@@ -59,7 +58,7 @@ const PasswordResetPage = () => {
             }
           });
           if(response.status==200){
-            console.log(response.data)
+            router.push("/")
           }
         }
         catch(error){}

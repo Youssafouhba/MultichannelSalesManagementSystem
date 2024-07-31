@@ -109,6 +109,7 @@ const AddProductScreen = () => {
         imageUrls: imageUrls,
         category: category,
         id: '',
+        //isNew: true,
         postedDate: '',
       };
 

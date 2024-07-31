@@ -20,10 +20,12 @@ import TabLayout from "@/app/(tabs)/_layout";
 const HomePage = () => {
   
   return (
-    <View>
-      <SearchBoxContainer/>
-      <ProductsService/>
-    </View>
+    <SafeAreaView style={{ flex: 1 }}>
+      <View style={{ flex: 1 }}>
+        <SearchBoxContainer />
+        <ProductsService />
+      </View>
+    </SafeAreaView>
   );
 };
 

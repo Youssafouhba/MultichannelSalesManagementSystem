@@ -37,13 +37,13 @@ export default function TabLayout() {
   return (
     <Tabs
     sceneContainerStyle={{
-      
+      backgroundColor: Color.mainbackgroundcolor
     }}
     screenOptions={{
       tabBarActiveTintColor: Colors[colorScheme?? 'light'].tint,
       headerShown: false,
       tabBarStyle: {
-        height: 40, 
+        height: 51, 
       },
     }}>
       <Tabs.Screen
@@ -110,7 +110,7 @@ const styles1 = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     backgroundColor: Color.mainbackgroundcolor,
-    top: '5%',
+    top: '6%',
     height: 46,
     paddingHorizontal: 10,
   },

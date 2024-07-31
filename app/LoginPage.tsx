@@ -83,7 +83,7 @@ const LoginPage = () => {
         if (returnTo === 'ProductDetails' && productId) {
           router.push(`/ProductDetails?id=${productId}`);
         }else{
-          id?navigation.navigate(`/${id}?p=${idp}`):navigation.navigate("Account");
+          id?navigation.navigate(`/${id}?p=${idp}`):navigation.navigate("/");
         }
       }
     } catch (error) {

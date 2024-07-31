@@ -15,7 +15,7 @@ const SearchBoxContainer = () => {
   const [logen,setLoged] = React.useState(false)
 
   return (
-    <View style={[{marginTop: '5%',height: 80,width: '100%',justifyContent: "center",alignItems: "center",overflow: "hidden",backgroundColor: Color.mainbackgroundcolor,}]}>
+    <View style={[{height: 60,width: '100%',alignItems: "center",overflow: "hidden",backgroundColor: Color.mainbackgroundcolor}]}>
       <View style={[styles.searchInput]}>
         <TextInput
         placeholder="Search..."
@@ -24,8 +24,8 @@ const SearchBoxContainer = () => {
         <Ionicons style={[{marginLeft: 12,overflow: "hidden",}]} name='search' size={25} color="gray" />
       </View>
       {logen?(
-         <View style={[{right: '30%',top: 5}]}>
-         <Text style={[tw`text-base text-gray-900 font-normal text-lg`]}>Hi Youssef</Text>
+         <View style={[{right: '30%',top: 2}]}>
+         <Text style={[tw`text-base text-gray-900 font-normal text-sm`]}>Hi Youssef</Text>
        </View>
       ):(``)}
     </View>

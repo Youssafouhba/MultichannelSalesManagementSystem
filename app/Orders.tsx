@@ -65,10 +65,16 @@ const badgeColor = (status: OrderStatus) => {
 const Orders: React.FC = () => {
   const navigation = useNavigation();
   const { state,dispatch } = useAppContext();
+  const {id} = useLocalSearchParams()
   const [orders, setOrders] = useState<Order[]>([]);
   var cartItems = state.cartItems || {};
   var isLoggedIn = state.JWT_TOKEN !=='';
   var token = state.JWT_TOKEN;
+
+
+  const ClearCart = () => {
+    dispatch({ type: 'CLEAN_CART'});
+  };
 
   const apiHandler = async (url,token) => {
     try {

@@ -3,7 +3,7 @@ import { Product } from "@/constants/Classes";
 import { jwtDecode } from 'jwt-decode';
 const AppContext = createContext();
 
-const baseurl = '192.168.42.210'
+const baseurl = '192.168.100.45'
 
 const initialState = {
   theme: 'light',

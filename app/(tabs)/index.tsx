@@ -11,6 +11,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import { sessionManager } from '@/components/sessionManager';
 import AddProductScreen from '@/components/AddProductScreen';
+import tw from 'tailwind-react-native-classnames';
+import { View } from 'react-native';
+import QuatreCarres from '@/components/QuatreCarres';
 export default function Index() {
   return (
     <AppProvider>

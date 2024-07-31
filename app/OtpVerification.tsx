@@ -40,56 +40,72 @@ const OtpVerification = () => {
     }
   }
   
-  React.useEffect(() => {
-    const checkTokenAndRequestOtp = async () => {
-      console.log(token)
-      if (token) {
-        const payload = { email: email };
-        const response = await apiHandler("/api/auth-client/otp/request-otp", payload , token);
-        if (response.data.message === "OTP sent successfully") {
-          console.log(response)
-          setApiResponse(response);
-        }
-      }
-    };
-
-    checkTokenAndRequestOtp();
-  }, [email]);
-
+ 
   const ConfirmationHandler = async () => {
-    if (apiResponse?.data?.message === "OTP sent successfully") {
+   
       const payload = {
         email: email,
         otp: otp
       };
       console.log(payload);
       const response2 = await apiHandler("/api/auth-client/otp/verify-password-otp", payload);
-      console.log(response2.data);
-      if (response2.data.message === "OTP verified successfully") {
-        router.navigate("PasswordResetPage");
-        console.log("OTP verified successfully");
+      if (response2.data.message == "Password Otp is valid") {
+        dispatch({ type: 'SET_JWT_TOKEN', payload: response2.data.token });
+        router.navigate(`PasswordResetPage?mail=${email}&&otp=${otp}`);  
       } else {
         setErrorOtp(response2.data.message);
       }
-    } else {
-      setErrorOtp("OTP not sent successfully");
-    }
+   
   }
   
        
 
     
   return (
-    <View style={[authstyles.iphone1415ProMax6, authstyles.labelFlexBox,authstyles.register]}>
-      
-    <View style={styles.emailverification}>
-    <View style={[styles.frame3, styles.frame3Position]}>
-        <Image
-          style={[styles.image3Icon, styles.frame3Position]}
+    <View style={[authstyles.iphone1415ProMax6, authstyles.labelFlexBox]}>
+    <View style={[authstyles.content, authstyles.contentPosition]}>
+      <Image
+          style={authstyles.iphone1415ProMax6Child}
           contentFit="cover"
-     source={require("../assets/image-3.png")}
+          source={require("../assets/rectangle-2.png")}
         />
+      <SafeAreaView style={[tw`justify-center items-center`]}>
+        <Text style={[styles.email]} numberOfLines={1}>
+          Email verification
+        </Text>
+      </SafeAreaView>
+      <SafeAreaView style={styles.frame1}>
+        <View style={[tw`flex-row justify-between items-center`,styles.emailEdit]}>
+          <View>
+            <Text
+              style={[styles.emailInput]}
+            >{email?email:null}</Text>
+          </View>
+          <View>
+          <Button style={styles.edit} mode="text" labelStyle={styles.editBtn} onPress={() => navigation.goBack()}>
+                Edit
+              </Button>
+          </View>
+          
+        </View>
+      </SafeAreaView>
+      <View style={[tw`flex-col justify-center`,styles.frame]}>
+        <View style={[styles.name, styles.nameFlexBox]}>
+          <TextInput style={styles.label} numberOfLines={1}  value={otp} onChangeText={handleOtp} placeholder="Enter OTP (6-digit)" >
+           
+          </TextInput>
+        </View>
+        <View style={[tw`mt-4`]}>
+            { errorOtp ?
+          <Animatable.View animation="fadeInLeft" duration={500}>
+                <Text style={styles.errorMsg}>{errorOtp}.</Text>
+                </Animatable.View>
+                : null
+          }
+        </View>
       </View>
+      
+    
       <Button
         style={[styles.button, styles.nameFlexBox]}
         mode="contained"
@@ -99,36 +115,6 @@ const OtpVerification = () => {
       >
         Submit
       </Button>
-      <View style={[tw`flex-col`,styles.frame]}>
-        <View style={[styles.name, styles.nameFlexBox]}>
-          <TextInput style={styles.label} numberOfLines={1}  onChangeText={()=>setOtp(otp)} placeholder="Enter OTP (6-digit)" >
-           
-          </TextInput>
-        </View>
-        <View>
-            { errorOtp ?
-          <Animatable.View animation="fadeInLeft" duration={500}>
-                <Text style={styles.errorMsg}>{errorOtp}.</Text>
-                </Animatable.View>
-                : null
-          }
-        </View>
-      </View>
-      <SafeAreaView style={styles.frame1}>
-        <View style={styles.emailEdit}>
-          <Button style={styles.edit} mode="text" labelStyle={styles.editBtn} onPress={() => navigation.goBack()}>
-            Edit
-          </Button>
-          <Text
-            style={[styles.emailInput, styles.emailPosition]}
-          >{email?email:null}</Text>
-        </View>
-      </SafeAreaView>
-      <SafeAreaView style={styles.frame2}>
-        <Text style={[styles.email, styles.emailPosition]} numberOfLines={1}>
-          Email verification
-        </Text>
-      </SafeAreaView>
     </View>
     </View>
 
@@ -158,21 +144,18 @@ const styles = StyleSheet.create({
   },
   nameFlexBox: {
     alignItems: "center",
-    position: "absolute",
   },
   emailPosition: {
     color: Color.graysBlack,
     textAlign: "left",
     top: 0,
-    position: "absolute",
+    //position: "absolute",
   },
   frame3Position: {
-    height: 59,
-    left: 0,
+
     position: "absolute",
   },
   button: {
-    top: 505,
     shadowColor: "rgba(0, 0, 0, 0.25)",
     shadowOffset: {
       width: 0,
@@ -208,18 +191,19 @@ const styles = StyleSheet.create({
     backgroundColor: Color.schemesOnPrimary,
   },
   frame: {
-    top: 404,
+    //top: 404,
     //left: 44,
-    width: 342,
-    justifyContent: 'center',
-    height: 40,
-    position: "absolute",
+    width: '100%',
+    marginVertical: 16,
+    
+    //height: 40,
+    //position: "absolute",
     overflow: "hidden",
   },
   edit: {
-    left: 283,
+    //left: 283,
     top: 0,
-    position: "absolute",
+    //position: "absolute",
   },
   emailInput: {
     left: 0,
@@ -229,30 +213,26 @@ const styles = StyleSheet.create({
     color: Color.graysBlack,
   },
   emailEdit: {
-    width: 309,
-    height: 20,
+   
+    width: '100%',
+    //height: 20,
     left: 0,
     top: 0,
-    position: "absolute",
+    //position: "absolute",
   },
   frame1: {
-    top: 362,
-    //left: 47,
-    width: 336,
-    height: 31,
+    width: '100%',
     display: "flex",
     justifyContent: "center",
     alignItems: "center",
-    position: "absolute",
+    //position: "absolute",
     overflow: "hidden",
   },
   email: {
-    left: 1,
     fontSize: 25,
     lineHeight: 35,
     fontWeight: "600",
     fontFamily: FontFamily.interSemiBold,
-    width: 295,
     height: 40,
     overflow: "hidden",
   },
@@ -270,7 +250,8 @@ const styles = StyleSheet.create({
   },
   frame3: {
     top: '20%',
-    width: 430,
+    justifyContent: 'center',
+    width: '100%',
     overflow: "hidden",
   },
   emailverification: {

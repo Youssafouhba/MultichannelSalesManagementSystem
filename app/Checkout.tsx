@@ -121,11 +121,12 @@ const Checkout = () => {
         shepingDate: date,
         orderItems: []
       }
-      if(id=='r'){
-        const Products = state.products.filter((product: Product) => cartItems[product.id]?.quantity > 0);
+      const Products = state.products.filter((product: Product) => cartItems[product.id]?.quantity > 0);
         Products.map((product: Product) => {
           order.orderItems.push({id: '',quantity: cartItems[product.id]?.quantity,sub_total: cartItems[product.id]?.quantity*product.price,product: product})
         })
+      if(id=='r'){
+        
         const response = await apiHandler(`/Order/reorder/${jwtDecode(token).userid}`,order,token).then(
           res => {
             setOrderedProducts(cartItems)
@@ -133,15 +134,16 @@ const Checkout = () => {
            
           })
         }else{
+          
           const response = await apiHandler(`/Order/${jwtDecode(token).userid}`,order,token).then(
             res => {
               setAlertVisible(true);
               setOrderedProducts(cartItems)
             });
         }
-        setTimeout(() => {
-          ClearCart()
-        }, 4000);
+        
+        ClearCart()
+        
        
 
   

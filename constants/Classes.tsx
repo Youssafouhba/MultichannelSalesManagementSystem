@@ -3,6 +3,7 @@ import { Icon } from "react-native-paper";
 
 export interface Product {
     id: string;
+    //isNew: boolean;
     name: string;
     description: string;
     price: number;

@@ -50,7 +50,7 @@ const GroupComponent: React.FC<GroupComponentProps> = ({ onCategorySelect }) => 
   );
 
   return (
-    <View style={[tw`w-full`,{backgroundColor: Color.mainbackgroundcolor,height: '18%'}]}>
+    <View style={[tw`w-full`,{backgroundColor: Color.mainbackgroundcolor}]}>
       <View style={[tw`flex-row justify-between items-center text-center mx-2 pl-2 pr-2`,]}>
         <Pressable onPress={() => handleImagePress("suggestions")}>
           <Text style={[tw`text-base text-gray-900 font-normal text-lg`]}>

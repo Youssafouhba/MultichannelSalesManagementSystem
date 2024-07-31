@@ -119,6 +119,18 @@ export default function AppLayout() {
           }} 
         />
         <Stack.Screen 
+          name="OtpVerification" 
+          options={{ 
+            header: () => <CustomHeader title={'OtpVerification'}/>,
+          }} 
+        />
+        <Stack.Screen 
+          name="PasswordResetPage" 
+          options={{ 
+            header: () => <CustomHeader title={'PasswordResetPage'}/>,
+          }} 
+        />
+        <Stack.Screen 
           name="ForgetPasswordPage" 
           options={{ 
             header: () => <CustomHeader title={''} />,
@@ -197,7 +209,9 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.1)', // semi-transparent background
   },
-  container: {
+  container: {  //main header
+    top: '2%',
+    paddingTop: 6,
     flex: 1,
   },
   header: {
@@ -205,7 +219,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     backgroundColor: '#faffff',
-    top: '5%',
+    //top: '5%',
     height: 46,
     paddingHorizontal: 10,
   },
