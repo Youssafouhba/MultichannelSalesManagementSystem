@@ -1,44 +1,31 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View,Image, Text, TextInput, FlatList, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { View, Image, Text, TextInput, FlatList, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { useAppContext } from './AppContext';
 import axios from 'axios';
-import { Comment } from '@/constants/Classes';
+import { Comment, CommentItem } from '@/constants/Classes';
 import tw from 'tailwind-react-native-classnames';
 import { Ionicons } from '@expo/vector-icons';
 import GivStarRating from './GivStarRating';
 import { jwtDecode } from 'jwt-decode';
 import { router } from 'expo-router';
 import LoginRequiredAlert from "@/components/LoginRequiredAlert"
-import { format } from 'date-fns';
 import StarRating from './StarRating';
-interface CommentItem {
-  id: string;
-  content: string;
-  author: string;
-  createdDate: Date;
-  replies: CommentItem[];
-  first: boolean;
-  parentId?: string;
-  rating: number
-}
+import { useAppData } from './AppDataProvider';
+import { Color } from '@/GlobalStyles';
 
 const CommentSystem: React.FC<{ Id: string }> = ({ Id }) => {
   const { state, dispatch } = useAppContext();
   const [comments, setComments] = useState<CommentItem[]>([]);
-  const [loginAlertVisible,setloginAlertVisible] = useState<boolean>(false)
+  const [loginAlertVisible, setLoginAlertVisible] = useState<boolean>(false);
   const [newComment, setNewComment] = useState('');
-  const [replyingTo, setReplyingTo] = useState<string | null>(null);
-  const [expandedComments, setExpandedComments] = useState<Set<string>>(new Set());
   const [newCommentRating, setNewCommentRating] = useState(0);
+  const { data } = useAppData();
   const ws = useRef<WebSocket | null>(null);
-  var cartItems = state.cartItems || {};
-  var isLoggedIn = state.JWT_TOKEN !=='';
-  var token = state.JWT_TOKEN;
+  const isLoggedIn = state.JWT_TOKEN !== '';
+  const token = state.JWT_TOKEN;
 
   useEffect(() => {
     fetchComments(Id);
-    //setupWebSocket();
-
     return () => {
       if (ws.current) {
         ws.current.close();
@@ -46,90 +33,25 @@ const CommentSystem: React.FC<{ Id: string }> = ({ Id }) => {
     };
   }, [Id]);
 
-  const handleLogin = () => {
-    console.log(Id)
-    router.push(`/LoginPage?returnTo=ProductDetails&productId=${Id}`);
-  };
-
- const handleCancel = () => {
-  setloginAlertVisible(false)
- }
-
- {/**  const setupWebSocket = () => {
-    ws.current = new WebSocket(`ws://192.168.42.7:8080/comment`);
-
-    ws.current.onopen = () => {
-      console.log('WebSocket connection established');
-      // Subscribe to updates for this specific product/thread
-      ws.current.send(JSON.stringify({ type: 'SUBSCRIBE', productId: Id }));
-    };
-
-    ws.current.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      console.log('Received WebSocket message:', data);
-      if (data.type === 'NEW_COMMENT') {
-        console.log(data.comment)
-        //handleNewComment(data.comment);
-      }
-    };
-
-    ws.current.onerror = (error) => {
-      console.error('Erreur WebSocket:', error);
-    };
-
-    ws.current.onclose = () => {
-      console.log('Connexion WebSocket fermée');
-      setTimeout(setupWebSocket, 5000);
-    };
-  }; */}
-
   const fetchComments = async (productId: string) => {
     try {
       const response = await axios.get(`${state.API_BASE_URL}/Comments/${productId}`);
       const fetchedComments: CommentItem[] = response.data;
-      const filtredComments = fetchedComments.filter(comment => comment.first === true)
-      const sortedComments = filtredComments.sort((a, b) => 
+      const filteredComments = fetchedComments.filter(comment => comment.first === true);
+      const sortedComments = filteredComments.sort((a, b) => 
         new Date(b.createdDate).getTime() - new Date(a.createdDate).getTime()
       );
-      console.log(sortedComments)
-      setComments(sortedComments);
-      } catch (error) {
+      setComments(sortedComments.slice(0, 4)); // Only keep the 4 most recent comments
+    } catch (error) {
       console.error('Erreur lors de la récupération des commentaires:', error);
       Alert.alert('Erreur', 'Impossible de charger les commentaires. Veuillez réessayer.');
     }
   };
 
-  const handleNewComment = (newComment: CommentItem) => {
-    setComments(prevComments => {
-      if (newComment.first) {
-        return [...prevComments, newComment];
-      } else {
-        return addReply(prevComments, newComment.parentId!, newComment);
-      }
-    });
-  };
-
-  const addReply = (commentsList: CommentItem[], parentId: string, newReply: CommentItem): CommentItem[] => {
-    return commentsList.map(comment => {
-      if (comment.id === parentId) {
-        return {
-          ...comment,
-          replies: [...(comment.replies || []), newReply]
-        };
-      } else if (comment.replies && comment.replies.length > 0) {
-        return {
-          ...comment,
-          replies: addReply(comment.replies, parentId, newReply)
-        };
-      }
-      return comment;
-    });
-  };
-
   const handleAddComment = async () => {
-    if(!isLoggedIn)
-      setloginAlertVisible(true)
-    else{
+    if (!isLoggedIn) {
+      setLoginAlertVisible(true);
+    } else {
       if (newComment.trim() === '') {
         Alert.alert("Erreur", "Le commentaire ne peut pas être vide.");
         return;
@@ -137,88 +59,56 @@ const CommentSystem: React.FC<{ Id: string }> = ({ Id }) => {
       const comment: Comment = {
         id: '',
         content: newComment,
-        first: !replyingTo,
-        rating: newCommentRating // Include the rating
+        first: true,
+        rating: newCommentRating
       };
       try {
-        const endpoint = replyingTo
-          ? `${state.API_BASE_URL}/Comments/${jwtDecode(token).userid}/${Id}/${replyingTo}`
-          : `${state.API_BASE_URL}/Comments/${jwtDecode(token).userid}/${Id}/0`;
-  
-        const response = await axios.post(endpoint, comment,{
+        const endpoint = `${state.API_BASE_URL}/Comments/${jwtDecode(token).userid}/${Id}/0`;
+        const response = await axios.post(endpoint, comment, {
           headers: {
             Authorization: `Bearer ${token}`
           }
         });
-  
-        // Mise à jour locale immédiate
+
         const newCommentItem: CommentItem = {
           ...response.data,
           replies: [],
-          parentId: replyingTo || undefined
         };
-  
-        handleNewComment(newCommentItem);
-  
+
+        setComments(prevComments => {
+          const updatedComments = [newCommentItem, ...prevComments];
+          return updatedComments.slice(0, 4); // Keep only the 4 most recent comments
+        });
+
         setNewComment('');
-        if (replyingTo) {
-          setReplyingTo(null);
-          setExpandedComments(prev => new Set(prev).add(replyingTo));
-        }
+        setNewCommentRating(0);
       } catch (error) {
         console.error('Erreur lors de l\'envoi du commentaire:', error);
         Alert.alert('Erreur', 'Échec de l\'envoi du commentaire. Veuillez réessayer.');
       }
     }
   };
-  const toggleReplies = (commentId: string) => {
-    setExpandedComments(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(commentId)) {
-        newSet.delete(commentId);
-      } else {
-        newSet.add(commentId);
-      }
-      return newSet;
-    });
-  };
 
-
-  const renderCommentItem = ({ item, depth = 0 }: { item: CommentItem, depth?: number }) => (
-    <View style={[styles.commentContainer, { marginLeft: depth * 20 }]}>
+  const renderCommentItem = ({ item }: { item: CommentItem }) => (
+    <View style={styles.commentContainer}>
       <View style={styles.commentHeader}>
-        <Image source={require('@/assets/002.png')} style={styles.avatar} />
+        
         <View style={styles.authorInfo}>
           <Text style={styles.commentAuthor}>{item.author}</Text>
+        </View>
+      </View>
+      <View style={[tw`mt-2`]}>
+        {item.content!==''?(
+          <Text style={styles.commentContent}>{item.content}</Text>
+        ):(``)}
+        <View style={[tw`flex-row justify-between`]}>
+          {item.rating !== undefined && (
+            <StarRating rating={item.rating} maxRating={5} starSize={14} starColor="orange" />
+          )}
           <Text style={styles.commentDate}>{new Date(item.createdDate).toLocaleDateString()}</Text>
         </View>
-        {item.rating !== undefined && (
-          <StarRating rating={item.rating} maxRating={5} starSize={16} starColor="orange" />
-        )}
       </View>
-      <Text style={styles.commentContent}>{item.content}</Text>
-      <View style={styles.actionContainer}>
-        <TouchableOpacity onPress={() => {
-          setReplyingTo(item.id);
-          Alert.alert("Reply", `Replying to ${item.author}'s comment`);
-        }}>
-          <Text style={styles.actionButton}>Reply</Text>
-        </TouchableOpacity>
-        {item.replies && item.replies.length > 0 && (
-          <TouchableOpacity onPress={() => toggleReplies(item.id)}>
-            <Text style={styles.actionButton}>
-              {expandedComments.has(item.id) ? 'Hide Replies' : `Show Replies (${item.replies.length})`}
-            </Text>
-          </TouchableOpacity>
-        )}
-      </View>
-      {expandedComments.has(item.id) && item.replies && (
-        <FlatList
-          data={item.replies}
-          renderItem={({ item: reply }) => renderCommentItem({ item: reply, depth: depth + 1 })}
-          keyExtractor={(reply) => reply.id}
-        />
-      )}
+    
     </View>
   );
 
@@ -227,7 +117,7 @@ const CommentSystem: React.FC<{ Id: string }> = ({ Id }) => {
       <LoginRequiredAlert
         visible={loginAlertVisible}
         onLogin={() => router.push(`/LoginPage?returnTo=ProductDetails&productId=${Id}`)}
-        onCancel={() => setloginAlertVisible(false)}
+        onCancel={() => setLoginAlertVisible(false)}
       />
       <Text style={styles.sectionTitle}>Customer Reviews</Text>
       <FlatList
@@ -236,7 +126,7 @@ const CommentSystem: React.FC<{ Id: string }> = ({ Id }) => {
         keyExtractor={(item) => item.id}
         ListEmptyComponent={<Text style={styles.emptyListText}>Be the first to review this product!</Text>}
       />
-      <View style={[tw`flex-col`,styles.inputContainer]}>
+      <View style={[tw`flex-col`, styles.inputContainer]}>
         <View style={styles.ratingContainer}>
           <Text style={styles.ratingText}>Your Rating:</Text>
           <GivStarRating
@@ -247,22 +137,17 @@ const CommentSystem: React.FC<{ Id: string }> = ({ Id }) => {
         </View>
         <View style={[tw`flex-row`]}>
           <TextInput
-              style={styles.input}
-              value={newComment}
-              onChangeText={setNewComment}
-              placeholder={replyingTo ? "Write a reply..." : "Write a review..."}
-              multiline
-            />
-            <TouchableOpacity style={styles.button} onPress={handleAddComment}>
-              <Ionicons name='send-sharp' size={24} color={'white'} />
-            </TouchableOpacity>
-          </View>
+            style={styles.input}
+            value={newComment}
+            onChangeText={setNewComment}
+            placeholder="Write a review..."
+            multiline
+          />
+          <TouchableOpacity style={styles.button} onPress={handleAddComment}>
+            <Ionicons name='send-sharp' size={24} color={'white'} />
+          </TouchableOpacity>
+        </View>
       </View>
-      {replyingTo && (
-        <TouchableOpacity style={styles.cancelButton} onPress={() => setReplyingTo(null)}>
-          <Text style={styles.cancelButtonText}>Cancel Reply</Text>
-        </TouchableOpacity>
-      )}
     </View>
   );
 };
@@ -270,8 +155,10 @@ const CommentSystem: React.FC<{ Id: string }> = ({ Id }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 12,
-    backgroundColor: '#f8f8f8',
+    width: '100%',
+    backgroundColor: Color.mainbackgroundcolor,
+    marginVertical: 16,
+
   },
   sectionTitle: {
     fontSize: 22,
@@ -283,7 +170,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#ffffff',
     padding: 16,
     marginVertical: 8,
-    borderRadius: 8,
+    borderRadius: 2,
+    borderWidth: 0.2,
+    borderColor: '#0066cc',
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -306,7 +195,7 @@ const styles = StyleSheet.create({
   },
   commentAuthor: {
     fontWeight: 'bold',
-    fontSize: 16,
+    fontSize: 14,
     color: '#333',
   },
   commentDate: {

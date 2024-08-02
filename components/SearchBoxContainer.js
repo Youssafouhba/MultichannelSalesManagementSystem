@@ -15,7 +15,7 @@ const SearchBoxContainer = () => {
   const [logen,setLoged] = React.useState(false)
 
   return (
-    <View style={[{height: 60,width: '100%',alignItems: "center",overflow: "hidden",backgroundColor: Color.mainbackgroundcolor}]}>
+    <View style={[{height: 60,width: '100%',alignItems: "center",overflow: "hidden",backgroundColor: Color.colorWhite}]}>
       <View style={[styles.searchInput]}>
         <TextInput
         placeholder="Search..."

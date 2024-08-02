@@ -1,10 +1,12 @@
 import { useAppContext } from '@/components/AppContext';
 import { API_BASE_URL } from '@/constants/GlobalsVeriables';
+import { FontSize, Color } from '@/GlobalStyles';
 import { Client } from '@stomp/stompjs';
 import axios from 'axios';
+import { useRouter } from 'expo-router';
 import { jwtDecode } from 'jwt-decode';
 import React, { useEffect, useRef, useState } from 'react';
-import { FlatList, StyleSheet, Text, View } from 'react-native';
+import { FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 
 var SockJS = require('sockjs-client/dist/sockjs.js');
@@ -17,10 +19,23 @@ interface Notification {
     postedDate: string;
 }
 
-// Function to fetch notifications
+
+
+export default function Notifications() {
+    const { state, dispatch } = useAppContext();
+    const navigation = useRouter();
+    const [notifications, setNotifications] = useState<Notification[]>([]);
+    const [loading, setLoading] = useState<boolean>(true);
+    const [stompClient, setStompClient] = useState<Client | null>(null);
+    const chatAreaRef = useRef<FlatList<Notification>>(null);
+    var cartItems = state.cartItems || {};
+    var isLoggedIn = state.JWT_TOKEN !=='';
+    var token = state.JWT_TOKEN;
+
+    // Function to fetch notifications
 async function fetchNotification(token: string): Promise<Notification[]> {
     try {
-        const response = await axios.get(`${API_BASE_URL}/api/adMin/notification/mynotif`, {
+        const response = await axios.get(`${state.API_BASE_URL}/api/adMin/notification/mynotif`, {
             headers: {
                 Authorization: `Bearer ${token}`
             }
@@ -30,30 +45,22 @@ async function fetchNotification(token: string): Promise<Notification[]> {
         throw new Error(`Error fetching notification: ${error.message}`);
     }
 }
-
-export default function Notifications() {
-    const { state, dispatch } = useAppContext();
-    const [notifications, setNotifications] = useState<Notification[]>([]);
-    const [loading, setLoading] = useState<boolean>(true);
-    const [stompClient, setStompClient] = useState<Client | null>(null);
-    //const token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI0IiwiaWF0IjoxNzIyMzY5NTE1LCJ1c2VyaWQiOjQsImVtYWlsIjoiYWxraHNwYW1lckBnbWFpbC5jb20iLCJyb2xlIjpbImNsaWVudCJdfQ.ARq5LzI7tIkeLLEtplVCCxehbcGMhg7uJf1nDFp1nmk'; // Replace with actual token logic
-    const chatAreaRef = useRef<FlatList<Notification>>(null);
-    var cartItems = state.cartItems || {};
-    var isLoggedIn = state.JWT_TOKEN !=='';
-    var token = state.JWT_TOKEN;
     useEffect(() => {
         const getNotifications = async () => {
             try {
                 const data = await fetchNotification(token);
-                setNotifications(data.reverse());
+                const notifscount = data.length
+                state.notificationsCount = notifscount
+                dispatch({ type: 'SET_notificationsCount', payload: { notifscount } });
+                setNotifications(data);
             } catch (error) {
                 console.error('Error fetching notifications:', error);
             } finally {
                 setLoading(false);
             }
         };
-
-        getNotifications();
+        if(isLoggedIn)
+            getNotifications();
 
         if (token) {
             const client = new Client({
@@ -78,8 +85,11 @@ export default function Notifications() {
                 }
             };
         }
-    }, [token]);
+    }, [isLoggedIn,token]);
 
+    const handleLogin = () => {
+        navigation.navigate("LoginPage?id=Notifications");
+      };
     useEffect(() => {
         if (chatAreaRef.current) {
             chatAreaRef.current.scrollToEnd({ animated: true });
@@ -117,6 +127,18 @@ export default function Notifications() {
             <Text style={styles.date}>{new Date(item.postedDate).toLocaleString()}</Text>
         </View>
     );
+
+    if(!isLoggedIn)
+        return(
+            <View style={styles.container}>
+                <View style={styles.loginContainer}>
+                    <Text style={styles.loginText}>Please log in to view your Notifications</Text>
+                    <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
+                    <Text style={styles.loginButtonText}>Log In</Text>
+                    </TouchableOpacity>
+                </View>
+            </View>
+          )
 
     return (
         <View style={styles.container}>
@@ -172,4 +194,24 @@ const styles = StyleSheet.create({
         color: '#888',
         textAlign: 'right',
     },
+    loginContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+      },
+      loginText: {
+        fontSize: FontSize.presetsBody2_size,
+        color: Color.colorBlack,
+        marginBottom: 20,
+      },
+      loginButton: {
+        backgroundColor: Color.colorBlack,
+        paddingHorizontal: 20,
+        paddingVertical: 10,
+        borderRadius: 5,
+      },
+      loginButtonText: {
+        color: Color.colorWhite,
+        fontSize: FontSize.presetsBody2_size,
+      },
 });

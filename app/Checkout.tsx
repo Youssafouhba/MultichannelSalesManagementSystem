@@ -48,6 +48,7 @@ const Checkout = () => {
       return error.response;
     }
   }
+  
   const handleDeliveryCheck = () => {
     setCardChecked(true);
     setCashChecked(false);
@@ -134,7 +135,7 @@ const Checkout = () => {
            
           })
         }else{
-          
+          console.log(order)
           const response = await apiHandler(`/Order/${jwtDecode(token).userid}`,order,token).then(
             res => {
               setAlertVisible(true);

@@ -1,13 +1,14 @@
 import React, { createContext, useContext, useReducer } from 'react';
 import { Product } from "@/constants/Classes";
 import { jwtDecode } from 'jwt-decode';
+import config from './config';
 const AppContext = createContext();
 
-const baseurl = '192.168.100.45'
+const baseurl = '192.168.42.250'
 
 const initialState = {
   theme: 'light',
-  API_BASE_URL: `http://${baseurl}:9000`,
+  API_BASE_URL: config.API_BASE_URL,
   API_BASE_URL_ADMIN: `http://${baseurl}:9999`,
   API_BASE_URL_PRODUCT: `http://${baseurl}:8080`,
   products: [],
@@ -15,8 +16,9 @@ const initialState = {
   productId: 0,
   JWT_TOKEN: '',
   userId: '',
-  wsUrl: 'ws://172.28.128.1:8080',
+  wsUrl: 'http://192.168.42.250:9001',
   cartItemsCount: 0,
+  notificationsCount: 0,
   cartItems: {},
 };
 
@@ -67,8 +69,9 @@ function appReducer(state, action) {
       return { ...state, wsUrl: action.payload };
     case 'SET_USER':
       return { ...state, userId: action.payload };
-    case 'SET_THEME':
-      return { ...state, theme: action.payload };
+    case 'SET_notificationsCount':
+      const {notifscount} = action.payload;
+      return { ...state, notificationsCount: notifscount };
     default:
       return state;
   }

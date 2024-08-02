@@ -3,7 +3,7 @@ import { View, Text, Pressable, StyleSheet, FlatList, Dimensions, ScrollView, To
 import { Image } from "expo-image";
 import axios from "axios";
 import tw from 'tailwind-react-native-classnames';
-import { Product } from "@/constants/Classes";
+import { CommentItem, Product } from "@/constants/Classes";
 import GroupComponent from "@/components/GroupComponent";
 import CeilingCalculator from "./CeillingCalculator";
 import { Color } from "@/GlobalStyles";
@@ -14,6 +14,8 @@ import LoadingAnimation from "@/components/LoadingAnimation";
 import { useAppContext } from "@/components/AppContext";
 import {sessionManager} from "@/components/sessionManager"
 import QuatreRectangles from "@/components/QuatreCarres";
+import { Item } from "react-native-paper/lib/typescript/components/Drawer/Drawer";
+import { useAppData } from "@/components/AppDataProvider";
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
 
@@ -28,8 +30,10 @@ export default function ProductsService() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
   const [category, setCategory] = useState("all");
-  const [products, setProducts] = useState<Product[]>([]);
-  const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
+  const [products, setProducts] = useState<Product[] | undefined>([]);
+  const [productRatings, setProductRatings] = useState<{[key: number]: number} | undefined>({});
+  const [filteredProducts, setFilteredProducts] = useState<Product[] | undefined>([]);
+  const { data} = useAppData();
   var cartItems = state.cartItems || {};
   var isLoggedIn = state.JWT_TOKEN !=='';
   var token = state.JWT_TOKEN;
@@ -42,29 +46,41 @@ export default function ProductsService() {
   
   const numColumns = dimensions.width > 600 ? 3 : 2;
 
-  const apiHandler = async (url) => {
+
+
+  
+  const fetchProductRating = async (productId: number) => {
     try {
-      const response = await axios.get<Product[]>(`${state.API_BASE_URL}${url}`);
-      console.log(response.data);
-      return response;
+      const response = await axios.get(`${state.API_BASE_URL}/Comments/${productId}`);
+      const fetchedComments: CommentItem[] = response.data;
+      const totalRating = fetchedComments.reduce((sum, item) => sum + item.rating, 0);
+      const averageRating = fetchedComments.length > 0 ? totalRating / fetchedComments.length : 0;
+      return averageRating.toFixed(1);
     } catch (error) {
-      console.log(error.response.data);
-      return error.response;
+      console.error(`Error fetching rating for product ${productId}:`, error);
+      return 0;
     }
-  }
+  };
+
 
   useEffect(() => {
-    const fetchProducts = async () => {
-      const response = await apiHandler(`/api/Products`);
-      setTimeout(() => {
-        setProducts(response.data);
-        state.products = response.data
-        setFilteredProducts(response.data);
+    const fetchData = async () => {
+      try {
+        setProducts(data?.products);
+        setFilteredProducts(data?.products)
+        state.products = data?.products;
+        console.log(data?.ratings[5])
+        setProductRatings(data?.ratings);
         setIsLoading(false);
-      }, 2000);
+      } catch (error) {
+        console.error('Error fetching products:', error);
+        setIsLoading(false);
+      }
     };
-    fetchProducts();
+
+    fetchData();
   }, []);
+
 
   const isNew = (postedDate: string | Date): boolean => {
     const now = new Date();
@@ -103,7 +119,7 @@ export default function ProductsService() {
             <View style={[styles.offerBadge,category === "New designs" && { marginRight: 15,}]}>
               <Text style={[styles.offerText, category === "New designs" && styles.fullWidthOfferText]}>Offer</Text>
             </View>
-            <StarRating rating={4.5} />
+            <StarRating rating={productRatings[parseInt(item.id)]} />
           </View>
         </View>
       </Pressable>
@@ -117,18 +133,33 @@ export default function ProductsService() {
   );
 
   const renderProductList = () => (
-    <FlatList
-    style={{ flex: 1 }}
-    key={`${category}-${numColumns}`}
-    data={filteredProducts}
-    renderItem={renderProduct}
-    keyExtractor={(item) => item.id.toString()}
-    contentContainerStyle={styles.gridContainer}
-    numColumns={numColumns}
-    scrollEnabled={true}
-    onEndReachedThreshold={0.5}
-    onEndReached={() => console.log("End reached")}
-  />
+    <View style={[styles.listContainer, tw``]}>
+    {category === "New designs"?(
+      <FlatList
+        style={{ flex: 1 }}
+        key={category}
+        data={filteredProducts} // Limiter à 4 éléments
+        renderItem={renderProduct}
+        keyExtractor={(item) => item.id.toString()}
+        numColumns={1}
+        scrollEnabled={true} // Désactiver le défilement
+        contentContainerStyle={styles.flatListContent}
+    />
+    ):(
+      <FlatList
+        style={{ flex: 1 }}
+        key={category}
+        data={filteredProducts} // Limiter à 4 éléments
+        renderItem={renderProduct}
+        keyExtractor={(item) => item.id.toString()}
+        numColumns={2}
+        columnWrapperStyle={styles.row}
+        scrollEnabled={true} // Désactiver le défilement
+        contentContainerStyle={styles.flatListContent}
+    />
+    )}
+    
+  </View>
   );
 
   const filterProducts = (categoryName: string | null) => {
@@ -145,38 +176,26 @@ export default function ProductsService() {
     }
   };
 
-
-
   return (
     <View style={styles.container}>
       <GroupComponent onCategorySelect={filterProducts} />
-      <View style={[styles.listContainer, tw``]}>
-        {category === "New designs"?(
-          <FlatList
-            style={{ flex: 1 }}
-            key={category}
-            data={filteredProducts} // Limiter à 4 éléments
-            renderItem={renderProduct}
-            keyExtractor={(item) => item.id.toString()}
-            numColumns={1}
-            scrollEnabled={true} // Désactiver le défilement
-            contentContainerStyle={styles.flatListContent}
-        />
-        ):(
-          <FlatList
-            style={{ flex: 1 }}
-            key={category}
-            data={filteredProducts} // Limiter à 4 éléments
-            renderItem={renderProduct}
-            keyExtractor={(item) => item.id.toString()}
-            numColumns={2}
-            columnWrapperStyle={styles.row}
-            scrollEnabled={true} // Désactiver le défilement
-            contentContainerStyle={styles.flatListContent}
-        />
-        )}
-        
-      </View>
+      {isLoading? (
+        <ScrollView contentContainerStyle={{alignItems: 'center',top: '40%'}} style={[styles.scrollView,{}]}>
+          <LoadingAnimation size={80} color="blue" />
+          <Text style={[tw`text-base text-xs text-gray-400`]}>Loading...</Text>
+        </ScrollView>):
+      (
+      <SafeAreaView style={styles.scrollView}>
+      {category === "Ceilling Calculator" ? (
+        <CeilingCalculator />
+      ) : filteredProducts.length === 0 ? (
+        <View style={styles.noProductsContainer}>
+          <Text style={styles.noProductsText}>No products found</Text>
+        </View>
+      ) : (
+        renderProductList()
+      )}
+      </SafeAreaView>)}
     </View>
 
   );

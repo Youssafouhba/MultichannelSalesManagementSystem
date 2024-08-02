@@ -7,12 +7,14 @@ import { screenHeight } from '@/constants/GlobalsVeriables';
 import { useAppContext } from '@/components/AppContext';
 import { Color } from '@/GlobalStyles';
 import { Linking } from 'react-native';
+import { useAppData } from "@/components/AppDataProvider";
+
 const MenuOptions = [
   {name: 'Filter', icon: require('@/assets/images/icons8-réglages-vertical-50.png'), path: '/Profile'},
   {name: 'My Orders', icon: require('@/assets/images/icons8-sac-de-courses-80.png'), path: '/Orders'},
-  {name: 'My Favorite', icon: require('@/assets/images/icons8-coeurs-50.png'), path: '/Profile'},
+  {name: 'My Favorite', icon: require('@/assets/images/icons8-coeurs-50.png'), path: '/Wishlist'},
   {name: 'Offers', icon: require('@/assets/images/icons8-offer-58.png'), path: '/Profile'},
-  {name: 'Trade Customer', icon: require('@/assets/images/icons8-badge-50.png'), path: '/Profile'},
+  {name: 'Trade Customer', icon: require('@/assets/images/icons8-badge-50.png'), path: '/TradeCustomer'},
   {name: 'Log Out', icon: require('@/assets/images/icons8-déconnexion-arrondi-64.png'), path: '/'},
 ];
 
@@ -23,12 +25,14 @@ const SocialMediaIcons = [
 
 function Menu({ isVisible, onClose }) {
   const { state, dispatch } = useAppContext();
-  
+  const { logout, error } = useAppData();
   if (!isVisible) return null;
 
   const handleMenuItemPress = async (path) => {
     onClose(); // Close the menu
     if (path === '/') {
+      state.notificationsCount = 0;
+      logout();
       dispatch({ type: 'SET_JWT_TOKEN', payload: '' });
     }
     router.push(path); // Navigate to the selected path
@@ -60,15 +64,17 @@ function Menu({ isVisible, onClose }) {
   );
 
   return (
-    <View style={[styles.menu, tw`rounded`]}>
-      <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-        <Ionicons name="close" size={24} color="gray" />
-      </TouchableOpacity>
-      <FlatList
-        data={MenuOptions}
-        renderItem={renderMenuItem}
-        keyExtractor={(item) => item.name}
-      />
+    <View style={[styles.menu, tw`flex-col justify-between rounded`]}>
+      <View style={[{}]}>
+        <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+          <Ionicons name="close" size={24} color="gray" />
+        </TouchableOpacity>
+        <FlatList
+          data={MenuOptions}
+          renderItem={renderMenuItem}
+          keyExtractor={(item) => item.name}
+        />
+      </View>
       <View style={[styles.socialIconsContainer]}>
         <FlatList
           data={SocialMediaIcons}
@@ -85,7 +91,7 @@ function Menu({ isVisible, onClose }) {
 const styles = StyleSheet.create({
   menu: {
     position: 'absolute',
-    top: screenHeight * 0.04,
+    top: screenHeight * 0.02,
     right: '0%',
     bottom: 0,
     width: '52%',

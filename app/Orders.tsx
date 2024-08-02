@@ -12,6 +12,8 @@ import { Color, FontSize } from '@/GlobalStyles';
 import { jwtDecode } from 'jwt-decode';
 import { Route } from 'expo-router/build/Route';
 import { router, useLocalSearchParams,  } from 'expo-router';
+import LogInRequiredPage from '@/components/LogInRequiredPage';
+import { useAppData } from '@/components/AppDataProvider';
 
 type IconConfig = {
   name: string;
@@ -65,8 +67,8 @@ const badgeColor = (status: OrderStatus) => {
 const Orders: React.FC = () => {
   const navigation = useNavigation();
   const { state,dispatch } = useAppContext();
+  const { orders, fetchOrders,error} = useAppData();
   const {id} = useLocalSearchParams()
-  const [orders, setOrders] = useState<Order[]>([]);
   var cartItems = state.cartItems || {};
   var isLoggedIn = state.JWT_TOKEN !=='';
   var token = state.JWT_TOKEN;
@@ -76,19 +78,7 @@ const Orders: React.FC = () => {
     dispatch({ type: 'CLEAN_CART'});
   };
 
-  const apiHandler = async (url,token) => {
-    try {
-      const response = await axios.get<Order[]>(`${state.API_BASE_URL}${url}`,{
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
-      return response;
-    } catch (error) {
-      console.log(error.response.data);
-      return error.response;
-    }
-  }
+
 
   const handleLogin = () => {
     router.push("/LoginPage?id=Orders");
@@ -97,24 +87,12 @@ const Orders: React.FC = () => {
   
   useFocusEffect(
     useCallback(() => {
-      const fetchOrders = async () => {
-        try {
-          const response = await apiHandler(`/api/client/getMyOrders`, token);
-          const sortedOrders = response.data.sort((a, b) => 
-            new Date(b.creationDate).getTime() - new Date(a.creationDate).getTime()
-          );
-          state.offers = sortedOrders
-          setOrders(sortedOrders);
-        } catch (error) {
-          console.error('Failed to fetch orders', error);
-        }
+      const fetch = async () => {
+        await fetchOrders();
       };
-  
       if(isLoggedIn)
-        fetchOrders();
-  
+        fetch();
       return () => {
-       
       };
     }, [token])
   );
@@ -156,12 +134,7 @@ const Orders: React.FC = () => {
     <View style={styles.container}>
       {!isLoggedIn ?
       (
-      <View style={styles.loginContainer}>
-        <Text style={styles.loginText}>Please log in to view your profile</Text>
-        <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
-          <Text style={styles.loginButtonText}>Log In</Text>
-        </TouchableOpacity>
-      </View>):
+        <LogInRequiredPage message='Please log in to view your Orders' page='Orders'/>):
       (
       <FlatList
         data={orders}
@@ -175,33 +148,6 @@ const Orders: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
-  profile: {
-    backgroundColor: Color.mainbackgroundcolor,
-    flex: 1,
-    width: "100%",
-    height: 932,
-    overflow: "hidden",
-  },
-  loginContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  loginText: {
-    fontSize: FontSize.presetsBody2_size,
-    color: Color.colorBlack,
-    marginBottom: 20,
-  },
-  loginButton: {
-    backgroundColor: Color.colorBlack,
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 5,
-  },
-  loginButtonText: {
-    color: Color.colorWhite,
-    fontSize: FontSize.presetsBody2_size,
-  },
   container: {
     flex: 1,
     backgroundColor: Color.mainbackgroundcolor, // Light Gray for the page background

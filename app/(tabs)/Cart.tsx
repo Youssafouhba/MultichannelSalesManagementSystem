@@ -8,38 +8,30 @@ import tw from "tailwind-react-native-classnames";
 import { StyleSheet } from "react-native";
 import { router } from "expo-router";
 import axios from "axios";
-import { Ionicons } from "@expo/vector-icons";
-import { sessionManager } from "@/components/sessionManager";
 import { jwtDecode } from "jwt-decode";
-import CustomAlert from "@/components/CustomAlert"
 import ModernCustomAlert from "@/components/ModernCustomAlert";
+import { useAppData } from "@/components/AppDataProvider";
 
 
 const Cart = () => {
   const { state, dispatch } = useAppContext();
+  const { data,cartElements,error} = useAppData();
   const [sumCheckout, setSumCheckout] = useState(0);
-  const [alertVisible, setAlertVisible] = useState(false);
+  const [first, setFirst] = useState(false);
+  const [LogInAlertVisible, setLogInAlertVisible] = useState(false);
   var cartItems = state.cartItems || {};
   var isLoggedIn = state.JWT_TOKEN !=='';
   var token = state.JWT_TOKEN;
 
 
   useEffect(() => {
-    checkLoginStatus();
-  }, []);
-
-  const checkLoginStatus = async () => {
-    console.log(state.JWT_TOKEN)
-  };
-
-  useEffect(() => {
     const total = Object.entries(cartItems).reduce((sum, [productId, item]) => {
-      const product = state.products.find(p => p.id === parseInt(productId));
-      console.log(product)
+      const product = data?.products.find(p => p.id == productId);
       return sum + (product ? product.price * item.quantity : 0);
     }, 0);
     setSumCheckout(total);
-  }, [cartItems, state.products]);
+  }, [cartItems, data?.products]);
+
 
   const updateItemQuantity = (productId: string, change: number) => {
     const currentQuantity = cartItems[productId]?.quantity || 0;
@@ -103,7 +95,7 @@ const Cart = () => {
             </Text>
           </View>
           <View style={styles.productInfoContainer}>
-            <StarRating rating={4.5} />
+            <StarRating rating={data?.ratings[item.id]} />
             <Text style={styles.salesText}>| +1000 vendus</Text>
             <Pressable style={styles.deleteButton} onPress={() => removeItem(item.id)}>
               <Image
@@ -118,7 +110,7 @@ const Cart = () => {
   };
 
   const renderCheckoutButton = () => (
-    <Pressable style={styles.checkoutButton} onPress={()=>handleCheckout()}>
+    <Pressable style={styles.checkoutButton} onPress={()=> handelcheckout()}>
       <Image
         style={styles.checkoutIcon}
         source={require("@/assets/star1.png")}
@@ -134,24 +126,6 @@ const Cart = () => {
   );
 
 
-  const handleCheckout = () => {
-    if (isLoggedIn) {
-      submitCard();
-    } else {
-      setAlertVisible(true);
-    }
-  };
-
-  const handleCancel = () => {
-    setAlertVisible(false);
-  };
-
-  const handleConfirm = () => {
-    setAlertVisible(false);
-    router.push("/LoginPage?id=Cart");
-  };
-
-  
   const apiHandler = async (url, payload, token) => {
     try {
       const response = await axios.post(`${state.API_BASE_URL}${url}`, payload, {
@@ -159,7 +133,6 @@ const Cart = () => {
           Authorization: `Bearer ${token}`
         }
       });
-      console.log(response.data);
       return response;
     } catch (error) {
       console.log(error.response.data);
@@ -167,51 +140,81 @@ const Cart = () => {
     }
   }
   
-
-
   const submitCard = async () => {
     try {
+      const total = Object.entries(cartItems).reduce((sum, [productId, item]) => {
+        const product = state.products.find(p => p.id === parseInt(productId));
+        return sum + (product ? product.price * item.quantity : 0);
+      }, 0);
+      
       const Products = state.products.filter((product: Product) => cartItems[product.id]?.quantity > 0);
       const card: Card = {
         cartElements: [],
-        total_amount: sumCheckout,
+        total_amount: total,
         id: '',
       };
-      Products.map((product: Product) => {
-        card.cartElements.push({id: '',quantity: cartItems[product.id]?.quantity,sub_total: cartItems[product.id]?.quantity*product.price,product: product})
-      })
+      Products.forEach((product: Product) => {
+        card.cartElements.push({
+          id: '',
+          quantity: cartItems[product.id]?.quantity,
+          sub_total: cartItems[product.id]?.quantity * product.price,
+          product: product
+        });
+      });
 
-  
+      if (isLoggedIn) {
+        if(cartElements.length){
+          router.push("/Checkout");
+        }else{
+          const response = await apiHandler(`/api/Cart/${jwtDecode(token).userid}`, card, token);
+          if (response.status === 200) {
+            router.push("/Checkout");
+          } else {
+            Alert.alert('Error', 'Failed to submit the cart. Please try again.');
+          }
+        }
 
-      const response = await apiHandler(`/api/Cart/${jwtDecode(token).userid}`,card,token).then(
-      res => {
-        router.push("/Checkout")
       }
-    );
-  }catch (error) {
-    console.error('Error submitting card:', error);
-    Alert.alert('Erreur', 'Échec de l\'ajout du cart. Veuillez réessayer.');
-  }
-  }
+    } catch (error) {
+      console.error('Error submitting card:', error);
+      Alert.alert('Error', 'Failed to add the cart. Please try again.');
+    }
+  };
 
+  const handelcheckout = () => {
+    if (isLoggedIn) {
+      submitCard();
+    } else {
+      setLogInAlertVisible(true);
+    }
+  };
+
+  const handleCancel = () => {
+    setLogInAlertVisible(false);
+  };
+
+  const handleConfirm = () => {
+      setLogInAlertVisible(false);
+      router.push(`/LoginPage?id=Cart`);
+  };
   const cartProducts = useMemo(() => {
     return state.products.filter((product: Product) => cartItems[product.id]?.quantity > 0);
-  }, [state.products, cartItems]);
+  }, [data?.products, cartItems]);
 
 
   return (
     <View style={styles.container}>
       <ModernCustomAlert
-        visible={alertVisible}
-        title="Login Required"
-        message="You need to be logged in to proceed to checkout."
-        onCancel={handleCancel}
-        onConfirm={handleConfirm}
-      />
+                visible={LogInAlertVisible}
+                title="Login Required"
+                message="You need to be logged in to proced to Checkout."
+                onCancel={handleCancel}
+                onConfirm={handleConfirm}
+            />
       {cartProducts.length > 0 ? (
         <>
           <FlatList
-            data={cartProducts}
+            data={cartElements.length==0?cartProducts:cartElements}
             renderItem={renderCartElement}
             keyExtractor={(item) => item.id?.toString()}
           />

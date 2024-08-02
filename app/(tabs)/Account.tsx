@@ -6,79 +6,28 @@ import { useCallback } from "react";
 import axios from "axios";
 import Infos from "@/components/Infos";
 import { Color, FontSize } from "@/GlobalStyles";
+import LogInRequiredPage from "@/components/LogInRequiredPage";
+import { UserDTO } from "@/constants/Classes";
+import { useAppData } from "@/components/AppDataProvider";
 
-interface UserDTO {
-  fullName: string,
-  email: string,
-  phoneNumber: string,
-  dateOfCreation: string | Date
-};
 
 export default function Account() {
+  const { user, deleteAccount,error } = useAppData();
   const { state, dispatch } = useAppContext();
-  const navigation = useRouter();
-  const [userData, setUserData] = React.useState<UserDTO>();
   const isLoggedIn = state.JWT_TOKEN !== '';
-  const token = state.JWT_TOKEN;
-
-  const apiHandler = async (url, token) => {
-    try {
-      const response = await axios.get(`${state.API_BASE_URL}${url}`, {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
-      console.log(response.data);
-      return response;
-    } catch (error) {
-      console.log(error.response.data);
-      return error.response;
-    }
-  }
-
-  const handleLogin = () => {
-    navigation.navigate("LoginPage?id=Account");
-  };
-
-  useFocusEffect(
-    useCallback(() => {
-      const fetchClientData = async () => {
-        try {
-          const response = await apiHandler(`/api/client/getMyProfil`, token);
-          console.log(token);
-          setUserData(response.data);
-        } catch (error) {
-          console.error('Failed to fetch orders', error);
-        }
-      };
-
-      if (isLoggedIn) {
-        fetchClientData();
-      }
-
-      return () => {
-        // This is the cleanup function (optional)
-        // It runs when the component is unfocused
-      };
-    }, [isLoggedIn, token])
-  );
+  
   
   return (
     <View style={styles.profile}>
       {isLoggedIn ? (
         <Infos
-          fullName={userData?.fullName}
-          email={userData?.email}
-          phoneNumber={userData?.phoneNumber}
-          dateOfCreation={userData?.dateOfCreation}
+          fullName={user?.fullName}
+          email={user?.email}
+          phoneNumber={user?.phoneNumber}
+          dateOfCreation={user?.dateOfCreation}
         />
       ) : (
-        <View style={styles.loginContainer}>
-          <Text style={styles.loginText}>Please log in to view your profile</Text>
-          <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
-            <Text style={styles.loginButtonText}>Log In</Text>
-          </TouchableOpacity>
-        </View>
+        <LogInRequiredPage message='Please log in to view your profile' page='Account'/>
       )}
     </View>
   );
@@ -91,26 +40,6 @@ const styles = StyleSheet.create({
     width: "100%",
     height: 932,
     overflow: "hidden",
-  },
-  loginContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  loginText: {
-    fontSize: FontSize.presetsBody2_size,
-    color: Color.colorBlack,
-    marginBottom: 20,
-  },
-  loginButton: {
-    backgroundColor: Color.colorBlack,
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 5,
-  },
-  loginButtonText: {
-    color: Color.colorWhite,
-    fontSize: FontSize.presetsBody2_size,
   },
   footer: {
     position: 'absolute',

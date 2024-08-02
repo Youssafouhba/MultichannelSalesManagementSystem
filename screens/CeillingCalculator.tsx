@@ -182,7 +182,7 @@ export default function CeilingCalculator() {
         />
         <TouchableOpacity
           style={[
-            tw`bg-blue-500 absolute top-32 h-7 w-40 rounded-lg justify-center items-center`,
+            tw`bg-blue-500 h-7 w-40 rounded-lg justify-center items-center`,
             isCalculating && tw`opacity-60`,(length== '' || width =='') && tw`opacity-60`
           ]}
           onPress={submitMaterial}
@@ -196,7 +196,7 @@ export default function CeilingCalculator() {
         </TouchableOpacity>
       </View>
       {isfinish ?(
-        <View style={[tw`absolute mt-56 w-full mx-6`]}>
+        <View style={[tw`w-full my-6 justify-center`]}>
           <Text style={styles.ResultText}>Results</Text>
           <FlatList
             data={Results}

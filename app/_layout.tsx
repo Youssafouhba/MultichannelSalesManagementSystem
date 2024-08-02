@@ -10,6 +10,7 @@ import { screenHeight } from '@/constants/GlobalsVeriables';
 import { Color } from '@/GlobalStyles';
 import { color } from '@rneui/themed/dist/config';
 import Menu from '@/components/Menu';
+import { AppDataProvider } from '@/components/AppDataProvider';
 
 function FilterMenu({ isVisible, onClose }) {
   if (!isVisible) return null;
@@ -32,9 +33,8 @@ function FilterMenu({ isVisible, onClose }) {
 function CustomHeader({title}) {
   const { id } = useGlobalSearchParams();
   const navigation = useNavigation();
-  console.log(id)
   return (
-    <View style={[styles.header, { backgroundColor: Color.mainbackgroundcolor }]}>
+    <View style={[styles.header, { backgroundColor: Color.colorWhite }]}>
       <TouchableOpacity onPress={() =>{id=='Cart'? navigation.navigate(`${id}`): navigation.goBack()}} style={styles.backButton}>
         <Ionicons name='chevron-back-outline' size={20} color="black" style={{ overflow: 'hidden' }} />
       </TouchableOpacity>
@@ -93,6 +93,7 @@ export default function AppLayout() {
 
   
   return (
+    <AppDataProvider>
     <AppProvider>
     <View style={styles.container}>
       <Stack>
@@ -110,6 +111,24 @@ export default function AppLayout() {
           name="ProductDetails" 
           options={{ 
             header: () => <CustomHeader title={'Product Details'}/>,
+          }} 
+        />
+        <Stack.Screen 
+          name="CompleteTradeCustomer" 
+          options={{ 
+            header: () => <CustomHeader title={'TradeCustomer'}/>,
+          }} 
+        />
+        <Stack.Screen 
+          name="TradeCustomer" 
+          options={{ 
+            header: () => <CustomHeader title={'TradeCustomer'}/>,
+          }} 
+        />
+        <Stack.Screen 
+          name="Wishlist" 
+          options={{ 
+            header: () => <CustomHeader title={'My Wishlist'}/>,
           }} 
         />
         <Stack.Screen 
@@ -200,31 +219,33 @@ export default function AppLayout() {
         </Modal>
       </View>
     </AppProvider>
-
+    </AppDataProvider>
   );
 }
 
 const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
+    top: '2%',
     backgroundColor: 'rgba(0, 0, 0, 0.1)', // semi-transparent background
   },
   container: {  //main header
     top: '2%',
     paddingTop: 6,
+    backgroundColor: Color.colorWhite,
     flex: 1,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#faffff',
+    backgroundColor: '#ffffff',
     //top: '5%',
     height: 46,
     paddingHorizontal: 10,
   },
   backButton: {
-    backgroundColor: 'white',
+    backgroundColor: Color.colorWhitesmoke,
     width: 30,
     height: 30,
     borderRadius: 50,

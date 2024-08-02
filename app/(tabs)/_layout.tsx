@@ -13,26 +13,9 @@ import { useAppContext } from '@/components/AppContext';
 export default function TabLayout() {
   const { state } = useAppContext(); // Use the AppContext
   const colorScheme = useColorScheme();
-  const [notificationCount, setNotificationCount] = useState(0);
-  const pathname = usePathname();
-  const { id } = useLocalSearchParams();
-  useEffect(() => {
-    // Ici, vous pouvez ajouter la logique pour récupérer le nombre de notifications
-    // Par exemple, une requête API ou une écoute en temps réel
-    // Pour l'exemple, nous allons simplement définir un nombre aléatoire
-    setNotificationCount(Math.floor(Math.random() * 100));
-  }, []);
+
   
-  function CustomHeader() {
-    const navigation = useNavigation();
-      return (
-        <View style={[styles1.header]}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles1.backButton}>
-            <Ionicons name='chevron-back-outline' size={20} color="black" style={{ overflow: 'hidden' }} />
-          </TouchableOpacity>
-        </View>
-      );
-  }
+
 
   return (
     <Tabs
@@ -95,7 +78,7 @@ export default function TabLayout() {
                   <TabBarIcon 
                     name={focused ? 'notifications' : 'notifications-outline'} 
                     color={color}
-                    badgeCount={notificationCount}
+                    badgeCount={state.notificationsCount || 0}
                   />
                 ),
               }}
@@ -109,7 +92,7 @@ const styles1 = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: Color.mainbackgroundcolor,
+    backgroundColor: Color.colorWhite,
     top: '6%',
     height: 46,
     paddingHorizontal: 10,

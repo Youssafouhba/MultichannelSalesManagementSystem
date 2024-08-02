@@ -6,8 +6,8 @@ import axios from "axios";
 import { Image } from "expo-image";
 import React, { useState } from "react";
 import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
-import config from "@/components/config";
-import tw from "tailwind-react-native-classnames";
+
+const API_BASE_URL = "http://localhost:9000";
 
 interface RouteParams {
     payload: any; // Replace 'any' with the actual type of payload
@@ -50,7 +50,7 @@ const CompleteTradeCustomer = () => {
   
 
       try {
-        const response = await axios.post(`${config.API_BASE_URL}/api/client/request-trade-customer`, updatedPayload, {
+        const response = await axios.post(`${API_BASE_URL}/api/client/request-trade-customer`, updatedPayload, {
           headers: {
             "Content-Type": "application/json",
                 Authorization: `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIzIiwiaWF0IjoxNzIyMjE0MDA0LCJ1c2VyaWQiOjMsImVtYWlsIjoiYmF5bG9yLmFzbGFhbUBmbG9vZG91dHMuY29tIiwicm9sZSI6WyJjbGllbnQiXX0._aPIjV1jMStJaPofgo0pFN6aOGn30RM0EmAM9Sg26GA`
@@ -72,47 +72,107 @@ const CompleteTradeCustomer = () => {
     };
   
     return (
-      <View style={[tw`py-4`,styles.CompleteTradeCustomer2]}>
-        <View style={[tw`flex-col px-4`]}>
-            <View style={[tw`flex-row items-center`]}>
-                <Image
-                    style={[styles.image10Icon]}
-                    contentFit="cover"
-                    source={require("@/assets/image9.png")}
-                />
-                <Text style={styles.businessDetails}>Business Details</Text>
-            </View>
-            <View style={[tw`my-3`]}>
-                <TextInput
-                    style={[tw`my-2`,styles.inputPosition]}
-                    placeholder="VAT Number (if applicable):"
-                    placeholderTextColor="#b3b3b3"
-                    onChangeText={handleVatNumberChange}
-                />
-                <TextInput
-                    style={[styles.inputPosition]}
-                    placeholder="Business Registration Number (if applicable)"
-                    placeholderTextColor="#b3b3b3"
-                    onChangeText={handleBusinessRegistrationNumberChange}
-                />
-            </View>
-            <View style={[tw`-mt-3`]}>
-                <Picker
-                    selectedValue={selectedProduct}
-                    style={[styles.selectField, styles.inputTypo]}
-                    onValueChange={(itemValue) => setSelectedProduct(itemValue)}
-                    >
-                    <Picker.Item label="Products of Interest" value="" />
-                    <Picker.Item label="LED Lighting" value="LED Lighting" />
-                    <Picker.Item
-                    label="Suspended ceiling & Aluminium grid"
-                    value="Suspended ceiling & Aluminium grid"
-                    />
-                    <Picker.Item label="Both" value="Both" />
-                </Picker>
-            </View>
+      <View style={styles.CompleteTradeCustomer2}>
+        <View style={styles.declaration}>
+          <Pressable style={styles.buttonDanger} onPress={handleSubmit}>
+            <Image
+              style={styles.iconLayout}
+              contentFit="cover"
+              source={require("@/assets/image9.png")}
+            />
+            <Text style={styles.button}>SEND</Text>
+            <Image
+              style={[styles.xIcon, styles.iconLayout]}
+              contentFit="cover"
+              source={require("@/assets/x2.png")}
+            />
+          </Pressable>
+          <Text style={styles.declarationIweCertifyContainer}>
+            <Text style={styles.declaration1}>Declaration</Text>
+            <Text style={styles.text}>{`: `}</Text>
+            <Text style={styles.iweCertifyThat}>
+              I/we certify that the information provided above is true and
+              accurate to the best of my/our knowledge. I/we agree to abide by
+              Wholesale Ltd.'s terms and conditions for trade customers
+            </Text>
+            <Text style={styles.text}>{`.`}</Text>
+          </Text>
+          <CheckBox
+            style={styles.checkSquare}
+            checked={checkSquarechecked}
+            onPress={() => setCheckSquarechecked(!checkSquarechecked)}
+            checkedColor="#000"
+            containerStyle={styles.checkSquareLayout}
+          />
         </View>
-        
+        <View style={[styles.inputField, styles.inputPosition1]}>
+          <Text style={styles.label}>Additional Information</Text>
+          <Text style={[styles.description, styles.errorTypo]}>Description</Text>
+          <TextInput
+            style={[styles.input, styles.inputBorder]}
+            placeholder="Any other relevant information you would like us to know"
+            placeholderTextColor="#b3b3b3"
+            onChangeText={handleadditionalInformationChange}
+          />
+          <Text style={[styles.error, styles.errorTypo]}>Error</Text>
+        </View>
+        <View style={[styles.inputField1, styles.inputPosition1]}>
+          <Text style={styles.label}>How did you hear about us?</Text>
+          <Text style={[styles.description, styles.errorTypo]}>Description</Text>
+          <TextInput
+            style={[styles.input1, styles.inputBorder]}
+            placeholder="AAAAAAA"
+            onChangeText={handlehowDidYouHearAboutUsChange}
+          />
+          <Text style={[styles.error, styles.errorTypo]}>Error</Text>
+        </View>
+        <View style={styles.view}>
+          <Image
+            style={[styles.image11Icon, styles.iconPosition]}
+            contentFit="cover"
+            source={require("@/assets/image9.png")}
+          />
+          <TextInput
+            style={[styles.inputField2, styles.inputTypo]}
+            placeholder="Annual Sales Volume"
+            placeholderTextColor="#b3b3b3"
+            onChangeText={handleAnnualSalesVolumeChange}
+          />
+          <Text style={styles.salesInformation}>Sales Information</Text>
+        </View>
+        <View style={styles.view1}>
+          <Picker
+            selectedValue={selectedProduct}
+            style={[styles.selectField, styles.inputTypo]}
+            onValueChange={(itemValue) => setSelectedProduct(itemValue)}
+          >
+            <Picker.Item label="Products of Interest" value="" />
+            <Picker.Item label="LED Lighting" value="LED Lighting" />
+            <Picker.Item
+              label="Suspended ceiling & Aluminium grid"
+              value="Suspended ceiling & Aluminium grid"
+            />
+            <Picker.Item label="Both" value="Both" />
+          </Picker>
+          <TextInput
+            style={[styles.inputField3, styles.inputPosition]}
+            placeholder="VAT Number (if applicable):"
+            placeholderTextColor="#b3b3b3"
+            onChangeText={handleVatNumberChange}
+          />
+          <TextInput
+            style={[styles.inputField4, styles.inputPosition]}
+            placeholder="Business Registration Number (if applicable)"
+            placeholderTextColor="#b3b3b3"
+            onChangeText={handleBusinessRegistrationNumberChange}
+          />
+          <Text style={styles.businessDetails}>Business Details</Text>
+          <Image
+            style={[styles.image10Icon, styles.iconPosition]}
+            contentFit="cover"
+            source={require("@/assets/image9.png")}
+          />
+        </View>
       </View>
     );
   };
@@ -163,13 +223,15 @@ const styles = StyleSheet.create({
   },
 
   inputTypo: {
+    fontFamily: FontFamily.presetsBody2,
     fontSize: FontSize.presetsBody2_size,
   },
   inputPosition: {
     width: 317,
     left: 36,
-    fontSize: 15,
-    //position: "absolute",
+    fontFamily: FontFamily.presetsBody2,
+    fontSize: FontSize.presetsBody2_size,
+    position: "absolute",
   },
   button: {
     lineHeight: 16,
@@ -291,11 +353,13 @@ const styles = StyleSheet.create({
     position: "absolute",
   },
   selectField: {
-    left: 24,
+    top: 120,
+    left: 40,
     width: 316,
+    position: "absolute",
   },
   inputField3: {
-    //top: 75,
+    top: 75,
   },
   inputField4: {
     top: 24,
@@ -308,14 +372,25 @@ const styles = StyleSheet.create({
     fontSize: FontSize.size_sm,
     fontFamily: FontFamily.interMedium,
     fontWeight: "500",
+    top: 0,
     textAlign: "left",
     position: "absolute",
   },
   image10Icon: {
     width: 23,
+    
     height: 24,
+    left: 0,
+    top: -3,
+    position: "absolute",
+  
   },
   view1: {
+    top: 95,
+    left: 14,
+    width: 395,
+    height: 198,
+    position: "absolute",
   },
   icon: {
     marginLeft: -176,
@@ -328,7 +403,7 @@ const styles = StyleSheet.create({
   CompleteTradeCustomer2: {
     flex: 1,
     width: "100%",
-    //height: 932,
+    height: 932,
     overflow: "hidden",
     backgroundColor: Color.backgroundDefaultDefault,
   },

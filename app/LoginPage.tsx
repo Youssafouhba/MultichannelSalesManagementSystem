@@ -10,39 +10,18 @@ import { useAppContext } from '@/components/AppContext';
 import { authstyles } from '../GlobalStyles';
 import { Color, FontSize, Padding, Border } from "../GlobalStyles";
 import { Product } from "@/constants/Classes";
+import { useAppData } from "@/components/AppDataProvider";
 
 const LoginPage = () => {
   const { id ,idp} = useLocalSearchParams();
+  const { login,cartElements,token, error } = useAppData();
   const { returnTo, productId } = useLocalSearchParams();
   const navigation = useRouter();
   const { state, dispatch } = useAppContext();
   const [errorAuth, setErrorAuth] = useState("");
   const [password, setPassword] = useState("");
   const [email, setEmail] = useState("");
-  var cartitems = []
-  const token = state.JWT_TOKEN;
-
-
-  const apiHandler = async (url,token) => {
-    try {
-      const response = await axios.get(`${state.API_BASE_URL}${url}`,{
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
-      return response;
-    } catch (error) {
-      return error.response;
-    }
-  }
-
-  useEffect(() => {
-    const checkToken = async () => {
-      const token = await AsyncStorage.getItem('jwtToken');
-      
-    };
-    checkToken();
-  }, [navigation]);
+ 
 
   const isValidEmail = (email) => {
     const emailRegex = /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,})+$/;
@@ -58,39 +37,23 @@ const LoginPage = () => {
       setErrorAuth("Invalid email format");
       return;
     }
-
-    const payload = {
-      email: email,
-      password: password,
-    };
-
-    try {
-      const response = await axios.post(`${state.API_BASE_URL}/api/auth/singin`,payload);
-
-      if (response.status === 200) {
-        dispatch({ type: 'SET_JWT_TOKEN', payload: response.data.token });
-        await AsyncStorage.setItem('jwtToken', response.data.token);
-        const cart = await apiHandler('/api/client/getMyCart',response.data.token)
-        console.log(idp)
-        if(cart.cart!=undefined){
-           cartitems = cart.data.cartElements
-          cartitems.map((item: {product: Product,quantity: number})=>{
-          const pro = item.product
-          const quantity = item.quantity
-          dispatch({ type: 'ADD_TO_CART', payload: { ...pro, quantity } });
-          })
-        }
-        if (returnTo === 'ProductDetails' && productId) {
-          router.push(`/ProductDetails?id=${productId}`);
-        }else{
-          id?navigation.navigate(`/${id}?p=${idp}`):navigation.navigate("/");
-        }
+    await login(email, password);
+    if (token) {
+        
+      dispatch({ type: 'SET_JWT_TOKEN', payload: token });
+      await AsyncStorage.setItem('jwtToken', token);
+      cartElements?.map((item: {product: Product,quantity: number})=>{
+      const pro = item.product
+      const quantity = item.quantity
+      dispatch({ type: 'ADD_TO_CART', payload: { ...pro, quantity } });
+      })
+      if (returnTo === 'ProductDetails' && productId) {
+        router.push(`/ProductDetails?id=${productId}`);
+      }else{
+        id?navigation.navigate(`/${id}?p=${idp}`):navigation.navigate("/");
       }
-    } catch (error) {
-      console.error(error);
-      setErrorAuth(error.response?.data?.message || "An error occurred. Please try again.");
     }
-  };
+  }
 
   return (
     <View style={[authstyles.iphone1415ProMax6, authstyles.labelFlexBox]}>

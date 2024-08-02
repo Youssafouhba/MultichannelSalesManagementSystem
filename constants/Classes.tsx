@@ -1,6 +1,14 @@
 import { TabBarIcon } from "@/components/navigation/TabBarIcon";
 import { Icon } from "react-native-paper";
 
+
+export interface UserDTO {
+  fullName: string,
+  email: string,
+  phoneNumber: string,
+  dateOfCreation: string | Date
+};
+
 export interface Product {
     id: string;
     //isNew: boolean;
@@ -14,6 +22,16 @@ export interface Product {
     category: string;
     postedDate: string;
   }
+export interface CommentItem {
+  id: string;
+  content: string;
+  author: string;
+  createdDate: Date;
+  replies: CommentItem[];
+  first: boolean;
+  parentId?: string;
+  rating: number
+}
 
 export interface Comment {
   id: string,

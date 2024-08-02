@@ -45,6 +45,7 @@ export const Color = {
   textDefaultDefault: "#1e1e1e",
   textBrandOnBrand: "#f5f5f5",
   colorWhitesmoke_100: "#eee",
+  colorWhitesmoke: "whitesmoke",
   colorWhitesmoke_50: 'rgba(204,214,221,1.00)',
   colorGainsboro: "#e0e0e0",
   colorsBlue: "#007aff",
@@ -87,14 +88,13 @@ export const productlistheight=screenHeight-264
 export const ceillingcalstyles = StyleSheet.create({
   matarea: {
     backgroundColor: '#fafaff',
-    height: productlistheight,
     width: '100%',
     paddingHorizontal: 16,
-    paddingVertical: 8
+    paddingVertical: 8,
+    flex: 1
   },
   form: {
     width: '50%',
-    height: '42%',
   },
     rsltvalue: {
         //fontFamily: 'kavoonRegular',
@@ -118,7 +118,6 @@ export const ceillingcalstyles = StyleSheet.create({
   },
   inputBorder: {
     borderColor: Color.colorWhitesmoke_50,
-   // fontFamily: 'KleeOne-Regular',
   },
   labelText: {
     fontFamily: 'KleeOne-Regular',
@@ -126,7 +125,6 @@ export const ceillingcalstyles = StyleSheet.create({
   matCalculatorText: {
     fontSize: FontSize.size_xl,
     lineHeight: 24,
-    //fontFamily: 'kavoonRegular',
     color: Color.colorBlack,
     textAlign: "left",
     height: 20,
@@ -134,7 +132,6 @@ export const ceillingcalstyles = StyleSheet.create({
   ResultText: {
     fontSize: FontSize.size_xl,
     lineHeight: 24,
-    //fontFamily: 'kavoonRegular',
     color: Color.colorLimegreen,
     textAlign: "left",
     height: 24,

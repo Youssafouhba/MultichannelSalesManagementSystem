@@ -9,6 +9,7 @@ import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-
 import { Color, StyleVariable } from "@/GlobalStyles";
 import { useAppContext } from '@/components/AppContext';
 import { Ionicons } from '@expo/vector-icons';
+import config from '@/components/config';
 
 
 const Messages = () => {
@@ -16,7 +17,7 @@ const Messages = () => {
   const [stompClient, setStompClient] = React.useState(null);
   const [messages, setMessages] = React.useState([]);
   const [inputValue, setInputValue] = React.useState('');
-    const [username , setUsername] = React.useState(null);
+  const [username , setUsername] = React.useState(null);
   const admin = "admin";
   const chatAreaRef = React.useRef(null);
   const messageInputRef = React.useRef(null);
@@ -29,8 +30,9 @@ const Messages = () => {
     if (token) {
       console.log("Token present: " + token);
       try {
-      const response = await axios.get(`${state.API_BASE_URL}${url}`, { headers: {"Authorization" : `Bearer ${token}`} });
+      const response = await axios.get(`http://192.168.42.250:9001${url}`, { headers: {"Authorization" : `Bearer ${token}`} });
       console.log(response);
+
       return response;
     } catch (error) {
       console.log(error.response);
@@ -115,12 +117,12 @@ const Messages = () => {
         content: messageContent,
       };
       console.log(joinMessage);
-
      stompClient.publish({destination:"/app/tg3edlappel", body:JSON.stringify(joinMessage) , headers: {"Authorization" : `Bearer ${token}`}});
    setMessages(prevMessages => [...prevMessages, joinMessage]);
       setInputValue('');
       chatAreaRef.current.scrollToEnd({ animated: true });
     }
+      
   };
 
   const findMyChat = async (token) => {
@@ -146,7 +148,7 @@ const Messages = () => {
 
   const fetchAndDisplayUserChat = async (selectedUser,token) => {
     console.log(token);
-    try {
+   try {
       const userChatResponse = await apiGetHandler(`/getConversation/${selectedUser.convid}`,token);
 
       if (userChatResponse) {
@@ -229,9 +231,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: StyleVariable.space400,
+    paddingHorizontal: 8,
     paddingVertical: StyleVariable.space300,
-    width: "80%",
+    width: "90%",
     marginRight: 10,
     marginTop: 8,
     alignSelf: "stretch",

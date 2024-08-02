@@ -12,7 +12,7 @@ interface GroupComponentProps {
 }
 
 const GroupComponent: React.FC<GroupComponentProps> = ({ onCategorySelect }) => {
-  const [selectedLabel, setSelectedLabel] = useState<string | null>(null);
+  const [selectedLabel, setSelectedLabel] = useState<string | null>("Best Seller");
 
   const handleImagePress = (label: string) => {
     const newLabel = label===selectedLabel? selectedLabel: label;
