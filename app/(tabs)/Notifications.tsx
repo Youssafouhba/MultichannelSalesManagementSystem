@@ -1,4 +1,6 @@
 import { useAppContext } from '@/components/AppContext';
+import { useAppData } from '@/components/AppDataProvider';
+import config from '@/components/config';
 import { API_BASE_URL } from '@/constants/GlobalsVeriables';
 import { FontSize, Color } from '@/GlobalStyles';
 import { Client } from '@stomp/stompjs';
@@ -6,23 +8,19 @@ import axios from 'axios';
 import { useRouter } from 'expo-router';
 import { jwtDecode } from 'jwt-decode';
 import React, { useEffect, useRef, useState } from 'react';
-import { FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-
+import { FlatList, StyleSheet, Image,Text, TouchableOpacity, View } from 'react-native';
+import { Notification } from '@/constants/Classes';
+import tw from 'tailwind-react-native-classnames';
 
 var SockJS = require('sockjs-client/dist/sockjs.js');
 
-// Define the Notification interface
-interface Notification {
-    id: number;
-    title: string;
-    message: string;
-    postedDate: string;
-}
+
 
 
 
 export default function Notifications() {
     const { state, dispatch } = useAppContext();
+    const { markNotificationAsRead,fetchNotification} = useAppData();
     const navigation = useRouter();
     const [notifications, setNotifications] = useState<Notification[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
@@ -32,26 +30,18 @@ export default function Notifications() {
     var isLoggedIn = state.JWT_TOKEN !=='';
     var token = state.JWT_TOKEN;
 
-    // Function to fetch notifications
-async function fetchNotification(token: string): Promise<Notification[]> {
-    try {
-        const response = await axios.get(`${state.API_BASE_URL}/api/adMin/notification/mynotif`, {
-            headers: {
-                Authorization: `Bearer ${token}`
-            }
-        });
-        return response.data;
-    } catch (error: any) {
-        throw new Error(`Error fetching notification: ${error.message}`);
+    const readonescount = async ()=>{
+        const data = await fetchNotification();
+        const notifscount = data.filter((item: Notification) => !item.isRead).length;
+        state.notificationsCount = notifscount;
+        dispatch({ type: 'SET_notificationsCount', payload: { notifscount } });
     }
-}
+
     useEffect(() => {
         const getNotifications = async () => {
             try {
-                const data = await fetchNotification(token);
-                const notifscount = data.length
-                state.notificationsCount = notifscount
-                dispatch({ type: 'SET_notificationsCount', payload: { notifscount } });
+                const data = await fetchNotification();
+                readonescount()
                 setNotifications(data);
             } catch (error) {
                 console.error('Error fetching notifications:', error);
@@ -59,13 +49,15 @@ async function fetchNotification(token: string): Promise<Notification[]> {
                 setLoading(false);
             }
         };
-        if(isLoggedIn)
+    
+        if (isLoggedIn) {
             getNotifications();
+        }
 
         if (token) {
             const client = new Client({
                 debug: (str) => { console.log(str); },
-                brokerURL: `${state.API_BASE_URL}/notifications`,
+                brokerURL: `${config.API_BASE_URL}/notifications`,
                 connectHeaders: { Authorization: `Bearer ${token}` },
                 appendMissingNULLonIncoming: true,
                 onConnect: () => onConnected(client),
@@ -90,11 +82,7 @@ async function fetchNotification(token: string): Promise<Notification[]> {
     const handleLogin = () => {
         navigation.navigate("LoginPage?id=Notifications");
       };
-    useEffect(() => {
-        if (chatAreaRef.current) {
-            chatAreaRef.current.scrollToEnd({ animated: true });
-        }
-    }, [notifications]);
+
 
     const onConnected = (client: Client) => {
         client.subscribe('/topic/public-notifications', onPublicNotificationReceived, { Authorization: `Bearer ${token}` });
@@ -108,24 +96,48 @@ async function fetchNotification(token: string): Promise<Notification[]> {
     const onPublicNotificationReceived = (payload: any) => {
         const notification = JSON.parse(payload.body);
         console.log('Received public notification:', notification);
-
         setNotifications(prevNotifications => [notification, ...prevNotifications]);
-        chatAreaRef.current?.scrollToEnd({ animated: true });
+        readonescount()
     };
 
     const onPrivateNotificationReceived = (payload: any) => {
         console.log('Received private notification:', payload);
         const notification = JSON.parse(payload.body);
         setNotifications(prevNotifications => [notification, ...prevNotifications]);
-        chatAreaRef.current?.scrollToEnd({ animated: true });
+        readonescount()
+    };
+
+    const handleNotificationPress = async (notificationId: number) => {
+        // Mise à jour optimiste de l'état local
+        setNotifications(prevNotifications =>
+            prevNotifications.map(notification =>
+                notification.id === notificationId
+                    ? { ...notification, isRead: true }
+                    : notification
+            )
+        );
+       
+    
+        // Appel à l'API en arrière-plan
+        try {
+            await markNotificationAsRead(notificationId);
+            readonescount()
+        } catch (error) {
+            console.error('Error marking notification as read:', error);
+            // En cas d'échec, on pourrait revenir à l'état précédent
+            // ou afficher un message d'erreur à l'utilisateur
+        }
     };
 
     const renderItem = ({ item }: { item: Notification }) => (
-        <View style={styles.notificationContainer}>
-            <Text style={styles.title}>{item.title}</Text>
-            <Text style={styles.message}>{item.message}</Text>
+        <TouchableOpacity 
+            style={[styles.notificationContainer, !item.isRead && styles.unreadNotification]}
+            onPress={async () => {handleNotificationPress(item.id)}}
+        >
+            <Text style={[styles.title, !item.isRead && styles.unreadText]}>{item.title}</Text>
+            <Text style={[styles.message, !item.isRead && styles.unreadText]}>{item.message}</Text>
             <Text style={styles.date}>{new Date(item.postedDate).toLocaleString()}</Text>
-        </View>
+        </TouchableOpacity>
     );
 
     if(!isLoggedIn)
@@ -145,13 +157,20 @@ async function fetchNotification(token: string): Promise<Notification[]> {
             {loading ? (
                 <Text style={styles.loadingText}>Loading...</Text>
             ) : (
+                notifications.length > 0 ?
                 <FlatList
                     ref={chatAreaRef}
                     data={notifications}
                     keyExtractor={(item) => item.id.toString()}
                     renderItem={renderItem}
                     showsVerticalScrollIndicator={false} // Hide the scroll bar
+                    inverted={false}
                 />
+                :
+                <View style={[tw`justify-center items-center h-80`]}>
+                    <Text style={[tw`text-base`]}>You don't have any notification for moment !</Text>
+                    <Image source={require("@/assets/images/icons8-aucun-résultat-48.png")}/>
+                </View>
             )}
         </View>
     );
@@ -214,4 +233,10 @@ const styles = StyleSheet.create({
         color: Color.colorWhite,
         fontSize: FontSize.presetsBody2_size,
       },
+      unreadNotification: {
+        backgroundColor: '#e6f7ff', // Couleur de fond légère pour les notifications non lues
+    },
+    unreadText: {
+        fontWeight: 'bold',
+    },
 });

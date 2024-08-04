@@ -1,9 +1,12 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import axios from 'axios';
-import { CartElement, CommentItem, Order, Product } from '@/constants/Classes';
+import axios, { AxiosError, AxiosResponse } from 'axios';
+import { CartElement, CommentItem, Order, OrderItem, Product } from '@/constants/Classes';
 import Config from '@/components/config';
 import { Text } from 'react-native';
 import { UserDTO } from '@/constants/Classes';
+import { Notification } from '@/constants/Classes';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
 interface AppData {
   products: Product[];
   ratings: { [key: number]: number };
@@ -15,15 +18,22 @@ interface AppDataContextType {
   cartElements: CartElement[];
   orders: Order[];
   favProducts: Product[];
+  BestProducts: Product[];
+  NewProducts: Product[];
   user: UserDTO | null;
   isLoading: boolean;
   error: string | null;
-  login: (email: string, password: string) => Promise<void>;
   updateProfile: (userdto: UserDTO) => Promise<void>;
   logout: () => void;
+  fetchprofile: ()=> Promise<void>;
   deleteAccount: () => void;
+  markNotificationAsRead: (id: any) => Promise<void>;
   fetchFavorites: ()=> Promise<void>;
   fetchOrders: ()=> Promise<void>;
+  fetchCart: ()=> Promise<void>;
+  fetchdt: (token: string)=> void;
+  login: (tok: string) => Promise<void>;
+  fetchNotification(): Promise<Notification[]>;
 }
 
 const AppDataContext = createContext<AppDataContextType | undefined>(undefined);
@@ -48,8 +58,10 @@ export const AppDataProvider: React.FC<AppDataProviderProps> = ({ children }) =>
   const [token, setToken] = useState<string | null>(null);
   const [cartElements,setCartElements] = useState<CartElement[]>([]);
   const [favProducts, setFavProducts] = useState<Product[]>([]);
+  const [NewProducts, setNewProducts] = useState<Product[]>([]);
+  const [BestProducts, setBestProducts] = useState<Product[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
-  useEffect(() => {
+  useEffect( () => {
     const fetchProductRating = async (productId: number): Promise<number> => {
       try {
         const response = await axios.get(`${Config.API_BASE_URL}/Comments/${productId}`);
@@ -72,13 +84,20 @@ export const AppDataProvider: React.FC<AppDataProviderProps> = ({ children }) =>
         const ratingsPromises = products.map(product => fetchProductRating(parseInt(product.id)));
         const ratingValues = await Promise.all(ratingsPromises);
 
-        const ratings = Object.fromEntries(
-          products.map((product, index) => [parseInt(product.id), ratingValues[index]])
-        );
+        const nweproducts = products.filter((product: Product) => product.isNew);
+        const newones =  await Promise.all(nweproducts)
 
-        setData({ products, ratings });
+        const ratings = Object.fromEntries(products.map((product, index) => [parseInt(product.id), ratingValues[index]]));
+
+        const bestproducts = products.filter((product: Product) => product.isBestSeller);
+        const bestones =  await Promise.all(bestproducts)
+
 
         console.log('Data set successfully');
+        setData({ products, ratings });
+    
+        setNewProducts(newones);
+        setBestProducts(bestones)
         setIsLoading(false);
       } catch (err) {
         console.error('Error fetching data:', err);
@@ -90,7 +109,41 @@ export const AppDataProvider: React.FC<AppDataProviderProps> = ({ children }) =>
     fetchAppData();
   }, []);
 
-  
+  const fetchdt = async (token: string) => {
+    //setToken(token)
+  }
+
+  const login = async (tok: string) => {
+    try {     
+      setToken(tok)
+      const responseAuth = await axios.get(`${Config.API_BASE_URL}/api/client/getMyProfil`,{
+        headers: {
+          Authorization: `Bearer ${tok}`
+        }});
+        setUser(responseAuth.data);
+        try {
+          const responseFavorites = await axios.get<Product[]>(
+            `${Config.API_BASE_URL}/api/client/getMyFavoriteProducts`,
+            { headers: { Authorization: `Bearer ${tok}`}});
+          setFavProducts(responseFavorites.data);
+        } catch (err) {
+          console.error('favorites :', err);
+          setError('favorites failed');
+        }
+        fetchOrders()
+    } catch (error) {
+      return error;
+    }
+  }
+
+const fetchprofile = async () => {
+  const responseAuth = await axios.get(`${Config.API_BASE_URL}/api/client/getMyProfil`,{
+    headers: {
+      Authorization: `Bearer ${token}`
+    }});
+    setUser(responseAuth.data);
+}
+
   const fetchFavorites = async () => {
     try {
       const responseFavorites = await axios.get<Product[]>(
@@ -101,6 +154,15 @@ export const AppDataProvider: React.FC<AppDataProviderProps> = ({ children }) =>
       console.error('favorites :', err);
       setError('favorites failed');
     }
+  }
+
+  const fetchCart = async () => {
+    const cart = await axios.get(`${Config.API_BASE_URL}/api/client/getMyCart`,{
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    })
+    setCartElements(cart.data)
   }
 
   const fetchOrders = async () => {
@@ -115,10 +177,26 @@ export const AppDataProvider: React.FC<AppDataProviderProps> = ({ children }) =>
       );
       setOrders(sortedOrders);
     } catch (error) {
-      console.log(error.response.data);
+      //console.log(error.response.data);
       return error.response;
     }
   }
+
+  const fetchNotification = async () => {
+    try {
+        const response = await axios.get(`${Config.API_BASE_URL}/api/adMin/notification/mynotif`, {
+            headers: {
+                Authorization: `Bearer ${token}`
+            }
+        });
+        return response.data.map((notification: any) => ({
+            ...notification,
+            isRead: notification.isRead || false // Assurez-vous que le backend renvoie cette information
+        }));
+    } catch (error: any) {
+        throw new Error(`Error fetching notification: ${error.message}`);
+    }
+}
 
   const deleteAccount =  async () => {
     try{
@@ -128,7 +206,6 @@ export const AppDataProvider: React.FC<AppDataProviderProps> = ({ children }) =>
         }
       });
     }catch(error: any){
-      console.log(error.response.data);
       return error.response;
     }finally{
       setUser(null);
@@ -145,37 +222,26 @@ export const AppDataProvider: React.FC<AppDataProviderProps> = ({ children }) =>
           Authorization: `Bearer ${token}`
         }
       });
-      console.log(updateResponse.data)
+
     }catch(error: any){
-      console.log(error.response.data);
+      
       return error.response;
     }finally{
       
     }
   }
-  
-  const login = async (email: string, password: string) => {
-    try {
-      const response = await axios.post(`${Config.API_BASE_URL}/api/auth/singin`, { email, password });
-      const responseAuth = await axios.get(`${Config.API_BASE_URL}/api/client/getMyProfil`,{
+
+  const  markNotificationAsRead = async (id: any) => {
+    try{
+      const response = await axios.post(`${Config.API_BASE_URL}/api/adMin/notification/MarAsRead/${id}`, {},{
         headers: {
-          Authorization: `Bearer ${response.data.token}`
+            Authorization: `Bearer ${token}`
         }
-      });
-      const cart = await axios.get(`${Config.API_BASE_URL}/api/client/getMyCart`,{
-        headers: {
-          Authorization: `Bearer ${response.data.token}`
-        }
-      })
-      fetchFavorites()    
-      setToken(response.data.token);
-      setUser(responseAuth.data);
-      setCartElements(cart.data)
-    } catch (err) {
-      console.error('Login failed:', err);
-      setError('Login failed');
+    });
+    }catch(error: any){
+      console.log(error)
     }
-  };
+  }
 
   const logout = () => {
     setUser(null);
@@ -184,11 +250,9 @@ export const AppDataProvider: React.FC<AppDataProviderProps> = ({ children }) =>
     setFavProducts([])
   }
 
-
-
   return (
     <AppDataContext.Provider value={{ 
-      data, user,token,cartElements,orders,updateProfile,fetchOrders,deleteAccount,favProducts, isLoading, error, login, logout,fetchFavorites }}>
+      data, user,token,cartElements,orders,BestProducts,NewProducts,login,fetchCart,fetchprofile,fetchNotification,markNotificationAsRead,updateProfile,fetchOrders,deleteAccount,favProducts, isLoading, error,fetchdt, logout,fetchFavorites }}>
       {isLoading ? <Text>Loading...</Text> : children}
     </AppDataContext.Provider>
   );

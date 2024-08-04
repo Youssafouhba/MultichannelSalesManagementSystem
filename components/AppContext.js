@@ -4,7 +4,7 @@ import { jwtDecode } from 'jwt-decode';
 import config from './config';
 const AppContext = createContext();
 
-const baseurl = '192.168.42.250'
+const baseurl = '192.168.42.175'
 
 const initialState = {
   theme: 'light',
@@ -16,7 +16,7 @@ const initialState = {
   productId: 0,
   JWT_TOKEN: '',
   userId: '',
-  wsUrl: 'http://192.168.42.250:9001',
+  wsUrl: 'http://192.168.42.175:9001',
   cartItemsCount: 0,
   notificationsCount: 0,
   cartItems: {},

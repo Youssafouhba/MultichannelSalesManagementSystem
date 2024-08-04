@@ -1,337 +1,404 @@
-import { Color, FontFamily, FontSize, StyleVariable } from "@/GlobalStyles";
-import { Picker } from "@react-native-picker/picker";
-import { useRoute } from "@react-navigation/native";
-import { CheckBox } from "@rneui/themed";
-import axios from "axios";
+import React, { useEffect, useState, useMemo, useCallback } from "react";
+import { View, Text, Pressable, StyleSheet, FlatList, Dimensions, ScrollView, TouchableOpacity, SafeAreaView, useWindowDimensions, TextInput } from "react-native";
 import { Image } from "expo-image";
-import React, { useState } from "react";
-import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
-import config from "@/components/config";
-import tw from "tailwind-react-native-classnames";
+import tw from 'tailwind-react-native-classnames';
+import CeilingCalculator from "./CeillingCalculator";
+import { Color, Padding, styles } from "@/GlobalStyles";
+import { groupecomponentstyles, headerstyles } from "@/GlobalStyles";
+import StarRating from "@/components/StarRating";
+import { useRouter } from 'expo-router';
+import LoadingAnimation from "@/components/LoadingAnimation";
+import { useAppContext } from "@/components/AppContext";
+import { useAppData } from "@/components/AppDataProvider";
+import { Ionicons } from "@expo/vector-icons";
+import { Product } from "@/constants/Classes";
 
-interface RouteParams {
-    payload: any; // Replace 'any' with the actual type of payload
+export default function ProductsService() {
+  const { width, height } = useWindowDimensions();
+  const [selectedLabel, setSelectedLabel] = useState<string>("Best Seller");
+  const { BestProducts, NewProducts, data, user, token } = useAppData();
+  const { state, dispatch } = useAppContext();
+  const router = useRouter();
+  const [isLoading, setIsLoading] = useState(true);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [productRatings, setProductRatings] = useState<{[key: number]: number}>({});
+  const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
+  const [inputSearch, setInputSearch] = useState<string>('');
+  const [showSuggestions, setShowSuggestions] = useState(true);
+
+  const isLoggedIn = token !== '';
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setProducts(data?.products || []);
+        dispatch({ type: 'SET_PRODUCTS', payload: data?.products || [] });
+        setProductRatings(data?.ratings || {});
+        setIsLoading(false);
+      } catch (error) {
+        console.error('Error fetching products:', error);
+        setIsLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [data]);
+
+  useEffect(() => {
+    if (products.length > 0) {
+      switch (selectedLabel) {
+        case "New designs":
+          setFilteredProducts(NewProducts);
+          break;
+        case "Best Seller":
+          setFilteredProducts(BestProducts);
+          break;
+        default:
+          setFilteredProducts(products);
+          break;
+      }
+      setShowSuggestions(selectedLabel !== "all");
+    }
+  }, [products, selectedLabel, NewProducts, BestProducts]);
+
+  const styles = useMemo(() => createStyles(width, height), [width, height]);
+
+  const debouncedSearch = useCallback(
+    debounce((key: string) => {
+      if (key.trim() === '') {
+        setFilteredProducts(products);
+        setSelectedLabel('all');
+        setShowSuggestions(true);
+      } else {
+        const filtered = products.filter(
+          (product) =>
+            product.name.toLowerCase().includes(key.toLowerCase()) ||
+            product.price.toString().includes(key)
+        );
+        setFilteredProducts(filtered);
+        setSelectedLabel('all');
+        setShowSuggestions(false);
+      }
+    }, 300),
+    [products]
+  );
+
+  const handleInputChange = (text: string) => {
+    setInputSearch(text);
+    debouncedSearch(text);
+  };
+
+  const renderProduct = useCallback(({ item }: { item: Product }) => (
+    <Pressable 
+      style={[styles.productWrapper, selectedLabel === "New designs" && styles.fullWidthProduct]}
+      onPress={() => router.push(`/ProductDetails?id=${item.id}`)}
+    >
+      <View style={[styles.productInnerContainer, selectedLabel === "New designs" && styles.fullWidthInnerContainer]}>
+        <Image
+          contentFit="cover"
+          style={[styles.productImage, selectedLabel === "New designs" && styles.fullWidthImage]}
+          source={{ uri: item.imageUrls[0]?.url || require("@/assets/rectangle-94.png") }}
+        />
+        <View style={[styles.productDesc, selectedLabel === "New designs" && styles.fullWidthDesc]}>
+          <Text style={[styles.productName, selectedLabel === "New designs" && styles.fullWidthName]} numberOfLines={selectedLabel === "New designs" ? 3 : 2} ellipsizeMode="tail">
+            {item.name}
+          </Text>
+          <View style={[styles.infoArea, selectedLabel === "New designs" && { marginTop: 5 }]}>
+            <Text style={[styles.priceText, selectedLabel === "New designs" && styles.fullWidthPrice]}>
+              £ {item.price}
+            </Text>
+            <Text style={[styles.stockText, selectedLabel === "New designs" && styles.fullWidthStock]}>
+              <Text style={{ color: Color.colorize_gray }}>{item.quantityInStock}</Text> in stock
+            </Text>
+          </View>
+          <View style={[styles.badgeArea, selectedLabel === "New designs" && { marginTop: 5 }]}>
+            <View style={[styles.offerBadge, selectedLabel === "New designs" && { marginRight: 15 }]}>
+              <Text style={[styles.offerText, selectedLabel === "New designs" && styles.fullWidthOfferText]}>Offer</Text>
+            </View>
+            <StarRating rating={productRatings[parseInt(item.id)]} />
+          </View>
+        </View>
+      </View>
+      {item.isNew && (
+        <Image
+          style={[styles.newBadge, selectedLabel === "New designs" && styles.fullWidthNewBadge]}
+          source={require("../assets/badge_143875.png")}
+        />
+      )}
+    </Pressable>
+  ), [selectedLabel, productRatings, router]);
+
+  const renderProductList = useMemo(() => (
+    <FlatList
+      style={{ flex: 1 }}
+      data={filteredProducts}
+      renderItem={renderProduct}
+      keyExtractor={(item) => item.id.toString()}
+      numColumns={selectedLabel === "New designs" ? 1 : 2}
+      columnWrapperStyle={selectedLabel !== "New designs" ? styles.row : undefined}
+      showsVerticalScrollIndicator={false}
+      contentContainerStyle={styles.flatListContent}
+    />
+  ), [filteredProducts, selectedLabel, renderProduct, styles]);
+
+  const renderCategoryButton = useCallback((label: string) => (
+    <Pressable
+      key={label}
+      onPress={() => setSelectedLabel(label)}
+      style={({ pressed }) => [
+        tw`w-28`,
+        pressed && groupecomponentstyles.pressed
+      ]}
+    >
+      <View
+        style={[
+          groupecomponentstyles.variantneutralStatehover,
+          selectedLabel === label && groupecomponentstyles.selectedButton
+        ]}
+      >
+        <Text
+          style={[
+            groupecomponentstyles.texto,
+            selectedLabel === label && groupecomponentstyles.selectedButtonText,
+            tw`text-base font-normal text-sm`
+          ]}
+        >
+          {label}
+        </Text>
+      </View>
+    </Pressable>
+  ), [selectedLabel]);
+
+  const renderGroupElement = useMemo(() => (
+    <View style={[tw`w-full`, { backgroundColor: Color.mainbackgroundcolor }]}>
+      <View style={[tw`flex-row justify-between items-center text-center mx-2 pl-2 pr-2`]}>
+        <Pressable onPress={() => setSelectedLabel("Best Seller")}>
+          <Text style={[tw`text-base text-gray-400 font-normal text-lg`, showSuggestions && { color: 'black' }]}>
+            Suggestions
+          </Text>
+        </Pressable>
+        <Pressable onPress={() => setSelectedLabel("all")}>
+          <View style={styles.modelightStateenabled}>
+            <Text style={[styles.textTypo, tw`text-base text-gray-400 font-normal text-lg`, !showSuggestions && { color: 'black' }]}>View All</Text>
+          </View>
+        </Pressable>
+      </View>
+      <View style={tw`flex-row justify-around my-2`}>
+        {renderCategoryButton("Best Seller")}
+        {renderCategoryButton("New designs")}
+        {renderCategoryButton("Ceilling Calculator")}
+      </View>
+    </View>
+  ), [showSuggestions, renderCategoryButton]);
+
+  const searchContainer = useMemo(() => (
+    <View style={tw`h-15 w-full items-center overflow-hidden bg-white`}>
+      <View style={tw`flex-row items-center px-4 py-2 bg-gray-100 rounded-full`}>
+        <TextInput
+          placeholder="Search..."
+          value={inputSearch}
+          onChangeText={handleInputChange}
+          style={tw`flex-1 text-base`}
+          numberOfLines={1}
+        />
+        <Ionicons name="search" size={25} color="gray" style={tw`ml-3`} />
+      </View>
+      {user && (
+        <View style={tw`absolute right-4 top-2`}>
+          <Text style={tw`text-blue-400 text-sm`}>Hi {user.name}</Text>
+        </View>
+      )}
+    </View>
+  ), [inputSearch, user, handleInputChange]);
+
+  return (
+    <View style={styles.container}>
+      {searchContainer}
+      {renderGroupElement}
+      {isLoading ? (
+        <ScrollView contentContainerStyle={{ alignItems: 'center', top: '40%' }} style={styles.scrollView}>
+          <LoadingAnimation size={80} color="blue" />
+          <Text style={tw`text-base text-xs text-gray-400`}>Loading...</Text>
+        </ScrollView>
+      ) : (
+        <SafeAreaView style={styles.scrollView}>
+          {selectedLabel === "Ceilling Calculator" ? (
+            <CeilingCalculator />
+          ) : filteredProducts.length === 0 ? (
+            <View style={styles.noProductsContainer}>
+              <Text style={styles.noProductsText}>No products found</Text>
+            </View>
+          ) : (
+            renderProductList
+          )}
+        </SafeAreaView>
+      )}
+    </View>
+  );
+
+
+  function createStyles(screenWidth: number, screenHeight: number)  {
+    
+    return StyleSheet.create({
+      listContainer: {
+        flex: 1,
+        padding: 10,
+      },
+      flatListContent: {
+        flexGrow: 1,
+        justifyContent: 'space-between',
+      },
+      row: {
+        justifyContent: 'space-between',
+        marginBottom: 10,
+      },
+      rectangle: {
+        borderRadius: 8,
+        marginBottom: 10,
+      },
+    container: {
+      flex: 1,
+      width: '100%',
+    },
+    scrollView: {
+      flex: 1,
+      width: '100%',
+    },
+    gridContainer: {
+      justifyContent: 'space-between',
+    },
+    productWrapper: {
+      marginBottom: 10,
+      borderRadius: 8,
+      overflow: 'hidden',
+    },
+    fullWidthProduct: {
+      height: ((screenHeight*0.62)/3),//nwe
+      width: '100%',
+    },
+    productInnerContainer: {
+      flex: 1,
+      backgroundColor: '#fff',
+      borderRadius: 8,
+      elevation: 3,
+      shadowColor: 'gray',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 4,
+    },
+    fullWidthInnerContainer: {
+      height: '100%',
+      width: '100%',
+      flexDirection: 'row',
+    },
+    productImage: {
+      width: '100%',
+      height: imgheight, // 60% de la hauteur du wrapper
+      borderRadius: 8,
+    },
+    fullWidthImage: {
+      width: '45%',
+      height: '100%',
+      borderBottomRightRadius: 10,
+      borderTopRightRadius: 10,
+    },
+    productDesc: {
+      padding: 8,
+      paddingTop: 2,//
+      flex: 1,
+      justifyContent: 'space-between',
+    },
+    fullWidthDesc: {
+      
+      width: '50%',
+      padding: 15,
+    },
+    productName: {
+      fontSize: 12,
+      fontWeight: 'bold',
+      marginBottom: 4,
+    },
+    fullWidthName: {
+      width: '80%',
+      fontSize: 16,
+    },
+    infoArea: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    },
+    priceText: {
+      fontSize: 14,
+      fontWeight: 'bold',
+      color: Color.colorRed,
+    },
+    fullWidthPrice: {
+      fontSize: 16,
+    },
+    stockText: {
+      fontSize: 12,
+      color: Color.colorize_gray,
+    },
+    fullWidthStock: {
+      fontSize: 14,
+    },
+    badgeArea: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginTop: 4,
+    },
+    offerBadge: {
+      backgroundColor: '#e71d36',
+      borderRadius: 4,
+      paddingHorizontal: 4,
+      paddingVertical: 2,
+    },
+    offerText: {
+      color: '#f3de2c',
+      fontSize: 10,
+    },
+    fullWidthOfferText: {
+      fontSize: 12,
+    },
+    newBadge: {
+      position: 'absolute',
+      top: 5,
+      right: 5,
+      width: 30,
+      height: 30,
+    },
+    fullWidthNewBadge: {
+      position: 'absolute',
+      top: 0,
+      right: -5,
+      width: 50,
+      height: 20,
+    },
+    noProductsContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      height: screenHeight * 0.7,
+    },
+    noProductsText: {
+      fontSize: 18,
+      color: Color.colorNavy,
+    },
+    textTypo: {
+      textAlign: "left",
+      lineHeight: 18,
+    },
+    text: {
+      marginLeft: 3,
+    },
+    modelightStateenabled: {
+      flexDirection: "row",
+      paddingHorizontal: 0,
+      paddingVertical: Padding.p_smi,
+    },
+  })};
 }
 
 
 
-const CompleteTradeCustomer = () => {
-    const [checkSquarechecked, setCheckSquarechecked] = useState(false);
-    const [selectedProduct, setSelectedProduct] = useState("");
-    const [additionalInformation, setadditionalInformation] = useState("");
-    const [howDidYouHearAboutUs, sethowDidYouHearAboutUs] = useState("");
-    const [annualSalesVolume, setAnnualSalesVolume] = useState("");
-    const [vatNumber, setVatNumber] = useState("");
-    const [businessRegistrationNumber, setBusinessRegistrationNumber] = useState("");
-  
-    const route = useRoute();
-    const payload = (route.params as RouteParams)?.payload;
-  
-    const handleadditionalInformationChange = (text: string) => setadditionalInformation(text);
-    const handlehowDidYouHearAboutUsChange = (text: string) => sethowDidYouHearAboutUs(text);
-    const handleAnnualSalesVolumeChange = (text: string) => setAnnualSalesVolume(text);
-    const handleVatNumberChange = (text: string) => setVatNumber(text);
-    const handleBusinessRegistrationNumberChange = (text: string) =>
-      setBusinessRegistrationNumber(text);
-  
-    const handleSubmit = async () => {
-        if (checkSquarechecked && payload) {
-      const updatedPayload = {
-        ...payload,
-        additionalInformation:additionalInformation,
-        howDidYouHearAboutUs:howDidYouHearAboutUs,
-        annualSalesVolume:annualSalesVolume,
-        vatNumber:vatNumber,
-        businessRegistrationNumber:businessRegistrationNumber,
-        "userId":3
-      };
-
-      console.log(updatedPayload);
-  
-
-      try {
-        const response = await axios.post(`${config.API_BASE_URL}/api/client/request-trade-customer`, updatedPayload, {
-          headers: {
-            "Content-Type": "application/json",
-                Authorization: `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIzIiwiaWF0IjoxNzIyMjE0MDA0LCJ1c2VyaWQiOjMsImVtYWlsIjoiYmF5bG9yLmFzbGFhbUBmbG9vZG91dHMuY29tIiwicm9sZSI6WyJjbGllbnQiXX0._aPIjV1jMStJaPofgo0pFN6aOGn30RM0EmAM9Sg26GA`
-              
-          },
-        });
-        if(response.data==="Trade customer request submitted successfully."){
-            console.log("navigate to Another Page");
-
-        };
-      } catch (error) {
-        console.error(error);
-      }
-    }
-      else{
-        console.log("Please check the box to continue");
-      }
-      // You can now use updatedPayload to send data to your backend or perform other actions
-    };
-  
-    return (
-      <View style={[tw`py-4`,styles.CompleteTradeCustomer2]}>
-        <View style={[tw`flex-col px-4`]}>
-            <View style={[tw`flex-row items-center`]}>
-                <Image
-                    style={[styles.image10Icon]}
-                    contentFit="cover"
-                    source={require("@/assets/image9.png")}
-                />
-                <Text style={styles.businessDetails}>Business Details</Text>
-            </View>
-            <View style={[tw`my-3`]}>
-                <TextInput
-                    style={[tw`my-2`,styles.inputPosition]}
-                    placeholder="VAT Number (if applicable):"
-                    placeholderTextColor="#b3b3b3"
-                    onChangeText={handleVatNumberChange}
-                />
-                <TextInput
-                    style={[styles.inputPosition]}
-                    placeholder="Business Registration Number (if applicable)"
-                    placeholderTextColor="#b3b3b3"
-                    onChangeText={handleBusinessRegistrationNumberChange}
-                />
-            </View>
-            <View style={[tw`-mt-3`]}>
-                <Picker
-                    selectedValue={selectedProduct}
-                    style={[styles.selectField, styles.inputTypo]}
-                    onValueChange={(itemValue) => setSelectedProduct(itemValue)}
-                    >
-                    <Picker.Item label="Products of Interest" value="" />
-                    <Picker.Item label="LED Lighting" value="LED Lighting" />
-                    <Picker.Item
-                    label="Suspended ceiling & Aluminium grid"
-                    value="Suspended ceiling & Aluminium grid"
-                    />
-                    <Picker.Item label="Both" value="Both" />
-                </Picker>
-            </View>
-        </View>
-        
-      </View>
-    );
-  };
-  
-
-const styles = StyleSheet.create({
-  checkSquareLayout: {
-    backgroundColor: "transparent",
-    padding: 0,
-    left: -10,
-    top: -90,
-    position: "absolute",
-  },
-  iconLayout: {
-    display: "none",
-    height: 16,
-    width: 16,
-    overflow: "hidden",
-  },
-  inputPosition1: {
-    width: 378,
-    left: 29,
-    position: "absolute",
-  },
-  errorTypo: {
-    marginTop: 8,
-    lineHeight: 22,
-    textAlign: "left",
-    fontFamily: FontFamily.presetsBody2,
-    fontSize: FontSize.presetsBody2_size,
-    display: "none",
-  },
-  inputBorder: {
-    minWidth: 240,
-    paddingVertical: StyleVariable.space300,
-    paddingHorizontal: StyleVariable.space400,
-    borderColor: Color.borderDefaultDefault,
-    marginTop: 8,
-    alignSelf: "stretch",
-    alignItems: "center",
-    flexDirection: "row",
-    borderWidth: 1,
-    borderStyle: "solid",
-    borderRadius: StyleVariable.radius200,
-    overflow: "hidden",
-    backgroundColor: Color.backgroundDefaultDefault,
-    zIndex:7
-  },
-
-  inputTypo: {
-    fontSize: FontSize.presetsBody2_size,
-  },
-  inputPosition: {
-    width: 317,
-    left: 36,
-    fontSize: 15,
-    //position: "absolute",
-  },
-  button: {
-    lineHeight: 16,
-    color: Color.textDangerOnDanger,
-    marginLeft: 8,
-    textAlign: "left",
-    fontFamily: FontFamily.presetsBody2,
-    fontSize: FontSize.presetsBody2_size,
-  },
-  xIcon: {
-    marginLeft: 8,
-  },
-  buttonDanger: {
-    top: 132,
-    left: 124,
-    backgroundColor: Color.colorLimegreen_100,
-    borderColor: Color.colorLimegreen_100,
-    justifyContent: "center",
-    padding: StyleVariable.space300,
-    alignItems: "center",
-    flexDirection: "row",
-    borderWidth: 1,
-    borderStyle: "solid",
-    borderRadius: StyleVariable.radius200,
-    position: "absolute",
-    overflow: "hidden",
-  },
-  declaration1: {
-    color: Color.colorRed,
-  },
-  text: {
-    color: Color.colorDarkslateblue,
-  },
-  iweCertifyThat: {
-    color: "#1b1b1b",
-  },
-  declarationIweCertifyContainer: {
-    fontSize: 15,
-    lineHeight: 24,
-    width: 343,
-    height: 119,
-    fontFamily: FontFamily.interMedium,
-    fontWeight: "500",
-    left: 29,
-    top: -80,
-    textAlign: "left",
-    position: "absolute",
-  },
-  checkSquare: {
-    overflow: "hidden",
-  },
-  declaration: {
-    top: 674,
-    left: 38,
-    width: 372,
-    height: 172,
-    position: "absolute",
-  },
-  label: {
-    color: Color.textDefaultDefault,
-    lineHeight: 22,
-    alignSelf: "stretch",
-    textAlign: "left",
-    fontFamily: FontFamily.presetsBody2,
-    fontSize: FontSize.presetsBody2_size,
-  },
-  description: {
-    color: Color.textDefaultSecondary,
-    alignSelf: "stretch",
-    marginTop: 8,
-  },
-  input: {
-    fontFamily: FontFamily.presetsBody2,
-    fontSize: FontSize.presetsBody2_size,
-  },
-  error: {
-    color: Color.textDefaultDefault,
-  },
-  inputField: {
-    top: 470,
-  },
-  input1: {
-    height: 41,
-  },
-  inputField1: {
-    top: 370,
-  },
-  image11Icon: {
-    width: 22,
-    height: 24,
-    left: -19,
-    top: -112,
-    position: "absolute",
-    
-  },
-  inputField2: {
-    top: -70,
-    left: 20,
-    width: 306,
-    position: "absolute",
-  },
-  salesInformation: {
-    top: -110,
-    left: 27,
-    width: 346,
-    color: Color.colorBlack,
-    lineHeight: 21,
-    fontSize: FontSize.size_sm,
-    fontFamily: FontFamily.interMedium,
-    fontWeight: "500",
-    textAlign: "left",
-    position: "absolute",
-  },
-  view: {
-    top: 385,
-    left: 35,
-    width: 373,
-    height: 81,
-    position: "absolute",
-  },
-  selectField: {
-    left: 24,
-    width: 316,
-  },
-  inputField3: {
-    //top: 75,
-  },
-  inputField4: {
-    top: 24,
-  },
-  businessDetails: {
-    width: 359,
-    left: 36,
-    color: Color.colorBlack,
-    lineHeight: 21,
-    fontSize: FontSize.size_sm,
-    fontFamily: FontFamily.interMedium,
-    fontWeight: "500",
-    textAlign: "left",
-    position: "absolute",
-  },
-  image10Icon: {
-    width: 23,
-    height: 24,
-  },
-  view1: {
-  },
-  icon: {
-    marginLeft: -176,
-    top: 55,
-    left: "50%",
-    height: 16,
-    width: 16,
-    position: "absolute",
-  },
-  CompleteTradeCustomer2: {
-    flex: 1,
-    width: "100%",
-    //height: 932,
-    overflow: "hidden",
-    backgroundColor: Color.backgroundDefaultDefault,
-  },
-});
-
-export default CompleteTradeCustomer;

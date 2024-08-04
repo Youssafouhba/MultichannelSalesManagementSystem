@@ -1,11 +1,13 @@
 // config.ts
-const baseurl = '192.168.42.250'
+const baseurl = '192.168.42.175'
 const Config = {
     development: {
       API_BASE_URL: `http://${baseurl}:9000`,
+      API_BASE_URL_ADMIN: `http://${baseurl}:9999`,
     },
     production: {
       API_BASE_URL: `http://${baseurl}:9000`,
+      API_BASE_URL_ADMIN: `http://${baseurl}:9999`,
     },
   };
   

@@ -3,7 +3,7 @@ import { Platform, SafeAreaView, ScrollView, StyleSheet, Text, View, Pressable, 
 import { Image } from "expo-image";
 import { useTailwind } from 'tailwind-rn';
 import GroupComponent from "../components/GroupComponent";
-import SearchBoxContainer from "../components/SearchBoxContainer";
+import SearchBoxContainer from "../components/SearchInput";
 import {Footer} from "@/components/Footer";
 import { FontSize, Color, FontFamily, Padding } from "@/GlobalStyles";
 import tw from 'tailwind-react-native-classnames';
@@ -22,7 +22,6 @@ const HomePage = () => {
   return (
     <SafeAreaView style={{ flex: 1 }}>
       <View style={{ flex: 1 }}>
-        <SearchBoxContainer />
         <ProductsService />
       </View>
     </SafeAreaView>

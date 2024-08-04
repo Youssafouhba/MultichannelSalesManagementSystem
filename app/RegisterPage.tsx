@@ -8,6 +8,9 @@ import { Border, Color, FontFamily, FontSize, Padding } from "../GlobalStyles";
 import * as Animatable from "react-native-animatable";
 import { useAppContext } from "@/components/AppContext";
 import { sessionManager } from "@/components/sessionManager";
+import AnimatedCustomAlert from "@/components/AnimatedCustomAlert";
+import { useState } from "react";
+import config from "@/components/config";
 
 
 
@@ -28,6 +31,7 @@ const RegisterPage = () => {
   const [errorConfirmPassword, setErrorConfirmPassword] = React.useState("");
   const [errorRegistration, setErrorRegistration] = React.useState("");
 
+
   const ref_email = React.useRef();
   const ref_phone = React.useRef();
   const ref_password = React.useRef();
@@ -41,7 +45,7 @@ const RegisterPage = () => {
   
   const apiHandler = async (url, payload) => {
     try {
-      const response = await axios.post(`${state.API_BASE_URL}${url}`, payload);
+      const response = await axios.post(`${config.API_BASE_URL}${url}`, payload);
       console.log(response.data);
       return response;
     } catch (error) {
@@ -83,13 +87,14 @@ const RegisterPage = () => {
       const response = await apiHandler("/api/auth/register", payload);
       if (response.data.token && response.data.message === "User registered successfully!") {
         dispatch({ type: 'SET_JWT_TOKEN', payload: response.data.token });
-        //await AsyncStorage.setItem('jwtToken', response.data.token);
         navigation.navigate("EmailVerificationPage", { mail });
       } else {
         setErrorRegistration(response.data.message);
       }
     }
   };
+
+
   return (
     <ScrollView contentContainerStyle={authstyles.contentContainerStyle}>
     <View style={[authstyles.iphone1415ProMax6, authstyles.labelFlexBox,authstyles.register]}>

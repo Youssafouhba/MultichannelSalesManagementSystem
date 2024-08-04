@@ -16,6 +16,7 @@ import { screenHeight } from '@/constants/GlobalsVeriables';
 import axios from 'axios';
 import ModernCustomAlert from '@/components/ModernCustomAlert';
 import { useAppData } from '@/components/AppDataProvider';
+import config from '@/components/config';
 export default function ProductDetails() {
     const { state, dispatch } = useAppContext();
     const { id } = useLocalSearchParams();
@@ -29,28 +30,28 @@ export default function ProductDetails() {
     const [quantity, setQuantity] = useState<number>(1)
     const [addedItem, setAddedItem] = useState({ name: '', quantity: 0 });
     var isLoggedIn = state.JWT_TOKEN !=='';
-    var token = state.JWT_TOKEN;
-    const { data} = useAppData();
+    const { data,token} = useAppData();
     
     useFocusEffect(
         useCallback(() => {
             const fetchProduct = async () => {
-                const filtered = state.products.find((product: Product) => product.id == id);
+                const filtered = data?.products.find((product: Product) => product.id == id);
                 setProduct(filtered);
                 setImageUrl(filtered.imageUrls[0].url);
-                // Check if the product is in favorites
-                checkFavoriteStatus();
+                // Check if the product is in favorites      
             }
+            checkFavoriteStatus();
             fetchProduct();
-        }, [id, p, state.products])
+        }, [id, p, data?.products])
     );
 
     const checkFavoriteStatus = async () => {
-        if (isLoggedIn) {
+        if (token!=undefined) {
             try {
-                const response = await axios.get(`${state.API_BASE_URL}/api/client/isFavorite/${id}`, {
+                const response = await axios.get(`${config.API_BASE_URL}/api/client/isFavorite/${id}`, {
                     headers: { Authorization: `Bearer ${token}` },
                 });
+                console.log(response.data)
                 setIsFavorite(response.data);
             } catch (error) {
                 console.error("Error checking favorite status:", error);
@@ -68,15 +69,15 @@ export default function ProductDetails() {
     };
     
     const toggleFavorite = async () => {
-        if (!isLoggedIn) {
+        if (token==undefined) {
             setLogInAlertVisible(true)
             return;
         }
 
         try {
             const url = isFavorite
-                ? `${state.API_BASE_URL}/api/client/deleteFromFavorite/${id}`
-                : `${state.API_BASE_URL}/api/client/addToFavorite/${id}`;
+                ? `${config.API_BASE_URL}/api/client/deleteFromFavorite/${id}`
+                : `${config.API_BASE_URL}/api/client/addToFavorite/${id}`;
             
             const response = isFavorite? await axios.delete(url,{
                 headers: { Authorization: `Bearer ${token}` },
@@ -116,7 +117,7 @@ export default function ProductDetails() {
                 onCancel={handleCancel}
                 onConfirm={handleConfirm}
             />
-            <ScrollView style={[tw`top-4 w-full`, { flex: 1, backgroundColor: Color.colorWhite,height: (screenHeight*0.62), }]}>
+            <ScrollView showsVerticalScrollIndicator={false} style={[tw`top-4 w-full`, { flex: 1, backgroundColor: Color.colorWhite,height: (screenHeight*0.62), }]}>
                 <View style={[tw`flex-row px-2 w-full h-60`, { backgroundColor: Color.mainbackgroundcolor, borderBottomColor: 'white', borderBottomWidth: 3 }]}>
                 
                     <Image style={[tw`h-56 rounded`, { width: '80%' }]} source={{ uri: imageUrl }} />

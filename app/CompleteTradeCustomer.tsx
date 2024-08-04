@@ -224,7 +224,7 @@ const styles = StyleSheet.create({
     minWidth: 240,
     paddingVertical: StyleVariable.space300,
     paddingHorizontal: 10,
-    borderColor: Color.borderDefaultDefault,
+    borderColor: Color.BorderDefaultDefault,
     marginTop: 8,
     alignSelf: 'stretch',
     alignItems: "center",
@@ -233,7 +233,7 @@ const styles = StyleSheet.create({
     borderStyle: "solid",
     borderRadius: StyleVariable.radius200,
     overflow: "hidden",
-    backgroundColor: Color.backgroundDefaultDefault,
+    backgroundColor: Color.BackgroundBrandDefault,
     zIndex:7,
     
   },

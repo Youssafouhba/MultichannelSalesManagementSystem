@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { View, Text, FlatList, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, FlatList, StyleSheet,Image, TouchableOpacity } from 'react-native';
 import { useNavigation ,useFocusEffect} from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { TabBarIcon } from '@/components/navigation/TabBarIcon';
@@ -85,17 +85,14 @@ const Orders: React.FC = () => {
   };
 
   
-  useFocusEffect(
-    useCallback(() => {
-      const fetch = async () => {
-        await fetchOrders();
-      };
-      if(isLoggedIn)
-        fetch();
-      return () => {
-      };
-    }, [token])
-  );
+
+  useEffect(()=>{
+    const fetch = async () => {
+      await fetchOrders();
+    };
+    
+    fetch();
+  },[])
 
 
   const OrderItem: React.FC<{ order: Order; onPress: () => void }> = React.memo(({ order, onPress }) => (
@@ -136,12 +133,19 @@ const Orders: React.FC = () => {
       (
         <LogInRequiredPage message='Please log in to view your Orders' page='Orders'/>):
       (
+        orders.length > 0?
       <FlatList
         data={orders}
         renderItem={renderItem}
         keyExtractor={keyExtractor}
         contentContainerStyle={styles.listContainer}
       />
+        : 
+        <View style={[tw`justify-center items-center h-80`]}>
+          <Text style={[tw`text-base`]}>Your Order List is empty !</Text>
+          <Image source={require("@/assets/images/icons8-aucun-résultat-48.png")}/>
+        </View>
+
       )}
     </View>
   );

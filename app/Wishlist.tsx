@@ -10,10 +10,12 @@ import LogInRequiredPage from '@/components/LogInRequiredPage';
 import { useAppData } from '@/components/AppDataProvider';
 import StarRating from '@/components/StarRating';
 import tw from 'tailwind-react-native-classnames';
+import { Ionicons } from '@expo/vector-icons';
+import config from '@/components/config';
 
 const Wishlist: React.FC = () => {
     const { state } = useAppContext();
-    const { favProducts,data, fetchFavorites,error} = useAppData();
+    const { favProducts,token,data, fetchFavorites,error} = useAppData();
     const isLoggedIn = !!state.JWT_TOKEN;
 
     useEffect(() => {
@@ -21,7 +23,22 @@ const Wishlist: React.FC = () => {
             await fetchFavorites();
         }
         fetch()
-    }, [isLoggedIn, state.JWT_TOKEN]);
+    }, [isLoggedIn,token ]);
+
+    const removefromfavorite = async (id: string) => {
+        try {
+            const url = `${config.API_BASE_URL}/api/client/deleteFromFavorite/${id}`;
+            const response = await axios.delete(url,{
+                headers: { Authorization: `Bearer ${token}` },
+            })
+
+            if (response.status === 200) {
+                await fetchFavorites();
+            }
+        } catch (error) {
+            console.error("Error updating favorite status:", error);
+        }
+    }
 
     const renderItem = useCallback(({ item }: { item: Product }) => (
         <View style={styles.productContainer}>
@@ -50,6 +67,10 @@ const Wishlist: React.FC = () => {
                     </View>
                     <StarRating rating={data?.ratings[parseInt(item.id)]} />
                 </View>
+                <Pressable onPress={()=>removefromfavorite(item.id)} style={[tw`absolute`,{right: 2,top: 2}]}>
+                    <Ionicons name='close' size={16} color={'red'}  />
+                </Pressable>
+                
         </View>
 
         </View>

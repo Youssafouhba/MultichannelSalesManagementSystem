@@ -1,82 +1,82 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/core';
-import { Client } from '@stomp/stompjs';
+import { Client, StompSubscription } from '@stomp/stompjs';
 import axios from "axios";
-import { Image } from "expo-image";
 import { jwtDecode } from "jwt-decode";
 import * as React from "react";
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, Text, TextInput, View, Alert, NativeSyntheticEvent, TextInputChangeEventData } from "react-native";
 import { Color, StyleVariable } from "@/GlobalStyles";
 import { useAppContext } from '@/components/AppContext';
 import { Ionicons } from '@expo/vector-icons';
-import config from '@/components/config';
+import { useAppData } from '@/components/AppDataProvider';
 
+const SockJS = require('sockjs-client/dist/sockjs.js');
 
-const Messages = () => {
-  const {state,dispatche} = useAppContext()
-  const [stompClient, setStompClient] = React.useState(null);
-  const [messages, setMessages] = React.useState([]);
-  const [inputValue, setInputValue] = React.useState('');
-  const [username , setUsername] = React.useState(null);
+interface Message {
+  from: string;
+  to: string;
+  content: string;
+}
+
+interface UserChat {
+  id: string;
+  participants: string[];
+}
+
+const Messages: React.FC = () => {
+  const { state, dispatche } = useAppContext();
+  const { data, cartElements, token, error } = useAppData();
+  const [stompClient, setStompClient] = React.useState<Client | null>(null);
+  const [connected, setConnected] = React.useState<boolean>(false);
+  const [messages, setMessages] = React.useState<Message[]>([]);
+  const [inputValue, setInputValue] = React.useState<string>('');
+  const [username, setUsername] = React.useState<string | null>(null);
   const admin = "admin";
-  const chatAreaRef = React.useRef(null);
-  const messageInputRef = React.useRef(null);
+  const chatAreaRef = React.useRef<ScrollView>(null);
+  const messageInputRef = React.useRef<TextInput>(null);
   const navigation = useNavigation();
-  const [token, setToken] = React.useState(null);
 
-  var SockJS = require('sockjs-client/dist/sockjs.js');
+  const SERVER_URL = 'http://192.168.42.175:9001';
 
-  const apiGetHandler = async (url, token) => {
+  const apiGetHandler = async (url: string, token: string) => {
     if (token) {
       console.log("Token present: " + token);
       try {
-      const response = await axios.get(`http://192.168.42.250:9001${url}`, { headers: {"Authorization" : `Bearer ${token}`} });
-      console.log(response);
-
-      return response;
-    } catch (error) {
-      console.log(error.response);
-      return error.response;
+        const response = await axios.get(`${SERVER_URL}${url}`, { headers: { "Authorization": `Bearer ${token}` } });
+        console.log(response.data);
+        return response;
+      } catch (error: any) {
+        console.log(error.response);
+        return error.response;
+      }
     }
-    }
-    
   }
 
   React.useEffect(() => {
     const checkToken = async () => {
       const storedToken = await AsyncStorage.getItem('jwtToken');
       if (storedToken) {
-        setToken(storedToken);
-        const decodedToken = jwtDecode(storedToken);
+        const decodedToken = jwtDecode<{ email: string }>(storedToken);
         console.log("email is " + decodedToken.email);
         setUsername(decodedToken.email);
       }
-      
     };
     checkToken();
   }, []);
 
-
-
-
-
   React.useEffect(() => {
-    if (token && username ) {
-      const client = new Client(
-        {   debug: (a)=>{console.log(a)} ,
-            brokerURL: state.wsUrl,
-            connectHeaders : {Authorization: `Bearer ${token}` },
-            appendMissingNULLonIncoming:true,
-            onConnect : () => onConnected(client),
-            onStompError : () => onError
-        });
-        client.webSocketFactory = function () {
-              return new SockJS(state.wsUrl);
-
-        }
+    console.log(`token: ${token}`)
+    console.log(`username: ${username}`)
+    if (token && username) {
+      const client = new Client({
+        debug: (str) => { console.log(str) },
+        webSocketFactory: () => new SockJS(`${SERVER_URL}/secured/chat`),
+        connectHeaders: { Authorization: `Bearer ${token}` },
+        onConnect: () => onConnected(client),
+        onStompError: onError
+      });
 
       client.activate();
-      
       setStompClient(client);
       findMyChat(token);
 
@@ -86,7 +86,7 @@ const Messages = () => {
         }
       };
     }
-  }, [token]);
+  }, [token, username]);
 
   React.useEffect(() => {
     if (chatAreaRef.current) {
@@ -94,22 +94,30 @@ const Messages = () => {
     }
   }, [messages]);
 
-  const onConnected = (client) => {
-    client.subscribe(`/user/${username}/queue/messages`, onMessageReceived, { Authorization: `Bearer ${token}` });
+  const onConnected = (client: Client) => {
+    setConnected(true);
+    if (username) {
+      client.subscribe(`/user/${username}/queue/messages`, onMessageReceived, { Authorization: `Bearer ${token}` });
+    }
   };
 
-  const onError = (error) => {
+  const onError = (error: any) => {
     console.error('STOMP error:', error);
+    setConnected(false);
+    Alert.alert("Connection Error", "Failed to connect to the chat server. Please try again later.");
   };
 
   const onMessageReceived = (payload) => {
     const message = JSON.parse(payload.body);
-    setMessages(prevMessages => [...prevMessages, message]);
-    chatAreaRef.current.scrollToEnd({ animated: true });
+    if (message.id != null) {
+      setMessages(prevMessages => [...prevMessages, message]);
+    }
+   
   };
 
   const sendMessage = () => {
     const messageContent = inputValue.trim();
+    console.log(messageContent)
     if (messageContent && stompClient) {
       const joinMessage = {
         from: username,
@@ -117,25 +125,25 @@ const Messages = () => {
         content: messageContent,
       };
       console.log(joinMessage);
-     stompClient.publish({destination:"/app/tg3edlappel", body:JSON.stringify(joinMessage) , headers: {"Authorization" : `Bearer ${token}`}});
-   setMessages(prevMessages => [...prevMessages, joinMessage]);
+     stompClient.publish({destination:"/app/client/message", body:JSON.stringify(joinMessage) , headers: {"Authorization" : `Bearer ${token}`}});
+      setMessages(prevMessages => [...prevMessages, joinMessage]);
       setInputValue('');
-      chatAreaRef.current.scrollToEnd({ animated: true });
     }
       
   };
 
-  const findMyChat = async (token) => {
-    console.log(token)
+  const findMyChat = async (token: string) => {
     if (token) {
       try {
         const userChatResponse = await apiGetHandler(`/getmyclientConversations`, token);
         console.log(userChatResponse);
-        if (userChatResponse) {
-          const userChat = userChatResponse.data;
-          if (userChat.length > 0) {
+        if (userChatResponse && userChatResponse.data) {
+          const userChat: UserChat[] = userChatResponse.data;
+          if (userChat.length > 0 && username) {
             const selectedUser = userChat[0].participants.find(part => part !== username);
-            await fetchAndDisplayUserChat({ convid: userChat[0].id, userid: selectedUser },token);
+            if (selectedUser) {
+              await fetchAndDisplayUserChat({ convid: userChat[0].id, userid: selectedUser }, token);
+            }
           }
         }
       } catch (error) {
@@ -146,27 +154,26 @@ const Messages = () => {
     }
   };
 
-  const fetchAndDisplayUserChat = async (selectedUser,token) => {
-    console.log(token);
-   try {
-      const userChatResponse = await apiGetHandler(`/getConversation/${selectedUser.convid}`,token);
+  const fetchAndDisplayUserChat = async (selectedUser: { convid: string, userid: string }, token: string) => {
+    try {
+      const userChatResponse = await apiGetHandler(`/getConversation/${selectedUser.convid}`, token);
 
-      if (userChatResponse) {
-        const userChat = userChatResponse.data;
-         setMessages(userChat);
-      chatAreaRef.current.scrollToEnd({ animated: true });
+      if (userChatResponse && userChatResponse.data) {
+        const userChat: Message[] = userChatResponse.data;
+        setMessages(userChat);
+        chatAreaRef.current?.scrollToEnd({ animated: true });
       }
-     
     } catch (error) {
       console.error("Error fetching user chat:", error);
     }
   };
 
-  const renderMessage = (message, index) => (
+  const renderMessage = (message: Message, index: number) => (
     <View key={index} style={[styles.messageContainer, message.from === username ? styles.sender : styles.receiver]}>
       <Text>{message.content}</Text>
     </View>
   );
+
   return (
     <View style={styles.container}>
       <ScrollView ref={chatAreaRef} style={styles.chatMessages} contentContainerStyle={styles.contentContainer}>
@@ -183,12 +190,13 @@ const Messages = () => {
           onChangeText={setInputValue}
         />
         <Pressable onPress={sendMessage}>
-          <Ionicons name='send-sharp' size={26} color={'black'} />
+          <Ionicons name='send-sharp' size={26} color={connected ? 'black' : 'gray'} />
         </Pressable>
       </View>
     </View>
   );
 };
+
 
 const styles = StyleSheet.create({
   container: {

@@ -1,27 +1,28 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { View, Text, TextInput, Pressable, StyleSheet } from "react-native";
 import { Image } from "expo-image";
 import { router, useLocalSearchParams, useRouter } from 'expo-router';
-import axios from "axios";
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as Animatable from "react-native-animatable";
 import tw from 'tailwind-react-native-classnames';
 import { useAppContext } from '@/components/AppContext';
 import { authstyles } from '../GlobalStyles';
 import { Color, FontSize, Padding, Border } from "../GlobalStyles";
 import { Product } from "@/constants/Classes";
 import { useAppData } from "@/components/AppDataProvider";
+import LoginError from "@/components/LoginError";
+import axios from "axios";
+import config from "@/components/config";
 
 const LoginPage = () => {
-  const { id ,idp} = useLocalSearchParams();
-  const { login,cartElements,token, error } = useAppData();
+  const { id, idp } = useLocalSearchParams();
+  const { login, fetchdt, cartElements, token } = useAppData();
   const { returnTo, productId } = useLocalSearchParams();
   const navigation = useRouter();
   const { state, dispatch } = useAppContext();
-  const [errorAuth, setErrorAuth] = useState("");
   const [password, setPassword] = useState("");
   const [email, setEmail] = useState("");
- 
+  const [errorVisible, setErrorVisible] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
   const isValidEmail = (email) => {
     const emailRegex = /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,})+$/;
@@ -32,31 +33,87 @@ const LoginPage = () => {
     navigation.push('/ForgetPasswordPage');
   };
 
+  const navigateAfterLogin = () => {
+    let targetRoute = "/";
+    if (returnTo === 'ProductDetails' && productId) {
+      targetRoute = `/ProductDetails?id=${productId}`;
+    } else if (id) {
+      targetRoute = `/${id}?p=${idp}`;
+    }
+
+    // Check if the target route is different from the current route
+    if (targetRoute !== navigation.pathname) {
+      if (targetRoute.startsWith('/')) {
+        router.push(targetRoute);
+      } else {
+        navigation.navigate(targetRoute);
+      }
+    } else {
+      // If it's the same route, you might want to refresh the page or show a message
+      console.log("Already on the target page");
+    }
+  };
+
+
   const handleLogin = async () => {
     if (!isValidEmail(email)) {
-      setErrorAuth("Invalid email format");
+      setErrorMessage("Invalid email format");
+      setErrorVisible(true);
       return;
     }
-    await login(email, password);
-    if (token) {
+
+    try {
+      console.log(email + "----" + password)
+      const payload = { email, password };
+      const response = await axios.post(`${config.API_BASE_URL}/api/auth/singin`, payload);
+      const { message, token } = response.data;
+      await login(token);
+      if (token) {
+        await login(token);
+        dispatch({ type: 'SET_JWT_TOKEN', payload: token });
+        await AsyncStorage.setItem('jwtToken', token);
         
-      dispatch({ type: 'SET_JWT_TOKEN', payload: token });
-      await AsyncStorage.setItem('jwtToken', token);
-      cartElements?.map((item: {product: Product,quantity: number})=>{
-      const pro = item.product
-      const quantity = item.quantity
-      dispatch({ type: 'ADD_TO_CART', payload: { ...pro, quantity } });
-      })
-      if (returnTo === 'ProductDetails' && productId) {
-        router.push(`/ProductDetails?id=${productId}`);
-      }else{
-        id?navigation.navigate(`/${id}?p=${idp}`):navigation.navigate("/");
+        cartElements?.forEach((item) => {
+          const { product, quantity } = item;
+          dispatch({ type: 'ADD_TO_CART', payload: { ...product, quantity } });
+        });
+        
+        navigateAfterLogin();
+      } else {
+        throw new Error('No token received from server');
       }
+    } catch (error) {
+      let errorMessage = 'An unexpected error occurred';
+      
+      if (error.response) {
+        // The request was made and the server responded with a status code
+        // that falls out of the range of 2xx
+        errorMessage = error.response.data.message || `Server error: ${error.response.status}`;
+      } else if (error.request) {
+        // The request was made but no response was received
+        errorMessage = 'No response received from server';
+      } else {
+        // Something happened in setting up the request that triggered an Error
+        errorMessage = error.message;
+      }
+      
+      setErrorMessage(errorMessage);
+      setErrorVisible(true);
+      //console.error('Login error:', errorMessage);
     }
-  }
+  };
 
   return (
     <View style={[authstyles.iphone1415ProMax6, authstyles.labelFlexBox]}>
+      <LoginError 
+        visible={errorVisible}
+        title="Login Error"
+        message={errorMessage}
+        onDismiss={() => setErrorVisible(false)}
+        duration={3000}
+        iconName="alert-circle"
+        iconColor="#f44336"
+      />
       <View style={authstyles.content}>
         <Image
           style={authstyles.iphone1415ProMax6Child}
@@ -81,11 +138,6 @@ const LoginPage = () => {
             placeholder="Password"
             secureTextEntry
           />
-          {errorAuth && (
-            <Animatable.View animation="fadeInLeft" duration={500}>
-              <Text style={styles.errorMsg}>{errorAuth}</Text>
-            </Animatable.View>
-          )}
           <Pressable style={styles.button} onPress={handleLogin}>
             <Text style={styles.buttonText}>Sign in</Text>
           </Pressable>

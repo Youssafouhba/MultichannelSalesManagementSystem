@@ -12,9 +12,16 @@ import { useAppData } from "@/components/AppDataProvider";
 
 
 export default function Account() {
-  const { user, deleteAccount,error } = useAppData();
+  const { user,fetchprofile, deleteAccount,error } = useAppData();
   const { state, dispatch } = useAppContext();
   const isLoggedIn = state.JWT_TOKEN !== '';
+
+  React.useEffect(()=>{
+    const fetchaccount = async ()=>{
+      fetchprofile()
+    }
+    fetchaccount()
+  },[])
   
   
   return (

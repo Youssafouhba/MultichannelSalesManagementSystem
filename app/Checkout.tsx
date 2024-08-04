@@ -208,6 +208,7 @@ const Checkout = () => {
                 <FlatList
                   data={cartProducts}
                   renderItem={renderCheckoutElement}
+                  scrollEnabled={true}
                   keyExtractor={(item) => item.id.toString()}
                   />
                 <View style={styles.addressContainer}>

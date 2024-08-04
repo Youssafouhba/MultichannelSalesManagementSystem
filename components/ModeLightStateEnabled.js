@@ -13,17 +13,20 @@ const ModeLightStateEnabled = ({
   modeLightStateEnabledPosition,
   modeLightStateEnabledTop,
   modeLightStateEnabledLeft,
+  modeLightStateColor,
 }) => {
   const modeLightStateEnabledStyle = useMemo(() => {
     return {
       ...getStyleValue("position", modeLightStateEnabledPosition),
       ...getStyleValue("top", modeLightStateEnabledTop),
       ...getStyleValue("left", modeLightStateEnabledLeft),
+      ...getStyleValue("color", modeLightStateColor),
     };
   }, [
     modeLightStateEnabledPosition,
     modeLightStateEnabledTop,
     modeLightStateEnabledLeft,
+    modeLightStateColor
   ]);
 
   return (
@@ -37,7 +40,6 @@ const ModeLightStateEnabled = ({
 const styles = StyleSheet.create({
   textTypo: {
     textAlign: "left",
-    color: Color.colorGray,
     lineHeight: 18,
   },
   text: {

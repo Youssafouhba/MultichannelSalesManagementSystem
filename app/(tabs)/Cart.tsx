@@ -11,17 +11,18 @@ import axios from "axios";
 import { jwtDecode } from "jwt-decode";
 import ModernCustomAlert from "@/components/ModernCustomAlert";
 import { useAppData } from "@/components/AppDataProvider";
+import config from "@/components/config";
 
 
 const Cart = () => {
   const { state, dispatch } = useAppContext();
-  const { data,cartElements,error} = useAppData();
+  const { data,cartElements,error,token} = useAppData();
   const [sumCheckout, setSumCheckout] = useState(0);
   const [first, setFirst] = useState(false);
   const [LogInAlertVisible, setLogInAlertVisible] = useState(false);
   var cartItems = state.cartItems || {};
   var isLoggedIn = state.JWT_TOKEN !=='';
-  var token = state.JWT_TOKEN;
+
 
 
   useEffect(() => {
@@ -128,7 +129,7 @@ const Cart = () => {
 
   const apiHandler = async (url, payload, token) => {
     try {
-      const response = await axios.post(`${state.API_BASE_URL}${url}`, payload, {
+      const response = await axios.post(`${config.API_BASE_URL}${url}`, payload, {
         headers: {
           Authorization: `Bearer ${token}`
         }
@@ -162,7 +163,7 @@ const Cart = () => {
         });
       });
 
-      if (isLoggedIn) {
+      if (token) {
         if(cartElements.length){
           router.push("/Checkout");
         }else{

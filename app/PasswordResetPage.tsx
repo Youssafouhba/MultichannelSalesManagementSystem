@@ -10,9 +10,11 @@ import * as Animatable from "react-native-animatable";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAppContext } from '@/components/AppContext';
 import { router, useLocalSearchParams } from 'expo-router';
+import { useAppData } from '@/components/AppDataProvider';
 
 const PasswordResetPage = () => {
   const { state, dispatch } = useAppContext();
+  const { login } = useAppData();
   var token = state.JWT_TOKEN
 
   const confirmPasswordRef = React.useRef();
@@ -58,6 +60,7 @@ const PasswordResetPage = () => {
             }
           });
           if(response.status==200){
+            await login(token);
             router.push("/")
           }
         }
@@ -65,32 +68,6 @@ const PasswordResetPage = () => {
       }
   };
 
-  const handleDataRegister = async () => {
-
-    if (!MailCheckForm(mail)) {
-      console.log("Invalid email format");
-      return;
-    }
-    const payload = {
-      email: mail,
-      password: password,
-    };
-    try {
-      const response = await axios.post(`${state.API_BASE_URL}/api/auth-client/otp/singin`,payload);
-
-      if (response.status === 200) {
-        await AsyncStorage.setItem('jwtToken', response.data.token);}
-    }
-
-
-    catch (error) {
-      console.error(error);
-      // setError();
-    }
-
-    console.log(AsyncStorage.getItem('jwtToken'));
-
-  };
 
   const handlePasswordChange = (text) => {
     setPassword(text);

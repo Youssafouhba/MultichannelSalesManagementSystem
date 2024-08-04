@@ -15,6 +15,9 @@ import tw from 'tailwind-react-native-classnames';
 import { View } from 'react-native';
 import QuatreCarres from '@/components/QuatreCarres';
 import { AppDataProvider } from '@/components/AppDataProvider';
+import { TextEncoder } from 'text-encoding';
+
+global.TextEncoder = TextEncoder;
 export default function Index() {
   return (
     <AppDataProvider>

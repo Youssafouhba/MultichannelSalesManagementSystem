@@ -9,14 +9,14 @@ import { groupecomponentstyles as styles } from "../GlobalStyles";
 
 interface GroupComponentProps {
   onCategorySelect: (category: string | null) => void;
+  onviewall: (category: string | null) => void;
 }
 
-const GroupComponent: React.FC<GroupComponentProps> = ({ onCategorySelect }) => {
+const GroupComponent: React.FC<GroupComponentProps> = ({ onCategorySelect,onviewall }) => {
   const [selectedLabel, setSelectedLabel] = useState<string | null>("Best Seller");
 
   const handleImagePress = (label: string) => {
     const newLabel = label===selectedLabel? selectedLabel: label;
-    console.log(newLabel)
     setSelectedLabel(newLabel);
     onCategorySelect(newLabel);
   };

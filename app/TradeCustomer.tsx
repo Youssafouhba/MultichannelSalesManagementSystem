@@ -76,7 +76,7 @@ const TradeCustomer = () => {
       {isLoggedIn?(
         <View>
           <Text style={styles.title}>Open a trade account (minimum buy £500)</Text>
-          <View style={tw`flex-row justify-start items-center mt-4 -ml-16`}>
+          <View style={tw`flex-row justify-start items-center mt-4`}>
             <Image
               style={styles.icon}
               contentFit="cover"
@@ -101,7 +101,7 @@ const TradeCustomer = () => {
             <Image
               style={styles.icon}
               contentFit="cover"
-              tintColor={'red'}
+              tintColor={'white'}
               source={require("../assets/arrow-right.png")}
             />
           </Pressable>
@@ -115,7 +115,7 @@ const TradeCustomer = () => {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: Color.backgroundBrandDefault,
+    backgroundColor: Color.BackgroundBrandDefault,
     flex: 1,
     width: "100%",
     overflow: "hidden",
@@ -142,20 +142,20 @@ const styles = StyleSheet.create({
   },
   button: {
     top: 235,
-    left: 130,
+    backgroundColor: Color.colorsBlue,
     borderRadius: StyleVariable.radius200,
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: 'flex-end',
+    justifyContent: 'center',
     paddingHorizontal: StyleVariable.space300,
     paddingVertical: StyleVariable.space200,
-    opacity: 0.5,
+    opacity: 1,
   },
   buttonText: {
     fontSize: FontSize.presetsBody2_size,
     lineHeight: 16,
     fontFamily: FontFamily.presetsBody2,
-    color: "red",
+    color: "white",
     textAlign: "left",
   },
   inputoptions: {

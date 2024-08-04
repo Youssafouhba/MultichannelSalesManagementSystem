@@ -9,9 +9,18 @@ export interface UserDTO {
   dateOfCreation: string | Date
 };
 
+export interface Notification {
+  id: number;
+  title: string;
+  message: string;
+  postedDate: string;
+  isRead: boolean
+}
+
 export interface Product {
     id: string;
-    //isNew: boolean;
+    isNew: boolean;
+    isBestSeller: boolean;
     name: string;
     description: string;
     price: number;

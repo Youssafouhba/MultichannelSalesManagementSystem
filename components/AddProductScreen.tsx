@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ScrollView, Text,ImageBackground, View, Image, TextInput, TouchableOpacity, Alert, FlatList } from 'react-native';
+import { ScrollView, Text,ImageBackground, View, Image, TextInput, TouchableOpacity, Alert, FlatList, Switch } from 'react-native';
 import tw from 'tailwind-react-native-classnames';
 import * as ImagePicker from 'expo-image-picker';
 import axios from 'axios';
@@ -10,6 +10,7 @@ import RNPickerSelect from 'react-native-picker-select';
 import {CLOUDINARY_URL,UPLOAD_PRESET } from '../constants/GlobalsVeriables';
 import { Product } from "@/constants/Classes";
 import { useAppContext } from './AppContext';
+import config from './config';
 
 
 const AddProductScreen = () => {
@@ -21,6 +22,8 @@ const AddProductScreen = () => {
   const [size, setSize] = useState('');
   const [category,setCategory] = useState('');
   const [images, setImages] = useState<string[]>([]);
+  const [isNew, setIsNew] = useState(false);
+  const [isBestSeller, setIsBestSeller] = useState(false);
   var cartItems = state.cartItems || {};
   var isLoggedIn = state.JWT_TOKEN !=='';
   var token = state.JWT_TOKEN;
@@ -83,7 +86,7 @@ const AddProductScreen = () => {
 
   const apiHandler = async (url, payload, token) => {
     try {
-      const response = await axios.post(`${state.API_BASE_URL_ADMIN}${url}`, payload, {
+      const response = await axios.post(`${config.API_BASE_URL_ADMIN}${url}`, payload, {
         headers: {
           Authorization: `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI0MiIsImlhdCI6MTcyMTA3NDA2NywidXNlcmlkIjo0MiwiZW1haWwiOiJhbGtoc3BhbWVyckBnbWFpbC5jb20iLCJyb2xlIjpbIlN1cGVyQWRtaW4iXX0.omkORJ7wcRh0072FhNUT8SdmxWD_LDzubNZgCYLQUfA`
         }
@@ -111,6 +114,8 @@ const AddProductScreen = () => {
         id: '',
         //isNew: true,
         postedDate: '',
+        isNew: isNew,
+        isBestSeller: isBestSeller
       };
 
       const response = await apiHandler(`/Stock/Management/products/`,product,token);
@@ -207,6 +212,21 @@ const AddProductScreen = () => {
             value: null,
           }}
         />
+            <View style={tw`flex-row items-center justify-between mt-4`}>
+        <Text style={tw`font-medium`}>Is New:</Text>
+        <Switch
+          value={isNew}
+          onValueChange={setIsNew}
+        />
+      </View>
+
+      <View style={tw`flex-row items-center justify-between mt-4`}>
+        <Text style={tw`font-medium`}>Is Best Seller:</Text>
+        <Switch
+          value={isBestSeller}
+          onValueChange={setIsBestSeller}
+        />
+      </View>
         <View style={tw`mt-4`}>
         <Text style={tw`text-lg font-medium mb-2`}>Product Images</Text>
         <TouchableOpacity 

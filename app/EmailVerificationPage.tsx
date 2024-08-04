@@ -1,33 +1,47 @@
-import { useNavigation, useRoute } from "@react-navigation/native";
-import axios from "axios";
+import React, { useState, useEffect } from 'react';
+import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
+import axios, { AxiosResponse, AxiosError } from "axios";
 import { Image } from "expo-image";
-import * as React from "react";
 import { StyleSheet, Text, TextInput, View } from "react-native";
 import { Button } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { authstyles, Border, Color, FontFamily, FontSize, Padding } from "../GlobalStyles";
+import { authstyles, Border, Color, FontSize, Padding } from "../GlobalStyles";
 import { useAppContext } from "@/components/AppContext";
 import tw from "tailwind-react-native-classnames";
+import * as Animatable from "react-native-animatable";
+import AnimatedCustomAlert from "@/components/AnimatedCustomAlert";
+import config from '@/components/config';
 
+type RootStackParamList = {
+  EmailVerificationPage: { mail: string };
+};
 
+type EmailVerificationPageRouteProp = RouteProp<RootStackParamList, 'EmailVerificationPage'>;
 
+interface ApiResponse {
+  message: string;
+  [key: string]: any;
+}
 
-const EmailVerificationPage = () => {
+const EmailVerificationPage: React.FC = () => {
   const { state, dispatch } = useAppContext();
-  const route = useRoute();
+  const route = useRoute<EmailVerificationPageRouteProp>();
   const navigation = useNavigation();
   const email = route.params?.mail || null;
 
-  const [errorOtp, setErrorOtp] = React.useState("");
-  const [otp, setOtp] = React.useState("");
-  const [apiResponse, setApiResponse] = React.useState(null);
-  var token = state.JWT_TOKEN
+  const [errorOtp, setErrorOtp] = useState<string>("");
+  const [otp, setOtp] = useState<string>("");
+  const [apiResponse, setApiResponse] = useState<AxiosResponse<ApiResponse> | null>(null);
+  const token = state.JWT_TOKEN;
+  const [alertVisible, setAlertVisible] = useState<boolean>(false);
 
+  const handleDismiss = () => {
+    setAlertVisible(false);
+  };
 
-  const apiHandler = async (url, payload, token) => {
-    
+  const apiHandler = async (url: string, payload: any, token: string): Promise<AxiosResponse<ApiResponse>> => {
     try {
-      const response = await axios.post(`${state.API_BASE_URL}${url}`, payload, {
+      const response = await axios.post<ApiResponse>(`${config.API_BASE_URL}${url}`, payload, {
         headers: {
           Authorization: `Bearer ${token}`
         }
@@ -35,17 +49,20 @@ const EmailVerificationPage = () => {
       console.log(response.data);
       return response;
     } catch (error) {
-      console.log(error.response.data);
-      return error.response;
+      if (axios.isAxiosError(error)) {
+        console.log(error.response?.data);
+        return error.response as AxiosResponse<ApiResponse>;
+      }
+      throw error;
     }
-  }
+  };
 
-  React.useEffect(() => {
+  useEffect(() => {
     const checkTokenAndRequestOtp = async () => {
-      console.log(token)
-      if (token) {
+      if (token && email) {
+        setAlertVisible(true);
         const payload = { email: email };
-        const response = await apiHandler("/api/auth-client/otp/request-otp", payload , token);
+        const response = await apiHandler("/api/auth-client/otp/request-otp", payload, token);
         if (response.data.message === "OTP sent successfully") {
           setApiResponse(response);
         }
@@ -53,11 +70,11 @@ const EmailVerificationPage = () => {
     };
 
     checkTokenAndRequestOtp();
-  }, [email]);
+  }, [email, token]);
 
-  const handleOtp = (otp) => {
+  const handleOtp = (otp: string) => {
     setOtp(otp);
-  }
+  };
 
   const ConfirmationHandler = async () => {
     if (apiResponse?.data?.message === "OTP sent successfully") {
@@ -66,10 +83,10 @@ const EmailVerificationPage = () => {
         otp: otp
       };
       console.log(payload);
-      const response2 = await apiHandler("/api/auth-client/otp/verify-otp", payload,token);
+      const response2 = await apiHandler("/api/auth-client/otp/verify-otp", payload, token);
       console.log(response2.data);
       if (response2.data.message === "OTP verified successfully") {
-        navigation.navigate("LoginPage");
+        navigation.navigate("LoginPage" as never);
         console.log("OTP verified successfully");
       } else {
         setErrorOtp(response2.data.message);
@@ -77,65 +94,69 @@ const EmailVerificationPage = () => {
     } else {
       setErrorOtp("OTP not sent successfully");
     }
-  }
+  };
 
   return (
     <View style={[authstyles.iphone1415ProMax6, authstyles.labelFlexBox]}>
-    <View style={[authstyles.content, authstyles.contentPosition]}>
-      <Image
+      <View style={[authstyles.content, authstyles.contentPosition]}>
+        <AnimatedCustomAlert
+          visible={alertVisible}
+          title="Account Confirmation"
+          message="Check the code sent to your mail address in order to verify your account."
+          onDismiss={handleDismiss}
+          duration={2000}
+        />
+        <Image
           style={authstyles.iphone1415ProMax6Child}
           contentFit="cover"
           source={require("../assets/rectangle-2.png")}
         />
-      <SafeAreaView style={[tw`justify-center items-center`]}>
-        <Text style={[styles.email]} numberOfLines={1}>
-          Email verification
-        </Text>
-      </SafeAreaView>
-      <SafeAreaView style={styles.frame1}>
-        <View style={[tw`flex-row justify-between items-center`,styles.emailEdit]}>
-          <View>
-            <Text
-              style={[styles.emailInput]}
-            >{email?email:null}</Text>
-          </View>
-          <View>
-          <Button style={styles.edit} mode="text" labelStyle={styles.editBtn} onPress={() => navigation.goBack()}>
+        <SafeAreaView style={[tw`justify-center items-center`]}>
+          <Text style={[styles.email]} numberOfLines={1}>
+            Email verification
+          </Text>
+        </SafeAreaView>
+        <SafeAreaView style={styles.frame1}>
+          <View style={[tw`flex-row justify-between items-center`, styles.emailEdit]}>
+            <View>
+              <Text style={[styles.emailInput]}>{email ? email : null}</Text>
+            </View>
+            <View>
+              <Button style={styles.edit} mode="text" labelStyle={styles.editBtn} onPress={() => navigation.goBack()}>
                 Edit
               </Button>
+            </View>
           </View>
-          
-        </View>
-      </SafeAreaView>
-      <View style={[tw`flex-col justify-center`,styles.frame]}>
-        <View style={[styles.name, styles.nameFlexBox]}>
-          <TextInput style={styles.label} numberOfLines={1}  value={otp} onChangeText={handleOtp} placeholder="Enter OTP (6-digit)" >
-           
-          </TextInput>
-        </View>
-        <View style={[tw`mt-4`]}>
-            { errorOtp ?
-          <Animatable.View animation="fadeInLeft" duration={500}>
+        </SafeAreaView>
+        <View style={[tw`flex-col justify-center`, styles.frame]}>
+          <View style={[styles.name, styles.nameFlexBox]}>
+            <TextInput 
+              style={styles.label} 
+              numberOfLines={1}  
+              value={otp} 
+              onChangeText={handleOtp} 
+              placeholder="Enter OTP (6-digit)" 
+            />
+          </View>
+          <View style={[tw`mt-4`]}>
+            {errorOtp ? (
+              <Animatable.View animation="fadeInLeft" duration={500}>
                 <Text style={styles.errorMsg}>{errorOtp}.</Text>
-                </Animatable.View>
-                : null
-          }
+              </Animatable.View>
+            ) : null}
+          </View>
         </View>
+        <Button
+          style={[styles.button, styles.nameFlexBox]}
+          mode="contained"
+          labelStyle={styles.buttonBtn}
+          onPress={() => ConfirmationHandler()}
+          contentStyle={styles.buttonBtn1}
+        >
+          Submit
+        </Button>
       </View>
-      
-    
-      <Button
-        style={[styles.button, styles.nameFlexBox]}
-        mode="contained"
-        labelStyle={styles.buttonBtn}
-        onPress={() => ConfirmationHandler()}
-        contentStyle={styles.buttonBtn1}
-      >
-        Submit
-      </Button>
     </View>
-    </View>
-
   );
 };
 
@@ -146,8 +167,6 @@ const styles = StyleSheet.create({
   buttonBtn: {
     fontSize: 14,
     fontWeight: "500",
-    fontFamily: "Roboto-Medium",
-
   },
   buttonBtn1: {
     backgroundColor: "#000",
@@ -161,7 +180,6 @@ const styles = StyleSheet.create({
   editBtn: {
     color: "rgba(68, 0, 255, 0.84)",
     fontSize: 14,
-    fontFamily: "Inter-Regular",
   },
   nameFlexBox: {
     alignItems: "center",
@@ -170,10 +188,8 @@ const styles = StyleSheet.create({
     color: Color.graysBlack,
     textAlign: "left",
     top: 0,
-    //position: "absolute",
   },
   frame3Position: {
-
     position: "absolute",
   },
   button: {
@@ -191,14 +207,11 @@ const styles = StyleSheet.create({
   label: {
     color: Color.colorGray,
     textAlign: "left",
-    fontFamily: FontFamily.interRegular,
     lineHeight: 20,
     fontSize: FontSize.size_sm,
     overflow: "hidden",
   },
   name: {
-    //marginLeft: -171,
-    //left: "50%",
     borderRadius: Border.br_5xs,
     borderStyle: "solid",
     borderColor: Color.colorGainsboro_200,
@@ -212,48 +225,35 @@ const styles = StyleSheet.create({
     backgroundColor: Color.schemesOnPrimary,
   },
   frame: {
-    //top: 404,
-    //left: 44,
     width: '100%',
     marginVertical: 16,
-    
-    //height: 40,
-    //position: "absolute",
     overflow: "hidden",
   },
   edit: {
-    //left: 283,
     top: 0,
-    //position: "absolute",
   },
   emailInput: {
     left: 0,
-    fontFamily: FontFamily.interRegular,
     lineHeight: 20,
     fontSize: FontSize.size_sm,
     color: Color.graysBlack,
   },
   emailEdit: {
-   
     width: '100%',
-    //height: 20,
     left: 0,
     top: 0,
-    //position: "absolute",
   },
   frame1: {
     width: '100%',
     display: "flex",
     justifyContent: "center",
     alignItems: "center",
-    //position: "absolute",
     overflow: "hidden",
   },
   email: {
     fontSize: 25,
     lineHeight: 35,
     fontWeight: "600",
-    fontFamily: FontFamily.interSemiBold,
     height: 40,
     overflow: "hidden",
   },
@@ -276,7 +276,6 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
   emailverification: {
-    //flex: 1,
     width: "100%",
     height: 932,
     overflow: "hidden",

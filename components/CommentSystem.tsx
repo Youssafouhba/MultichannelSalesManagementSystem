@@ -12,6 +12,7 @@ import LoginRequiredAlert from "@/components/LoginRequiredAlert"
 import StarRating from './StarRating';
 import { useAppData } from './AppDataProvider';
 import { Color } from '@/GlobalStyles';
+import config from './config';
 
 const CommentSystem: React.FC<{ Id: string }> = ({ Id }) => {
   const { state, dispatch } = useAppContext();
@@ -35,7 +36,7 @@ const CommentSystem: React.FC<{ Id: string }> = ({ Id }) => {
 
   const fetchComments = async (productId: string) => {
     try {
-      const response = await axios.get(`${state.API_BASE_URL}/Comments/${productId}`);
+      const response = await axios.get(`${config.API_BASE_URL}/Comments/${productId}`);
       const fetchedComments: CommentItem[] = response.data;
       const filteredComments = fetchedComments.filter(comment => comment.first === true);
       const sortedComments = filteredComments.sort((a, b) => 
@@ -63,7 +64,7 @@ const CommentSystem: React.FC<{ Id: string }> = ({ Id }) => {
         rating: newCommentRating
       };
       try {
-        const endpoint = `${state.API_BASE_URL}/Comments/${jwtDecode(token).userid}/${Id}/0`;
+        const endpoint = `${config.API_BASE_URL}/Comments/${jwtDecode(token).userid}/${Id}/0`;
         const response = await axios.post(endpoint, comment, {
           headers: {
             Authorization: `Bearer ${token}`

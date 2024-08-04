@@ -1,73 +1,58 @@
-import React, { useEffect, useState, useMemo } from "react";
-import { View, Text, Pressable, StyleSheet, FlatList, Dimensions, ScrollView, TouchableOpacity, SafeAreaView, useWindowDimensions } from "react-native";
+import React, { useEffect, useState, useMemo, useCallback } from "react";
+import { View, Text, Pressable, StyleSheet, FlatList, Dimensions, ScrollView, TouchableOpacity, SafeAreaView, useWindowDimensions, TextInput } from "react-native";
 import { Image } from "expo-image";
-import axios from "axios";
 import tw from 'tailwind-react-native-classnames';
-import { CommentItem, Product } from "@/constants/Classes";
-import GroupComponent from "@/components/GroupComponent";
 import CeilingCalculator from "./CeillingCalculator";
-import { Color } from "@/GlobalStyles";
-import { getStyles } from "@/GlobalStyles";
+import { Color, Padding } from "@/GlobalStyles";
+import { groupecomponentstyles,headerstyles } from "@/GlobalStyles";
 import StarRating from "@/components/StarRating";
 import { useRouter } from 'expo-router';
 import LoadingAnimation from "@/components/LoadingAnimation";
 import { useAppContext } from "@/components/AppContext";
-import {sessionManager} from "@/components/sessionManager"
-import QuatreRectangles from "@/components/QuatreCarres";
-import { Item } from "react-native-paper/lib/typescript/components/Drawer/Drawer";
 import { useAppData } from "@/components/AppDataProvider";
-const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
+import { Ionicons } from "@expo/vector-icons";
+import { Product } from "@/constants/Classes";
+import SearchInput from "@/components/SearchInput";
+import { debounce } from "lodash";
 
 
 
 export default function ProductsService() {
   const { width, height } = useWindowDimensions();
+  const [selectedLabel, setSelectedLabel] = useState<string | null>("Best Seller");
+  const { BestProducts,NewProducts,data,user,token} = useAppData();
   const rectangleWidth = width / 2 - 15; // 15 est la marge entre les rectangles
   const rectangleHeight =(width/height) > 0.5 ? height /4+4:height *(width/height)-124; // Ajustez cette valeur selon vos besoi28
   const imgheight = (width/height) > 0.5 ? '55%': '62%';
   const [dimensions, setDimensions] = useState(Dimensions.get('window'));
   const { state, dispatch } = useAppContext();
   const router = useRouter();
+  const navigation = useRouter();
+  const [sug,setsug] = useState<boolean>(true)
   const [isLoading, setIsLoading] = useState(true);
   const [category, setCategory] = useState("all");
   const [products, setProducts] = useState<Product[] | undefined>([]);
   const [productRatings, setProductRatings] = useState<{[key: number]: number} | undefined>({});
   const [filteredProducts, setFilteredProducts] = useState<Product[] | undefined>([]);
-  const { data} = useAppData();
-  var cartItems = state.cartItems || {};
-  var isLoggedIn = state.JWT_TOKEN !=='';
-  var token = state.JWT_TOKEN;
+  const styles = useMemo(() => createStyles(dimensions.width, dimensions.height), [dimensions]);
+  const [inputsearch,setInputSearch] = useState<string>()
+  const [isLoggedIn,setIsLoggedIn] = useState<boolean>(false);
+ 
   useEffect(() => {
     const subscription = Dimensions.addEventListener('change', ({ window }) => {
       setDimensions(window);
     });
     return () => subscription?.remove();
   }, []);
-  
-  const numColumns = dimensions.width > 600 ? 3 : 2;
 
-
-
-  
-  const fetchProductRating = async (productId: number) => {
-    try {
-      const response = await axios.get(`${state.API_BASE_URL}/Comments/${productId}`);
-      const fetchedComments: CommentItem[] = response.data;
-      const totalRating = fetchedComments.reduce((sum, item) => sum + item.rating, 0);
-      const averageRating = fetchedComments.length > 0 ? totalRating / fetchedComments.length : 0;
-      return averageRating.toFixed(1);
-    } catch (error) {
-      console.error(`Error fetching rating for product ${productId}:`, error);
-      return 0;
-    }
-  };
-
+  useEffect(()=>{
+    setIsLoading(true)
+  },[state.JWT_TOKEN])
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         setProducts(data?.products);
-        setFilteredProducts(data?.products)
         state.products = data?.products;
         console.log(data?.ratings[5])
         setProductRatings(data?.ratings);
@@ -82,50 +67,71 @@ export default function ProductsService() {
   }, []);
 
 
-  const isNew = (postedDate: string | Date): boolean => {
-    const now = new Date();
-    const posted = new Date(postedDate);
-    const diffInDays = (now.getTime() - posted.getTime()) / (1000 * 3600 * 24);
-    return diffInDays <= 7;
-  }
-
-  const styles = useMemo(() => createStyles(dimensions.width, dimensions.height), [dimensions]);
-
+  useEffect(()=>{
+    if(products.length > 0 ){
+      switch (selectedLabel) {
+        case "New designs":
+          setsug(true)
+          setFilteredProducts(NewProducts);
+          break;
+        case "Best Seller":
+          setsug(true)
+          setFilteredProducts(BestProducts)
+          break
+        default:
+          break;
+      }
+    }
+  },[products, selectedLabel, NewProducts, BestProducts])
+  const navigateAfter = () => {
+    let targetRoute = "/";
+    // Check if the target route is different from the current route
+    if (targetRoute !== navigation.pathname) {
+      if (targetRoute.startsWith('/')) {
+        router.push(targetRoute);
+      } else {
+        navigation.navigate(targetRoute);
+      }
+    } else {
+      // If it's the same route, you might want to refresh the page or show a message
+      console.log("Already on the target page");
+    }
+  };
 
   const renderProduct = ({ item }: { item: Product }) => (
-    <View style={[{width: rectangleWidth,height: rectangleHeight},styles.productWrapper, category === "New designs" && styles.fullWidthProduct]}>
+    <View style={[{width: rectangleWidth,height: rectangleHeight},styles.productWrapper, selectedLabel === "New designs" && styles.fullWidthProduct]}>
       <Pressable 
-        style={[styles.productInnerContainer, category === "New designs" && styles.fullWidthInnerContainer]}
+        style={[styles.productInnerContainer, selectedLabel === "New designs" && styles.fullWidthInnerContainer]}
         onPress={() => { router.push(`/ProductDetails?id=${item.id}`)}}
       >
         <Image
           contentFit="cover"
-          style={[styles.productImage, category === "New designs" && styles.fullWidthImage]}
+          style={[styles.productImage, selectedLabel === "New designs" && styles.fullWidthImage]}
           source={{ uri: item.imageUrls[0]?.url || require("@/assets/rectangle-94.png") }}
         />
-        <View style={[styles.productDesc, category === "New designs" && styles.fullWidthDesc]}>
-          <Text style={[styles.productName, category === "New designs" && styles.fullWidthName]} numberOfLines={category === "New designs"?3:2} ellipsizeMode="tail">
+        <View style={[styles.productDesc, selectedLabel === "New designs" && styles.fullWidthDesc]}>
+          <Text style={[styles.productName, selectedLabel === "New designs" && styles.fullWidthName]} numberOfLines={category === "New designs"?3:2} ellipsizeMode="tail">
             {item.name}
           </Text>
-          <View style={[styles.infoArea, category === "New designs" &&{marginTop: 5}]}>
-            <Text style={[styles.priceText, category === "New designs" && styles.fullWidthPrice]}>
+          <View style={[styles.infoArea, selectedLabel === "New designs" &&{marginTop: 5}]}>
+            <Text style={[styles.priceText, selectedLabel === "New designs" && styles.fullWidthPrice]}>
               £ {item.price}
             </Text>
-            <Text style={[styles.stockText, category === "New designs" && styles.fullWidthStock]}>
+            <Text style={[styles.stockText, selectedLabel === "New designs" && styles.fullWidthStock]}>
               <Text style={{color: Color.colorize_gray}}>{item.quantityInStock}</Text> in stock
             </Text>
           </View>
-          <View style={[styles.badgeArea, category === "New designs" &&{marginTop: 5}]}>
-            <View style={[styles.offerBadge,category === "New designs" && { marginRight: 15,}]}>
-              <Text style={[styles.offerText, category === "New designs" && styles.fullWidthOfferText]}>Offer</Text>
+          <View style={[styles.badgeArea, selectedLabel === "New designs" &&{marginTop: 5}]}>
+            <View style={[styles.offerBadge,selectedLabel === "New designs" && { marginRight: 15,}]}>
+              <Text style={[styles.offerText, selectedLabel === "New designs" && styles.fullWidthOfferText]}>Offer</Text>
             </View>
             <StarRating rating={productRatings[parseInt(item.id)]} />
           </View>
         </View>
       </Pressable>
-      {isNew(item.postedDate) && (
+      {item.isNew && (
         <Image
-          style={[styles.newBadge, category === "New designs" && styles.fullWidthNewBadge]}
+          style={[styles.newBadge, selectedLabel === "New designs" && styles.fullWidthNewBadge]}
           source={require("../assets/badge_143875.png")}
         />
       )}
@@ -134,26 +140,28 @@ export default function ProductsService() {
 
   const renderProductList = () => (
     <View style={[styles.listContainer, tw``]}>
-    {category === "New designs"?(
+    {selectedLabel === "New designs"?(
       <FlatList
         style={{ flex: 1 }}
-        key={category}
-        data={filteredProducts} // Limiter à 4 éléments
+        key={selectedLabel}
+        data={NewProducts} // Limiter à 4 éléments
         renderItem={renderProduct}
         keyExtractor={(item) => item.id.toString()}
         numColumns={1}
+        showsVerticalScrollIndicator={false}
         scrollEnabled={true} // Désactiver le défilement
         contentContainerStyle={styles.flatListContent}
     />
     ):(
       <FlatList
         style={{ flex: 1 }}
-        key={category}
-        data={filteredProducts} // Limiter à 4 éléments
+        key={selectedLabel}
+        data={selectedLabel === "Best Seller"?BestProducts:filteredProducts} // Limiter à 4 éléments
         renderItem={renderProduct}
         keyExtractor={(item) => item.id.toString()}
         numColumns={2}
         columnWrapperStyle={styles.row}
+        showsVerticalScrollIndicator={false}
         scrollEnabled={true} // Désactiver le défilement
         contentContainerStyle={styles.flatListContent}
     />
@@ -163,22 +171,110 @@ export default function ProductsService() {
   );
 
   const filterProducts = (categoryName: string | null) => {
-    if (categoryName === "New designs") {
-      setCategory(categoryName);
-      const filtered = products.filter(product => isNew(product.postedDate));
-      setFilteredProducts(filtered);
-    } else  if (categoryName === "Ceilling Calculator")  {
-      setCategory(categoryName);
-      setFilteredProducts(products);
-    }else{
-      setCategory("all");
-      setFilteredProducts(products);
-    }
+   setSelectedLabel(categoryName)
   };
+
+  const renderCategoryButton = (label: string) => (
+    <Pressable
+      key={label}
+      onPress={() => filterProducts(label)}
+      style={({ pressed }) => [
+        tw`w-28`,
+        pressed && groupecomponentstyles.pressed
+      ]}
+    >
+      <View
+        style={[
+          groupecomponentstyles.variantneutralStatehover,
+          selectedLabel === label && groupecomponentstyles.selectedButton
+        ]}
+      >
+        <Text
+          style={[
+            groupecomponentstyles.texto,
+            selectedLabel === label && groupecomponentstyles.selectedButtonText,
+            tw`text-base font-normal text-sm`
+          ]}
+        >
+          {label}
+        </Text>
+      </View>
+    </Pressable>
+  );
+
+  const renderGroupElement = () => (
+    <View style={[tw`w-full`,{backgroundColor: Color.mainbackgroundcolor}]}>
+    <View style={[tw`flex-row justify-between items-center text-center mx-2 pl-2 pr-2`,]}>
+      <Pressable onPress={() => {setsug(true),setSelectedLabel("Best Seller")}}>
+        <Text style={[tw`text-base text-gray-400 font-normal text-lg`,sug&&{color: 'black'}]}>
+            {`Suggestions `}
+        </Text>
+      </Pressable>
+      <Pressable onPress={() => {setSelectedLabel("all"),setFilteredProducts(products),setInputSearch(''),setsug(false)}} >
+        <View style={[styles.modelightStateenabled]}>
+          <Text style={[styles.textTypo,tw`text-base text-gray-400 font-normal text-lg`,!sug&&{color: 'black'}]}>View All</Text>
+        </View>
+      </Pressable>
+    </View>
+    <View style={tw`flex-row justify-around my-2`}>
+      {renderCategoryButton("Best Seller")}
+      {renderCategoryButton("New designs")}
+      {renderCategoryButton("Ceilling Calculator")}
+    </View>
+  </View>
+  )
+
+  const debouncedSearch = useCallback(
+    debounce((key: string) => {
+      if (key.trim() === '') {
+        setFilteredProducts(products);
+        setSelectedLabel('all');
+        setsug(true);
+      } else {
+        const filtered = products.filter(
+          (product) =>
+            product.name.toLowerCase().includes(key.toLowerCase()) ||
+            product.category.toLowerCase().includes(key.toLowerCase()) ||
+            product.price.toString().includes(key)
+        );
+        setFilteredProducts(filtered);
+        setSelectedLabel('all');
+        setsug(false);
+      }
+    }, 300),
+    [filteredProducts]
+  );
+
+  const handleInputChange = (text: string) => {
+    setInputSearch(text);
+    debouncedSearch(text);
+  };
+
+  const searchContainer = useMemo(() => (
+    <View style={tw`h-16 w-full items-center overflow-hidden bg-white`}>
+      <View style={tw`flex-row items-center px-4 py-2 bg-gray-100 rounded-full`}>
+        <TextInput
+          placeholder="Search..."
+          value={inputsearch}
+          onChangeText={handleInputChange}
+          style={tw`flex-1 text-base`}
+          numberOfLines={1}
+        />
+        <Ionicons name="search" size={25} color="gray" style={tw`ml-3`} />
+      </View>
+      {isLoggedIn && (
+      <View style={[tw``,{right: '35%'}]}>
+        <Text style={tw`text-blue-400 text-sm`}>Hi Youssef</Text>
+      </View>
+      )}
+       
+    </View>
+  ), [inputsearch, user, handleInputChange]);
 
   return (
     <View style={styles.container}>
-      <GroupComponent onCategorySelect={filterProducts} />
+      {searchContainer}
+      {renderGroupElement()}
       {isLoading? (
         <ScrollView contentContainerStyle={{alignItems: 'center',top: '40%'}} style={[styles.scrollView,{}]}>
           <LoadingAnimation size={80} color="blue" />
@@ -186,7 +282,7 @@ export default function ProductsService() {
         </ScrollView>):
       (
       <SafeAreaView style={styles.scrollView}>
-      {category === "Ceilling Calculator" ? (
+      {selectedLabel === "Ceilling Calculator" ? (
         <CeilingCalculator />
       ) : filteredProducts.length === 0 ? (
         <View style={styles.noProductsContainer}>
@@ -242,7 +338,7 @@ export default function ProductsService() {
     },
     productInnerContainer: {
       flex: 1,
-      backgroundColor: '#fff',
+      backgroundColor: Color.colorWhitesmoke,
       borderRadius: 8,
       elevation: 3,
       shadowColor: 'gray',
@@ -254,6 +350,7 @@ export default function ProductsService() {
       height: '100%',
       width: '100%',
       flexDirection: 'row',
+      backgroundColor: Color.colorWhitesmoke,
     },
     productImage: {
       width: '100%',
@@ -348,6 +445,18 @@ export default function ProductsService() {
     noProductsText: {
       fontSize: 18,
       color: Color.colorNavy,
+    },
+    textTypo: {
+      textAlign: "left",
+      lineHeight: 18,
+    },
+    text: {
+      marginLeft: 3,
+    },
+    modelightStateenabled: {
+      flexDirection: "row",
+      paddingHorizontal: 0,
+      paddingVertical: Padding.p_smi,
     },
   })};
 }
