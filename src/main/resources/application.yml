@@ -1,0 +1,26 @@
+spring:
+    application:
+        name: messaging-service
+    data:
+        mongodb:
+            username: alkhspamer
+            password: TestPassword
+            uri: mongodb+srv://alkhspamer:TestPassword@cluster0.9zmc2mh.mongodb.net/
+            database: chat_app
+    jackson:
+        deserialization:
+            FAIL_ON_UNKNOWN_PROPERTIES: false
+        serialization:
+            write-dates-as-timestamps: false
+
+
+server:
+    port: 10000
+eureka:
+    client:
+        serviceUrl:
+            defaultZone: https://discoveryservice-1forrender.onrender.com/eureka/
+
+jwt:
+    secret: 31bR29G5KVtBdCIspV11aPM7PnaOq8js
+
