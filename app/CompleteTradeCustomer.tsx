@@ -5,10 +5,11 @@ import { CheckBox } from "@rneui/themed";
 import axios from "axios";
 import { Image } from "expo-image";
 import React, { useRef, useState } from "react";
-import { KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { Alert, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import config from "@/components/config";
 import tw from "tailwind-react-native-classnames";
 import { ScrollView } from "react-native";
+import { useAppData } from "@/components/AppDataProvider";
 
 interface RouteParams {
     payload: any; // Replace 'any' with the actual type of payload
@@ -17,183 +18,194 @@ interface RouteParams {
 
 
 const CompleteTradeCustomer = () => {
-    const [checkSquarechecked, setCheckSquarechecked] = useState(false);
-    const [selectedProduct, setSelectedProduct] = useState("");
-    const [additionalInformation, setadditionalInformation] = useState("");
-    const [howDidYouHearAboutUs, sethowDidYouHearAboutUs] = useState("");
-    const [annualSalesVolume, setAnnualSalesVolume] = useState("");
-    const [vatNumber, setVatNumber] = useState("");
-    const [businessRegistrationNumber, setBusinessRegistrationNumber] = useState("");
-  
-    const scrollViewRef = useRef(null);
+  const { token } = useAppData();
+  const [formData, setFormData] = useState({
+      checkSquarechecked: false,
+      selectedProduct: "",
+      additionalInformation: "",
+      howDidYouHearAboutUs: "",
+      annualSalesVolume: "",
+      vatNumber: "",
+      businessRegistrationNumber: "",
+  });
+  const [errors, setErrors] = useState({});
 
-    
-    const route = useRoute();
-    const payload = (route.params as RouteParams)?.payload;
-  
-    const handleadditionalInformationChange = (text: string) => setadditionalInformation(text);
-    const handlehowDidYouHearAboutUsChange = (text: string) => sethowDidYouHearAboutUs(text);
-    const handleAnnualSalesVolumeChange = (text: string) => setAnnualSalesVolume(text);
-    const handleVatNumberChange = (text: string) => setVatNumber(text);
-    const handleBusinessRegistrationNumberChange = (text: string) =>
-      setBusinessRegistrationNumber(text);
-  
-    const handleSubmit = async () => {
-        if (checkSquarechecked && payload) {
-      const updatedPayload = {
-        ...payload,
-        additionalInformation:additionalInformation,
-        howDidYouHearAboutUs:howDidYouHearAboutUs,
-        annualSalesVolume:annualSalesVolume,
-        vatNumber:vatNumber,
-        businessRegistrationNumber:businessRegistrationNumber,
-        "userId":3
-      };
+  const route = useRoute();
+  const payload = (route.params as RouteParams)?.payload;
 
-      console.log(updatedPayload);
-  
-
-      try {
-        const response = await axios.post(`${config.API_BASE_URL}/api/client/request-trade-customer`, updatedPayload, {
-          headers: {
-            "Content-Type": "application/json",
-                Authorization: `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIzIiwiaWF0IjoxNzIyMjE0MDA0LCJ1c2VyaWQiOjMsImVtYWlsIjoiYmF5bG9yLmFzbGFhbUBmbG9vZG91dHMuY29tIiwicm9sZSI6WyJjbGllbnQiXX0._aPIjV1jMStJaPofgo0pFN6aOGn30RM0EmAM9Sg26GA`
-              
-          },
-        });
-        if(response.data==="Trade customer request submitted successfully."){
-            console.log("navigate to Another Page");
-
-        };
-      } catch (error) {
-        console.error(error);
+  const handleInputChange = (name: string, value: string | boolean) => {
+      setFormData(prevData => ({ ...prevData, [name]: value }));
+      // Clear error when user starts typing
+      if (errors[name]) {
+          setErrors(prevErrors => ({ ...prevErrors, [name]: null }));
       }
-    }
-      else{
-        console.log("Please check the box to continue");
+  };
+    const validateForm = () => {
+      let newErrors = {};
+      if (!formData.checkSquarechecked) {
+          newErrors['checkSquarechecked'] = 'Please agree to the declaration';
       }
-      // You can now use updatedPayload to send data to your backend or perform other actions
-    };
+      if (!formData.selectedProduct) {
+          newErrors['selectedProduct'] = 'Please select a product of interest';
+      }
+      if (!formData.annualSalesVolume) {
+          newErrors['annualSalesVolume'] = 'Please enter your annual sales volume';
+      }
+      setErrors(newErrors);
+      return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = async () => {
+      if (validateForm()) {
+          const updatedPayload = {
+              ...payload,
+              ...formData,
+              userId: 3
+          };
+
+          try {
+            console.log(updatedPayload)
+              const response = await axios.post(
+                  `${config.API_BASE_URL}/api/client/request-trade-customer`,
+                  updatedPayload,
+                  {
+                      headers: {
+                          "Content-Type": "application/json",
+                          Authorization: `Bearer ${token}`
+                      },
+                  }
+              );
+              if (response.data === "Trade customer request submitted successfully.") {
+                  Alert.alert("Success", "Your trade customer request has been submitted successfully.");
+              }
+          } catch (error) {
+              console.error(error);
+              Alert.alert("Error", "There was an error submitting your request. Please try again.");
+          }
+      } else {
+          Alert.alert("Form Error", "Please fill in all required fields and agree to the declaration.");
+      }
+  };
     return (
-        <KeyboardAvoidingView 
-            behavior={Platform.OS === "ios" ? "padding" : "height"}
-            style={{ flex: 1 }}
-        >
-            <ScrollView
-                ref={scrollViewRef}
-                style={[tw`py-4`, styles.CompleteTradeCustomer2]}
-                contentContainerStyle={tw`pb-8`}
-            >
-                <View style={[tw`flex-col px-4 py-4`]}>
-                    {/* Business Details Section */}
-                    <View style={[tw`flex-row items-center mb-4`]}>
-                        <Image
-                            style={styles.image10Icon}
-                            contentFit="cover"
-                            source={require("@/assets/image-10.png")}
-                        />
-                        <Text style={styles.businessDetails}>Business Details</Text>
-                    </View>
+      <KeyboardAvoidingView 
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          style={{ flex: 1 }}
+      >
+          <ScrollView
+              style={[tw`py-4`, styles.CompleteTradeCustomer2]}
+              contentContainerStyle={tw`pb-8`}
+          >
+              <View style={[tw`flex-col px-4 py-4`]}>
+                  {/* Business Details Section */}
+                  <View style={[tw`flex-row items-center mb-4`]}>
+                      <Image
+                          style={styles.image10Icon}
+                          contentFit="cover"
+                          source={require("@/assets/image-10.png")}
+                      />
+                      <Text style={styles.businessDetails}>Business Details</Text>
+                  </View>
 
-                    <TextInput
-                        style={[styles.inputField, styles.inputTypo]}
-                        placeholder="VAT Number (if applicable):"
-                        placeholderTextColor="#b3b3b3"
-                        onChangeText={handleVatNumberChange}
-                        returnKeyType="next"
-                    />
-                    <TextInput
-                        style={[styles.inputField, styles.inputTypo]}
-                        placeholder="Business Registration Number (if applicable)"
-                        placeholderTextColor="#b3b3b3"
-                        onChangeText={handleBusinessRegistrationNumberChange}
-                        returnKeyType="next"
-                    />
+                  <TextInput
+                      style={[styles.inputField, styles.inputTypo]}
+                      placeholder="VAT Number (if applicable):"
+                      placeholderTextColor="#b3b3b3"
+                      onChangeText={(text) => handleInputChange('vatNumber', text)}
+                      value={formData.vatNumber}
+                  />
+                  <TextInput
+                      style={[styles.inputField, styles.inputTypo]}
+                      placeholder="Business Registration Number (if applicable)"
+                      placeholderTextColor="#b3b3b3"
+                      onChangeText={(text) => handleInputChange('businessRegistrationNumber', text)}
+                      value={formData.businessRegistrationNumber}
+                  />
 
-                    <Picker
-                        selectedValue={selectedProduct}
-                        style={[styles.selectField, styles.inputTypo]}
-                        onValueChange={(itemValue) => setSelectedProduct(itemValue)}
-                    >
-                        <Picker.Item label="Products of Interest" value="" />
-                        <Picker.Item label="LED Lighting" value="LED Lighting" />
-                        <Picker.Item
-                            label="Suspended ceiling & Aluminium grid"
-                            value="Suspended ceiling & Aluminium grid"
-                        />
-                        <Picker.Item label="Both" value="Both" />
-                    </Picker>
+                  <Picker
+                      selectedValue={formData.selectedProduct}
+                      style={[styles.selectField, styles.inputTypo]}
+                      onValueChange={(itemValue) => handleInputChange('selectedProduct', itemValue)}
+                  >
+                      <Picker.Item label="Products of Interest" value="" />
+                      <Picker.Item label="LED Lighting" value="LED Lighting" />
+                      <Picker.Item label="Suspended ceiling & Aluminium grid" value="Suspended ceiling & Aluminium grid" />
+                      <Picker.Item label="Both" value="Both" />
+                  </Picker>
+                  {errors.selectedProduct && <Text style={styles.errorText}>{errors.selectedProduct}</Text>}
 
-                    {/* Sales Information Section */}
-                    <View style={[tw`flex-row items-center mb-4`]}>
-                        <Image
-                            style={styles.image11Icon}
-                            contentFit="cover"
-                            source={require("@/assets/image-11.png")}
-                        />
-                        <Text style={styles.salesInformation}>Sales Information</Text>
-                    </View>
+                  {/* Sales Information Section */}
+                  <View style={[tw`flex-row items-center mb-4 mt-4`]}>
+                      <Image
+                          style={styles.image11Icon}
+                          contentFit="cover"
+                          source={require("@/assets/image-11.png")}
+                      />
+                      <Text style={styles.salesInformation}>Sales Information</Text>
+                  </View>
 
-                    <TextInput
-                        style={[styles.inputField, styles.inputTypo]}
-                        placeholder="Annual Sales Volume"
-                        placeholderTextColor="#b3b3b3"
-                        onChangeText={handleAnnualSalesVolumeChange}
-                        returnKeyType="next"
-                    />
+                  <TextInput
+                      style={[styles.inputField, styles.inputTypo]}
+                      placeholder="Annual Sales Volume"
+                      placeholderTextColor="#b3b3b3"
+                      onChangeText={(text) => handleInputChange('annualSalesVolume', text)}
+                      value={formData.annualSalesVolume}
+                  />
+                  {errors.annualSalesVolume && <Text style={styles.errorText}>{errors.annualSalesVolume}</Text>}
 
-                    <View style={tw``}>
-                        <Text style={styles.label}>How did you hear about us?</Text>
-                        <TextInput
-                            style={[styles.input, styles.inputBorder]}
-                            placeholder="Please describe"
-                            onChangeText={handlehowDidYouHearAboutUsChange}
-                            returnKeyType="next"
-                        />
-                    </View>
+                  <View style={tw`mt-4`}>
+                      <Text style={styles.label}>How did you hear about us?</Text>
+                      <TextInput
+                          style={[styles.input, styles.inputBorder]}
+                          placeholder="Please describe"
+                          onChangeText={(text) => handleInputChange('howDidYouHearAboutUs', text)}
+                          value={formData.howDidYouHearAboutUs}
+                      />
+                  </View>
 
-                    <View style={tw`mt-4`}>
-                        <Text style={styles.label}>Additional Information</Text>
-                        <TextInput
-                            style={[styles.input, styles.inputBorder, { height: 100 }]}
-                            multiline
-                            numberOfLines={4}
-                            placeholder="Any other relevant information you would like us to know"
-                            placeholderTextColor="#b3b3b3"
-                            onChangeText={handleadditionalInformationChange}
-                            textAlignVertical="top"
-                        />
-                    </View>
+                  <View style={tw`mt-4`}>
+                      <Text style={styles.label}>Additional Information</Text>
+                      <TextInput
+                          style={[styles.input, styles.inputBorder, { height: 100 }]}
+                          multiline
+                          numberOfLines={4}
+                          placeholder="Any other relevant information you would like us to know"
+                          placeholderTextColor="#b3b3b3"
+                          onChangeText={(text) => handleInputChange('additionalInformation', text)}
+                          value={formData.additionalInformation}
+                          textAlignVertical="top"
+                      />
+                  </View>
 
-                    {/* Declaration Section */}
-                    <View style={[tw`mt-6 -ml-2`, styles.declaration]}>
-                        <View style={tw`flex-row items-start`}>
-                            <CheckBox
-                                checked={checkSquarechecked}
-                                onPress={() => setCheckSquarechecked(!checkSquarechecked)}
-                                checkedColor="#000"
-                                containerStyle={styles.checkSquareLayout}
-                            />
-                            <Text style={[tw`flex-1`, styles.declarationText]}>
-                                <Text style={styles.declaration1}>Declaration</Text>
-                                <Text style={styles.text}>{` : `}</Text>
-                                <Text style={styles.iweCertifyThat}>
-                                    I/we certify that the information provided above is true and
-                                    accurate to the best of my/our knowledge. I/we agree to abide
-                                    by Wholesale Ltd.'s terms and conditions for trade customers
-                                </Text>
-                                <Text style={styles.text}>{`.`}</Text>
-                            </Text>
-                        </View>
-                    </View>
+                  {/* Declaration Section */}
+                  <View style={[tw`mt-6 -ml-2`, styles.declaration]}>
+                      <View style={tw`flex-row items-start`}>
+                          <CheckBox
+                              checked={formData.checkSquarechecked}
+                              onPress={() => handleInputChange('checkSquarechecked', !formData.checkSquarechecked)}
+                              checkedColor="#000"
+                              containerStyle={styles.checkSquareLayout}
+                          />
+                          <Text style={[tw`flex-1`, styles.declarationText]}>
+                              <Text style={styles.declaration1}>Declaration</Text>
+                              <Text style={styles.text}>{` : `}</Text>
+                              <Text style={styles.iweCertifyThat}>
+                                  I/we certify that the information provided above is true and
+                                  accurate to the best of my/our knowledge. I/we agree to abide
+                                  by Wholesale Ltd.'s terms and conditions for trade customers
+                              </Text>
+                              <Text style={styles.text}>{`.`}</Text>
+                          </Text>
+                      </View>
+                  </View>
+                  {errors.checkSquarechecked && <Text style={styles.errorText}>{errors.checkSquarechecked}</Text>}
 
-                    <Pressable style={[tw`-mt-4`, styles.buttonDanger]} onPress={handleSubmit}>
-                        <Text style={styles.button}>SEND</Text>
-                    </Pressable>
-                </View>
-            </ScrollView>
-        </KeyboardAvoidingView>
-    );
+                  <Pressable style={[tw`mt-4`, styles.buttonDanger]} onPress={handleSubmit}>
+                      <Text style={styles.button}>SEND</Text>
+                  </Pressable>
+              </View>
+          </ScrollView>
+      </KeyboardAvoidingView>
+  );
 };
   
 
@@ -202,6 +214,11 @@ const styles = StyleSheet.create({
     backgroundColor: "transparent",
     padding: 0,
   },
+  errorText: {
+    color: 'red',
+    fontSize: 12,
+    marginTop: 5,
+},
   iconLayout: {
     display: "none",
     height: 16,

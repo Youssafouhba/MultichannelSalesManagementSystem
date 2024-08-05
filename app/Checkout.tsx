@@ -18,6 +18,7 @@ import CustomAlert from "@/components/CustomAlert";
 import { useFocusEffect } from "@react-navigation/native";
 import AnimatedCustomAlert from "@/components/AnimatedCustomAlert";
 import RatingFeedbackModal from "@/components/RatingFeedbackModal"
+import { useAppData } from "@/components/AppDataProvider";
 const Checkout = () => {
   const [date, setDate] = useState(new Date());
   const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
@@ -25,6 +26,7 @@ const Checkout = () => {
   const [CashChecked, setCashChecked] = useState(false);
   const [adresse,setAdresse] = useState<string>('')
   const {state, dispatch } = useAppContext();
+  const {fetchOrders,fetchdt,error} = useAppData();
   const [sumCheckout, setSumCheckout] = useState(0);
   const [isRatingModalVisible,setisRatingModalVisible] = useState<boolean>(false)
   const [alertVisible, setAlertVisible] = useState(false);
@@ -73,8 +75,10 @@ const Checkout = () => {
     setCashChecked(true);
   };
 
-  const handleRatingSubmit = () => {
+  const handleRatingSubmit = async () => {
     setisRatingModalVisible(false)
+    fetchdt()
+    await fetchOrders()
     router.navigate("/Orders?id=Cart")
   }
 
@@ -126,8 +130,9 @@ const Checkout = () => {
         Products.map((product: Product) => {
           order.orderItems.push({id: '',quantity: cartItems[product.id]?.quantity,sub_total: cartItems[product.id]?.quantity*product.price,product: product})
         })
+
       if(id=='r'){
-        
+        console.log(order)
         const response = await apiHandler(`/Order/reorder/${jwtDecode(token).userid}`,order,token).then(
           res => {
             setOrderedProducts(cartItems)
@@ -135,7 +140,6 @@ const Checkout = () => {
            
           })
         }else{
-          console.log(order)
           const response = await apiHandler(`/Order/${jwtDecode(token).userid}`,order,token).then(
             res => {
               setAlertVisible(true);
@@ -184,7 +188,7 @@ const Checkout = () => {
 
       return (
         <SafeAreaView style={styles.container}>
-          <SafeAreaView style={[styles.scrollViewContent,{flex: 1}]}>
+          <ScrollView style={[styles.scrollViewContent,{flex: 1}]}>
           <AnimatedCustomAlert
               visible={alertVisible}
               title="Order Complete"
@@ -282,7 +286,7 @@ const Checkout = () => {
                 </Pressable>
               </View>
             </View>
-          </SafeAreaView>
+          </ScrollView>
         </SafeAreaView>
       );
     };

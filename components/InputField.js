@@ -12,18 +12,20 @@ const InputField = ({
   hasError = false,
   hasDescription = false,
   propTop,
+  color,
 }) => {
   const inputFieldStyle = useMemo(() => {
     return {
       ...getStyleValue("top", propTop),
+      ...getStyleValue("color", color),
     };
   }, [propTop]);
-
+//b3b3b3
   return (
     <TextInput
       style={[styles.inputField, inputFieldStyle]}
       placeholder={inputFieldPlaceholder}
-      placeholderTextColor="#b3b3b3"
+      placeholderTextColor={color}
     />
   );
 };

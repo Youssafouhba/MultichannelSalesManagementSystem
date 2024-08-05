@@ -4,19 +4,19 @@ import { Image } from "expo-image";
 import InputField from "../components/InputField";
 import { FontFamily, FontSize, Color, StyleVariable } from "../GlobalStyles";
 import tw from "tailwind-react-native-classnames";
-import { router } from "expo-router";
+import { router, useNavigation } from "expo-router";
 import { useAppContext } from "@/components/AppContext";
 import LogInRequiredPage from "@/components/LogInRequiredPage";
+import { useAppData } from "@/components/AppDataProvider";
+import { Alert } from "react-native";
+
 
 const OPTIONS = ["Sole Trader", "Partnership", "Limited Company", "Other"];
 
-const Inputoptions = ({ onSelectOption }) => {
-
-  const [selectedOption, setSelectedOption] = useState("");
+const Inputoptions = ({ onSelectOption, selectedOption }) => {
   const [isDropdownVisible, setDropdownVisible] = useState(false);
   const [dropdownPosition, setDropdownPosition] = useState({ top: 48, bottom: 'auto' });
   const selectRef = useRef(null);
-
 
   const toggleDropdown = useCallback(() => {
     if (!isDropdownVisible) {
@@ -35,9 +35,8 @@ const Inputoptions = ({ onSelectOption }) => {
   }, [isDropdownVisible]);
 
   const handleOptionSelect = useCallback((option) => {
-    setSelectedOption(option);
-    setDropdownVisible(false);
     onSelectOption(option);
+    setDropdownVisible(false);
   }, [onSelectOption]);
 
   return (
@@ -66,14 +65,91 @@ const Inputoptions = ({ onSelectOption }) => {
   );
 };
 
+interface RouteParams {
+  payload: any; // Replace 'any' with the actual type of payload
+}
+
+
 const TradeCustomer = () => {
-  const {state} = useAppContext()
-  const [selectedBusinessType, setSelectedBusinessType] = useState("");
-  var isLoggedIn = state.JWT_TOKEN !=='';
-  var token = state.JWT_TOKEN;
+  const { token } = useAppData();
+  const navigation = useNavigation<any>();
+  const { state } = useAppContext()
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const payload = (navigation.params as RouteParams)?.payload;
+
+  const [formData, setFormData] = useState({
+    companyName: "",
+    contactPerson: "",
+    businessAddress: "",
+    city: "",
+    country: "",
+    postalCode: "",
+    phoneNumber: "",
+    emailAddress: "",
+    website: "",
+    typeOfBusiness: "",
+  });
+
+  var isLoggedIn = state.JWT_TOKEN !== '';
+
+  const handleNextButton = (): void => {
+    if (validateForm()) {
+      const updatedPayload = {
+        ...payload,
+        ...formData,
+        userId: 3
+      };
+      console.log(updatedPayload);
+      // Navigate to CompleteTradeCustomer screen
+      navigation.navigate("CompleteTradeCustomer", { updatedPayload });
+    } else {
+      Alert.alert("Error", "Please fill in all required fields.");
+    }
+  };
+
+  const handleInputChange = (name: string, value: string | boolean) => {
+    setFormData(prevData => ({ ...prevData, [name]: value }));
+    // Clear error when user starts typing
+    if (errors[name]) {
+      setErrors(prevErrors => ({ ...prevErrors, [name]: '' }));
+    }
+  };
+
+  const inputFields = [
+    { name: "companyName", label: "Company Name (if applicable)", required: true },
+    { name: "contactPerson", label: "Contact Person", required: true },
+    { name: "businessAddress", label: "Business Address", required: true },
+    { name: "city", label: "City", required: true },
+    { name: "country", label: "Country", required: true },
+    { name: "postalCode", label: "Postal Code", required: true },
+    { name: "phoneNumber", label: "Phone Number", required: true },
+    { name: "emailAddress", label: "Email Address", required: true },
+    { name: "website", label: "Website (if applicable)", required: false },
+  ];
+
+  const validateForm = () => {
+    let newErrors: Record<string, string> = {};
+    let isValid = true;
+
+    inputFields.forEach(field => {
+      if (field.required && !formData[field.name]) {
+        newErrors[field.name] = `${field.label} is required`;
+        isValid = false;
+      }
+    });
+
+    if (!formData.typeOfBusiness) {
+      newErrors.typeOfBusiness = "Please select a business type";
+      isValid = false;
+    }
+
+    setErrors(newErrors);
+    return isValid;
+  };
+
   return (
     <View style={[tw`items-center py-4`, styles.container]}>
-      {isLoggedIn?(
+      {isLoggedIn ? (
         <View>
           <Text style={styles.title}>Open a trade account (minimum buy £500)</Text>
           <View style={tw`flex-row justify-start items-center mt-4`}>
@@ -86,17 +162,31 @@ const TradeCustomer = () => {
               Company/Individual Information :
             </Text>
           </View>
-          {[
-            "Company Name (if applicable )", "Contact Person", "Business Address", "City",
-            "Country", "Postal Code", "Phone Number", "Email Address", "Website (if applicable)"
-          ].map((placeholder, index) => (
-            <InputField key={placeholder} inputFieldPlaceholder={placeholder} propTop={30 + index * 20} />
+          {inputFields.map((field, index) => (
+            <View key={field.name}>
+              <InputField
+                inputFieldPlaceholder={field.label}
+                propTop={30 + index * 20}
+                color={errors[field.name] ? 'red' : "#b3b3b3"}
+                onChangeText={(text) => handleInputChange(field.name, text)}
+                value={formData[field.name]}
+              />
+            </View>
           ))}
-          <Inputoptions onSelectOption={setSelectedBusinessType} />
-          {selectedBusinessType === "Other" && (
-            <InputField inputFieldPlaceholder="Please Specify" propTop={225} />
+          <Inputoptions 
+            onSelectOption={(option) => handleInputChange('typeOfBusiness', option)}
+            selectedOption={formData.typeOfBusiness}
+          />
+          {formData.typeOfBusiness === "Other" && (
+            <InputField 
+              inputFieldPlaceholder="Please Specify" 
+              propTop={225}
+              color={errors.typeOfBusiness ? 'red' : "#b3b3b3"}
+              onChangeText={(text) => handleInputChange('typeOfBusiness', text)}
+              value={formData.typeOfBusiness}
+            />
           )}
-          <Pressable onPress={() => router.navigate("/CompleteTradeCustomer")} style={styles.button}>
+          <Pressable onPress={handleNextButton} style={styles.button}>
             <Text style={styles.buttonText}>Next</Text>
             <Image
               style={styles.icon}
@@ -106,12 +196,13 @@ const TradeCustomer = () => {
             />
           </Pressable>
         </View>
-      ):(
-        <LogInRequiredPage message='Please log in to view your trade customer page' page='TradeCustomer'/>
+      ) : (
+        <LogInRequiredPage message='Please log in to view your trade customer page' page='TradeCustomer' />
       )}
     </View>
   );
 };
+
 
 const styles = StyleSheet.create({
   container: {
@@ -217,6 +308,11 @@ const styles = StyleSheet.create({
     lineHeight: 22,
     fontSize: FontSize.presetsBody2_size,
     fontFamily: FontFamily.presetsBody2,
+  },
+  errorText: {
+    color: 'red',
+    fontSize: FontSize.presetsBody2_size,
+    marginTop: 4,
   },
 });
 

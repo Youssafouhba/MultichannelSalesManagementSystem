@@ -20,7 +20,7 @@ const CommentSystem: React.FC<{ Id: string }> = ({ Id }) => {
   const [loginAlertVisible, setLoginAlertVisible] = useState<boolean>(false);
   const [newComment, setNewComment] = useState('');
   const [newCommentRating, setNewCommentRating] = useState(0);
-  const { data } = useAppData();
+  const { data,fetchdt } = useAppData();
   const ws = useRef<WebSocket | null>(null);
   const isLoggedIn = state.JWT_TOKEN !== '';
   const token = state.JWT_TOKEN;
@@ -83,6 +83,7 @@ const CommentSystem: React.FC<{ Id: string }> = ({ Id }) => {
 
         setNewComment('');
         setNewCommentRating(0);
+        fetchdt()
       } catch (error) {
         console.error('Erreur lors de l\'envoi du commentaire:', error);
         Alert.alert('Erreur', 'Échec de l\'envoi du commentaire. Veuillez réessayer.');

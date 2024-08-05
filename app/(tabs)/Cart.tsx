@@ -167,6 +167,7 @@ const Cart = () => {
         if(cartElements.length){
           router.push("/Checkout");
         }else{
+          console.log(card)
           const response = await apiHandler(`/api/Cart/${jwtDecode(token).userid}`, card, token);
           if (response.status === 200) {
             router.push("/Checkout");

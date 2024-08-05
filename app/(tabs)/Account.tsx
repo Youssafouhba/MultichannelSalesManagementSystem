@@ -9,16 +9,18 @@ import { Color, FontSize } from "@/GlobalStyles";
 import LogInRequiredPage from "@/components/LogInRequiredPage";
 import { UserDTO } from "@/constants/Classes";
 import { useAppData } from "@/components/AppDataProvider";
+import { tokens } from "react-native-paper/lib/typescript/styles/themes/v3/tokens";
 
 
 export default function Account() {
-  const { user,fetchprofile, deleteAccount,error } = useAppData();
+  const { user,token,fetchprofile, deleteAccount,error } = useAppData();
   const { state, dispatch } = useAppContext();
   const isLoggedIn = state.JWT_TOKEN !== '';
 
   React.useEffect(()=>{
     const fetchaccount = async ()=>{
       fetchprofile()
+      console.log(token)
     }
     fetchaccount()
   },[])

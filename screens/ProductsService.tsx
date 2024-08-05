@@ -20,7 +20,7 @@ import { debounce } from "lodash";
 export default function ProductsService() {
   const { width, height } = useWindowDimensions();
   const [selectedLabel, setSelectedLabel] = useState<string | null>("Best Seller");
-  const { BestProducts,NewProducts,data,user,token} = useAppData();
+  const { BestProducts,NewProducts,data,user,fetchProductRating,token} = useAppData();
   const rectangleWidth = width / 2 - 15; // 15 est la marge entre les rectangles
   const rectangleHeight =(width/height) > 0.5 ? height /4+4:height *(width/height)-124; // Ajustez cette valeur selon vos besoi28
   const imgheight = (width/height) > 0.5 ? '55%': '62%';
@@ -54,8 +54,8 @@ export default function ProductsService() {
       try {
         setProducts(data?.products);
         state.products = data?.products;
+        setProductRatings(data?.ratings)
         console.log(data?.ratings[5])
-        setProductRatings(data?.ratings);
         setIsLoading(false);
       } catch (error) {
         console.error('Error fetching products:', error);

@@ -2,9 +2,10 @@ import React, { createContext, useContext, useReducer } from 'react';
 import { Product } from "@/constants/Classes";
 import { jwtDecode } from 'jwt-decode';
 import config from './config';
+import { baseurl } from './config';
 const AppContext = createContext();
 
-const baseurl = '192.168.42.175'
+
 
 const initialState = {
   theme: 'light',
@@ -16,7 +17,7 @@ const initialState = {
   productId: 0,
   JWT_TOKEN: '',
   userId: '',
-  wsUrl: 'http://192.168.42.175:9001',
+  wsUrl: 'http://192.168.42.88:9001',
   cartItemsCount: 0,
   notificationsCount: 0,
   cartItems: {},

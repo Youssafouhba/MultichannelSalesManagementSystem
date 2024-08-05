@@ -31,9 +31,10 @@ interface AppDataContextType {
   fetchFavorites: ()=> Promise<void>;
   fetchOrders: ()=> Promise<void>;
   fetchCart: ()=> Promise<void>;
-  fetchdt: (token: string)=> void;
+  fetchdt: () => void;
   login: (tok: string) => Promise<void>;
   fetchNotification(): Promise<Notification[]>;
+  fetchProductRating: (productId: number) =>Promise<number>;
 }
 
 const AppDataContext = createContext<AppDataContextType | undefined>(undefined);
@@ -61,19 +62,20 @@ export const AppDataProvider: React.FC<AppDataProviderProps> = ({ children }) =>
   const [NewProducts, setNewProducts] = useState<Product[]>([]);
   const [BestProducts, setBestProducts] = useState<Product[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
+  const fetchProductRating = async (productId: number): Promise<number> => {
+    try {
+      const response = await axios.get(`${Config.API_BASE_URL}/Comments/${productId}`);
+      const fetchedComments: CommentItem[] = response.data;
+      const totalRating = fetchedComments.reduce((sum, item) => sum + item.rating, 0);
+      const averageRating = fetchedComments.length > 0 ? totalRating / fetchedComments.length : 0;
+      return parseFloat(averageRating.toFixed(1));
+    } catch (error) {
+      console.error(`Error fetching rating for product ${productId}:`, error);
+      return 0;
+    }
+  };
   useEffect( () => {
-    const fetchProductRating = async (productId: number): Promise<number> => {
-      try {
-        const response = await axios.get(`${Config.API_BASE_URL}/Comments/${productId}`);
-        const fetchedComments: CommentItem[] = response.data;
-        const totalRating = fetchedComments.reduce((sum, item) => sum + item.rating, 0);
-        const averageRating = fetchedComments.length > 0 ? totalRating / fetchedComments.length : 0;
-        return parseFloat(averageRating.toFixed(1));
-      } catch (error) {
-        console.error(`Error fetching rating for product ${productId}:`, error);
-        return 0;
-      }
-    };
+    
 
     const fetchAppData = async () => {
       try {
@@ -109,8 +111,12 @@ export const AppDataProvider: React.FC<AppDataProviderProps> = ({ children }) =>
     fetchAppData();
   }, []);
 
-  const fetchdt = async (token: string) => {
-    //setToken(token)
+  const fetchdt = async () => {
+    const ratingsPromises = data.products.map(product => fetchProductRating(parseInt(product.id)));
+    const ratingValues = await Promise.all(ratingsPromises);
+    const ratings = Object.fromEntries(data.products.map((product, index) => [parseInt(product.id), ratingValues[index]]));
+    const d = data?.ratings
+    setData({ d, ratings });
   }
 
   const login = async (tok: string) => {
@@ -252,7 +258,7 @@ const fetchprofile = async () => {
 
   return (
     <AppDataContext.Provider value={{ 
-      data, user,token,cartElements,orders,BestProducts,NewProducts,login,fetchCart,fetchprofile,fetchNotification,markNotificationAsRead,updateProfile,fetchOrders,deleteAccount,favProducts, isLoading, error,fetchdt, logout,fetchFavorites }}>
+      data, user,token,cartElements,orders,BestProducts,NewProducts,fetchProductRating,login,fetchCart,fetchprofile,fetchNotification,markNotificationAsRead,updateProfile,fetchOrders,deleteAccount,favProducts, isLoading, error,fetchdt, logout,fetchFavorites }}>
       {isLoading ? <Text>Loading...</Text> : children}
     </AppDataContext.Provider>
   );

@@ -9,7 +9,7 @@ import { Color, StyleVariable } from "@/GlobalStyles";
 import { useAppContext } from '@/components/AppContext';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppData } from '@/components/AppDataProvider';
-
+import { baseurl } from '@/components/config';
 const SockJS = require('sockjs-client/dist/sockjs.js');
 
 interface Message {
@@ -36,7 +36,8 @@ const Messages: React.FC = () => {
   const messageInputRef = React.useRef<TextInput>(null);
   const navigation = useNavigation();
 
-  const SERVER_URL = 'http://192.168.42.175:9001';
+
+  const SERVER_URL = `http://${baseurl}:9001`;
 
   const apiGetHandler = async (url: string, token: string) => {
     if (token) {

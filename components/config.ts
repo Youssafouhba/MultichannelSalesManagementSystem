@@ -1,5 +1,5 @@
 // config.ts
-const baseurl = '192.168.42.175'
+export const baseurl = '192.168.42.192'
 const Config = {
     development: {
       API_BASE_URL: `http://${baseurl}:9000`,
