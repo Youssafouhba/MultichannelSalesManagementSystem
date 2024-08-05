@@ -11,6 +11,7 @@ const InputField = ({
   hasLabel = false,
   hasError = false,
   hasDescription = false,
+  onChangeText,
   propTop,
   color,
 }) => {
@@ -26,6 +27,7 @@ const InputField = ({
       style={[styles.inputField, inputFieldStyle]}
       placeholder={inputFieldPlaceholder}
       placeholderTextColor={color}
+      onChangeText={onChangeText}
     />
   );
 };

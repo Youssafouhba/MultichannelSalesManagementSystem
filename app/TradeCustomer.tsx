@@ -94,14 +94,11 @@ const TradeCustomer = () => {
 
   const handleNextButton = (): void => {
     if (validateForm()) {
-      const updatedPayload = {
-        ...payload,
+      const payload = {
         ...formData,
-        userId: 3
       };
-      console.log(updatedPayload);
       // Navigate to CompleteTradeCustomer screen
-      navigation.navigate("CompleteTradeCustomer", { updatedPayload });
+      navigation.navigate("CompleteTradeCustomer", { payload });
     } else {
       Alert.alert("Error", "Please fill in all required fields.");
     }

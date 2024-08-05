@@ -10,6 +10,10 @@ import config from "@/components/config";
 import tw from "tailwind-react-native-classnames";
 import { ScrollView } from "react-native";
 import { useAppData } from "@/components/AppDataProvider";
+import { useNavigation } from "expo-router";
+import { jwtDecode } from "jwt-decode";
+import AnimatedCustomAlert from "@/components/AnimatedCustomAlert";
+import LoginError from "@/components/LoginError";
 
 interface RouteParams {
     payload: any; // Replace 'any' with the actual type of payload
@@ -19,9 +23,12 @@ interface RouteParams {
 
 const CompleteTradeCustomer = () => {
   const { token } = useAppData();
+  const [alertVisible, setAlertVisible] = useState(false);
+  const [errorVisible, setErrorVisible] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
   const [formData, setFormData] = useState({
       checkSquarechecked: false,
-      selectedProduct: "",
+      productsOfInterest: "",
       additionalInformation: "",
       howDidYouHearAboutUs: "",
       annualSalesVolume: "",
@@ -32,7 +39,6 @@ const CompleteTradeCustomer = () => {
 
   const route = useRoute();
   const payload = (route.params as RouteParams)?.payload;
-
   const handleInputChange = (name: string, value: string | boolean) => {
       setFormData(prevData => ({ ...prevData, [name]: value }));
       // Clear error when user starts typing
@@ -40,13 +46,16 @@ const CompleteTradeCustomer = () => {
           setErrors(prevErrors => ({ ...prevErrors, [name]: null }));
       }
   };
-    const validateForm = () => {
+  const handleDismiss = () => {
+    setAlertVisible(false);
+  };
+  const validateForm = () => {
       let newErrors = {};
       if (!formData.checkSquarechecked) {
           newErrors['checkSquarechecked'] = 'Please agree to the declaration';
       }
-      if (!formData.selectedProduct) {
-          newErrors['selectedProduct'] = 'Please select a product of interest';
+      if (!formData.productsOfInterest) {
+          newErrors['productsOfInterest'] = 'Please select a product of interest';
       }
       if (!formData.annualSalesVolume) {
           newErrors['annualSalesVolume'] = 'Please enter your annual sales volume';
@@ -56,14 +65,16 @@ const CompleteTradeCustomer = () => {
   };
 
   const handleSubmit = async () => {
+    console.log(payload)
       if (validateForm()) {
           const updatedPayload = {
               ...payload,
               ...formData,
-              userId: 3
+              userId: jwtDecode(token).userid
           };
 
           try {
+         
             console.log(updatedPayload)
               const response = await axios.post(
                   `${config.API_BASE_URL}/api/client/request-trade-customer`,
@@ -76,14 +87,15 @@ const CompleteTradeCustomer = () => {
                   }
               );
               if (response.data === "Trade customer request submitted successfully.") {
-                  Alert.alert("Success", "Your trade customer request has been submitted successfully.");
+                setAlertVisible(true)
               }
           } catch (error) {
-              console.error(error);
-              Alert.alert("Error", "There was an error submitting your request. Please try again.");
+            setAlertVisible(true)
+            setErrorMessage("There was an error submitting your request. Please try again.")
           }
       } else {
-          Alert.alert("Form Error", "Please fill in all required fields and agree to the declaration.");
+        setAlertVisible(true)
+        setErrorMessage("Please fill in all required fields and agree to the declaration.");
       }
   };
     return (
@@ -91,6 +103,22 @@ const CompleteTradeCustomer = () => {
           behavior={Platform.OS === "ios" ? "padding" : "height"}
           style={{ flex: 1 }}
       >
+          <AnimatedCustomAlert
+              visible={alertVisible}
+              title="Success"
+              message="Your trade customer request has been submitted successfully."
+              onDismiss={handleDismiss}
+              duration={2000} // 3 seconds
+            />
+          <LoginError 
+            visible={errorVisible}
+            title="Error..."
+            message={errorMessage}
+            onDismiss={() => setErrorVisible(false)}
+            duration={3000}
+            iconName="alert-circle"
+            iconColor="#f44336"
+          />
           <ScrollView
               style={[tw`py-4`, styles.CompleteTradeCustomer2]}
               contentContainerStyle={tw`pb-8`}
@@ -122,16 +150,16 @@ const CompleteTradeCustomer = () => {
                   />
 
                   <Picker
-                      selectedValue={formData.selectedProduct}
+                      selectedValue={formData.productsOfInterest}
                       style={[styles.selectField, styles.inputTypo]}
-                      onValueChange={(itemValue) => handleInputChange('selectedProduct', itemValue)}
+                      onValueChange={(itemValue) => handleInputChange('productsOfInterest', itemValue)}
                   >
                       <Picker.Item label="Products of Interest" value="" />
                       <Picker.Item label="LED Lighting" value="LED Lighting" />
                       <Picker.Item label="Suspended ceiling & Aluminium grid" value="Suspended ceiling & Aluminium grid" />
                       <Picker.Item label="Both" value="Both" />
                   </Picker>
-                  {errors.selectedProduct && <Text style={styles.errorText}>{errors.selectedProduct}</Text>}
+                  {errors.productsOfInterest && <Text style={styles.errorText}>{errors.productsOfInterest}</Text>}
 
                   {/* Sales Information Section */}
                   <View style={[tw`flex-row items-center mb-4 mt-4`]}>
