@@ -14,6 +14,7 @@ interface AppData {
 
 interface AppDataContextType {
   data: AppData | null;
+  ProductsData: {};
   token: string | null;
   cartElements: CartElement[];
   orders: Order[];
@@ -62,6 +63,7 @@ export const AppDataProvider: React.FC<AppDataProviderProps> = ({ children }) =>
   const [NewProducts, setNewProducts] = useState<Product[]>([]);
   const [BestProducts, setBestProducts] = useState<Product[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
+ 
   const fetchProductRating = async (productId: number): Promise<number> => {
     try {
       const response = await axios.get(`${Config.API_BASE_URL}/Comments/${productId}`);
@@ -75,35 +77,54 @@ export const AppDataProvider: React.FC<AppDataProviderProps> = ({ children }) =>
     }
   };
   useEffect( () => {
-    
+
+    const checkFavoriteStatus = async (productId: string) => {
+        if (token!=undefined) {
+            try {
+                const response = await axios.get(`${Config.API_BASE_URL}/api/client/isFavorite/${productId}`, {
+                    headers: { Authorization: `Bearer ${token}` },
+                });
+                return response.data
+            } catch (error) {
+                console.error("Error checking favorite status:", error);
+            }
+        }
+    };
 
     const fetchAppData = async () => {
       try {
         setIsLoading(true);
+        
+        // Fetch products
         const productsResponse = await axios.get(`${Config.API_BASE_URL}/api/Products`);
         const products = productsResponse.data;
 
-        const ratingsPromises = products.map(product => fetchProductRating(parseInt(product.id)));
+        // Fetch ratings
+        const ratingsPromises = products.map((product: Product) => fetchProductRating(parseInt(product.id)));
         const ratingValues = await Promise.all(ratingsPromises);
 
-        const nweproducts = products.filter((product: Product) => product.isNew);
-        const newones =  await Promise.all(nweproducts)
+        // Filter new and best products
+        const newProductsList = products.filter((product: Product) => product.isNew);
+        const bestProductsList = products.filter((product: Product) => product.isBestSeller);
 
-        const ratings = Object.fromEntries(products.map((product, index) => [parseInt(product.id), ratingValues[index]]));
-
-        const bestproducts = products.filter((product: Product) => product.isBestSeller);
-        const bestones =  await Promise.all(bestproducts)
-
-
-        console.log('Data set successfully');
-        setData({ products, ratings });
-    
-        setNewProducts(newones);
-        setBestProducts(bestones)
-        setIsLoading(false);
-      } catch (err) {
-        console.error('Error fetching data:', err);
-        setError('Failed to fetch app data');
+        // Fetch favorite status
+        const favoriteStatusPromises = products.map(async (product: Product) => ({
+          ...product,
+          isFavorite: await checkFavoriteStatus(product.id),
+        }));
+        const productsWithFavorites = await Promise.all(favoriteStatusPromises);
+        console.log(productsWithFavorites)
+        // Update state
+        setData({
+          products: productsWithFavorites,
+          ratings: Object.fromEntries(products.map((product, index) => [parseInt(product.id), ratingValues[index]])),
+        });
+        setNewProducts(newProductsList);
+        setBestProducts(bestProductsList);
+      } catch (error) {
+        setError('Failed to fetch data');
+        console.error('Error fetching app data:', error);
+      } finally {
         setIsLoading(false);
       }
     };
@@ -136,6 +157,7 @@ export const AppDataProvider: React.FC<AppDataProviderProps> = ({ children }) =>
           console.error('favorites :', err);
           setError('favorites failed');
         }
+        fetchNotification()
         fetchOrders()
     } catch (error) {
       return error;

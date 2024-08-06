@@ -4,11 +4,11 @@
     "slug": "ecomerce",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/image-3.png",
     "scheme": "myapp",
     "userInterfaceStyle": "automatic",
     "splash": {
-      "image": "./assets/images/splash.png",
+      "image": "./assets/rectangle-1@3x.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
@@ -17,7 +17,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "foregroundImage": "./assets/images/output-onlinepngtools.png",
         "backgroundColor": "#ffffff"
       },
       "package": "com.ecom"
@@ -25,7 +25,7 @@
     "web": {
       "bundler": "metro",
       "output": "static",
-      "favicon": "./assets/images/favicon.png"
+      "favicon": "./assets/image-3.png"
     },
     "plugins": [
       "expo-router",

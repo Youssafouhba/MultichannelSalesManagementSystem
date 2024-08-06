@@ -5,11 +5,12 @@ import axios from "axios";
 import { jwtDecode } from "jwt-decode";
 import * as React from "react";
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View, Alert, NativeSyntheticEvent, TextInputChangeEventData } from "react-native";
-import { Color, StyleVariable } from "@/GlobalStyles";
+import { Color, FontSize, StyleVariable } from "@/GlobalStyles";
 import { useAppContext } from '@/components/AppContext';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppData } from '@/components/AppDataProvider';
 import { baseurl } from '@/components/config';
+import { TouchableOpacity } from 'react-native';
 const SockJS = require('sockjs-client/dist/sockjs.js');
 
 interface Message {
@@ -36,7 +37,7 @@ const Messages: React.FC = () => {
   const messageInputRef = React.useRef<TextInput>(null);
   const navigation = useNavigation();
 
-
+  var isLoggedIn = state.JWT_TOKEN !=='';
   const SERVER_URL = `http://${baseurl}:9001`;
 
   const apiGetHandler = async (url: string, token: string) => {
@@ -154,6 +155,9 @@ const Messages: React.FC = () => {
       console.log("Token not stored yet");
     }
   };
+  const handleLogin = () => {
+    navigation.navigate("LoginPage?id=Messages");
+  };
 
   const fetchAndDisplayUserChat = async (selectedUser: { convid: string, userid: string }, token: string) => {
     try {
@@ -174,6 +178,18 @@ const Messages: React.FC = () => {
       <Text>{message.content}</Text>
     </View>
   );
+
+  if(!isLoggedIn)
+    return(
+        <View style={styles.container}>
+            <View style={styles.loginContainer}>
+                <Text style={styles.loginText}>Please log in to view your Messages</Text>
+                <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
+                <Text style={styles.loginButtonText}>Log In</Text>
+                </TouchableOpacity>
+            </View>
+        </View>
+      )
 
   return (
     <View style={styles.container}>
@@ -204,6 +220,26 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: 'column',
     justifyContent: 'space-between',
+  },
+  loginContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loginText: {
+    fontSize: FontSize.presetsBody2_size,
+    color: Color.colorBlack,
+    marginBottom: 20,
+  },
+  loginButton: {
+    backgroundColor: Color.colorBlack,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 5,
+  },
+  loginButtonText: {
+    color: Color.colorWhite,
+    fontSize: FontSize.presetsBody2_size,
   },
   chatMessages: {
     flex: 1,

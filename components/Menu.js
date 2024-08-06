@@ -9,25 +9,25 @@ import { Color } from '@/GlobalStyles';
 import { Linking } from 'react-native';
 import { useAppData } from "@/components/AppDataProvider";
 
-const MenuOptions = [
-  {name: 'Filter', icon: require('@/assets/images/icons8-réglages-vertical-50.png'), path: '/Profile'},
-  {name: 'My Orders', icon: require('@/assets/images/icons8-sac-de-courses-80.png'), path: '/Orders'},
-  {name: 'My Favorite', icon: require('@/assets/images/icons8-coeurs-50.png'), path: '/Wishlist'},
-  {name: 'Offers', icon: require('@/assets/images/icons8-offer-58.png'), path: '/Profile'},
-  {name: 'Trade Customer', icon: require('@/assets/images/icons8-badge-50.png'), path: '/TradeCustomer'},
-  {name: 'Log Out', icon: require('@/assets/images/icons8-déconnexion-arrondi-64.png'), path: '/'},
-];
 
-const SocialMediaIcons = [
-  { name: require('@/assets/images/apple_16566143.png'), id: 'wtsp' },
-  { name: require('@/assets/images/messenger_5968771 (1).png'), id: 'fb' },
-];
 
 function Menu({ isVisible, onClose }) {
   const { state, dispatch } = useAppContext();
-  const { logout, error } = useAppData();
+  const { logout, token,error } = useAppData();
   if (!isVisible) return null;
-
+  const MenuOptions = [
+    {name: 'Filter', icon: require('@/assets/images/icons8-réglages-vertical-50.png'), path: '/Profile'},
+    {name: 'My Orders', icon: require('@/assets/images/icons8-sac-de-courses-80.png'), path: '/Orders'},
+    {name: 'My Favorite', icon: require('@/assets/images/icons8-coeurs-50.png'), path: '/Wishlist'},
+    {name: 'Offers', icon: require('@/assets/images/icons8-offer-58.png'), path: '/Profile'},
+    {name: 'Trade Customer', icon: require('@/assets/images/icons8-badge-50.png'), path: '/TradeCustomer'},
+    {name: token==undefined?'Log In' :'Log Out', icon: token==undefined?require(`@/assets/images/icons8-déconnexion-arrondi-50.png`):require(`@/assets/icons8-déconnexion-50.png`), path:token==undefined?`/LoginPage` :'/'},
+  ];
+  
+  const SocialMediaIcons = [
+    { name: require('@/assets/images/apple_16566143.png'), id: 'wtsp' },
+    { name: require('@/assets/images/messenger_5968771 (1).png'), id: 'fb' },
+  ];
   const handleMenuItemPress = async (path) => {
     onClose(); // Close the menu
     if (path === '/') {
@@ -91,7 +91,7 @@ function Menu({ isVisible, onClose }) {
 const styles = StyleSheet.create({
   menu: {
     position: 'absolute',
-    top: screenHeight * 0.02,
+    top: screenHeight * 0.04,
     right: '0%',
     bottom: 0,
     width: '52%',

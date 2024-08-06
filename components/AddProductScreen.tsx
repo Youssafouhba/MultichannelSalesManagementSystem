@@ -88,7 +88,7 @@ const AddProductScreen = () => {
     try {
       const response = await axios.post(`${config.API_BASE_URL_ADMIN}${url}`, payload, {
         headers: {
-          Authorization: `Bearer a`
+          Authorization: `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI0MiIsImlhdCI6MTcyMTA3NDA2NywidXNlcmlkIjo0MiwiZW1haWwiOiJhbGtoc3BhbWVyckBnbWFpbC5jb20iLCJyb2xlIjpbIlN1cGVyQWRtaW4iXX0.omkORJ7wcRh0072FhNUT8SdmxWD_LDzubNZgCYLQUfA`
         }
       });
       console.log(response);

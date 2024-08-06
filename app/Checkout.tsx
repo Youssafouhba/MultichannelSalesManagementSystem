@@ -127,10 +127,13 @@ const Checkout = () => {
         orderItems: []
       }
       const Products = state.products.filter((product: Product) => cartItems[product.id]?.quantity > 0);
+      var sum: number = 0;
         Products.map((product: Product) => {
+          sum + cartItems[product.id]?.quantity*product.price;
           order.orderItems.push({id: '',quantity: cartItems[product.id]?.quantity,sub_total: cartItems[product.id]?.quantity*product.price,product: product})
         })
 
+        
       if(id=='r'){
         console.log(order)
         const response = await apiHandler(`/Order/reorder/${jwtDecode(token).userid}`,order,token).then(

@@ -3,7 +3,7 @@ import { router, Stack, useGlobalSearchParams, useLocalSearchParams, useNavigati
 import { StyleSheet, Image, TouchableOpacity, View, Text, Pressable, FlatList, Modal, TouchableWithoutFeedback } from 'react-native';
 import { TabBarIcon } from '@/components/navigation/TabBarIcon';
 import { Ionicons } from '@expo/vector-icons';
-import { useRoute } from '@react-navigation/native';
+import { StackActions, useRoute } from '@react-navigation/native';
 import { AppProvider, useAppContext } from '@/components/AppContext';
 import tw from 'tailwind-react-native-classnames';
 import { screenHeight } from '@/constants/GlobalsVeriables';
@@ -31,13 +31,16 @@ function FilterMenu({ isVisible, onClose }) {
 }
 
 function CustomHeader({title}) {
-  const { id } = useGlobalSearchParams();
+  const { id ,pres} = useGlobalSearchParams();
   const navigation = useNavigation();
+  const goBack = () => {
+    pres === "LoginPage" ? router.push("/") : navigation.dispatch(StackActions.pop());
+  };
   return (
     <View style={[styles.header, { backgroundColor: Color.colorWhite }]}>
-      <TouchableOpacity onPress={() =>{id=='Cart'? navigation.navigate(`${id}`): navigation.goBack()}} style={styles.backButton}>
-        <Ionicons name='chevron-back-outline' size={20} color="black" style={{ overflow: 'hidden' }} />
-      </TouchableOpacity>
+        <TouchableOpacity onPress={() =>{id=='Cart'? router.push(`${id}`): goBack()}} style={styles.backButton}>
+          <Ionicons name='chevron-back-outline' size={20} color="black" style={{ overflow: 'hidden' }} />
+        </TouchableOpacity>
       <Text style={[tw`mx-2 font-medium`,{color: Color.colorsBlue}]}>{title}</Text>
     </View>
   );
@@ -45,23 +48,22 @@ function CustomHeader({title}) {
 
 function CustomMainHeader({ onMenuPress}) {
   const pathname = usePathname();
+  const {pres} = useGlobalSearchParams()
   const navigation = useNavigation();
+  const goBack = () => {
+    const previousRoute = navigation.getState().routes[navigation.getState().index - 1];
+    console.log("Previous Route:", previousRoute ? previousRoute.name : "None");
 
+    navigation.dispatch(StackActions.pop());
+  };
   return (
     <View style={styles.header}>
-      {pathname !== '/'?(
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Ionicons name='chevron-back-outline' size={20} color="black" style={{ overflow: 'hidden' }} />
-        </TouchableOpacity>
-      ):(
-        <TouchableOpacity onPress={() => {}} style={[]}>
+      <TouchableOpacity onPress={() => {}} style={[]}>
           <Image
-            style={[]}
             contentFit="cover"
             source={require("../assets/rectangle-111.png")}
           />
-        </TouchableOpacity>
-      )}
+      </TouchableOpacity>
    
       <TouchableOpacity onPress={onMenuPress} style={styles.menuButton}>
         <Ionicons name="menu" size={29} color="black" />
@@ -97,91 +99,105 @@ export default function AppLayout() {
     <AppProvider>
     <View style={styles.container}>
       <Stack>
-        <Stack.Screen 
+        <Stack.Screen       
           name="(tabs)" 
           options={{
+            animation: 'slide_from_right',
             header: () => <CustomMainHeader onMenuPress={toggleMenu} />,
           }} 
         />
         <Stack.Screen 
           name="LogoPage" 
-          options={{ headerShown: false }} 
+          options={{ animation: 'slide_from_right', headerShown: false }} 
         />
         <Stack.Screen 
           name="ProductDetails" 
           options={{ 
+            animation: 'slide_from_right',
             header: () => <CustomHeader title={'Product Details'}/>,
           }} 
         />
         <Stack.Screen 
           name="CompleteTradeCustomer" 
           options={{ 
+            animation: 'slide_from_right',
             header: () => <CustomHeader title={'TradeCustomer'}/>,
           }} 
         />
         <Stack.Screen 
           name="TradeCustomer" 
           options={{ 
+            animation: 'slide_from_right',
             header: () => <CustomHeader title={'TradeCustomer'}/>,
           }} 
         />
         <Stack.Screen 
           name="Wishlist" 
           options={{ 
+            animation: 'slide_from_right',
             header: () => <CustomHeader title={'My Wishlist'}/>,
           }} 
         />
         <Stack.Screen 
           name="OrderDetails" 
           options={{ 
+            animation: 'slide_from_right',
             header: () => <CustomHeader title={'Order Details'}/>,
           }} 
         />
         <Stack.Screen 
           name="OtpVerification" 
           options={{ 
+            animation: 'slide_from_right',
             header: () => <CustomHeader title={'OtpVerification'}/>,
           }} 
         />
         <Stack.Screen 
           name="PasswordResetPage" 
           options={{ 
+            animation: 'slide_from_right',
             header: () => <CustomHeader title={'PasswordResetPage'}/>,
           }} 
         />
         <Stack.Screen 
           name="ForgetPasswordPage" 
           options={{ 
+            animation: 'slide_from_right',
             header: () => <CustomHeader title={''} />,
           }} 
         />
         <Stack.Screen 
           name="EmailVerificationPage" 
           options={{ 
+            animation: 'slide_from_right',
             header: () => <CustomHeader title={''}/>,
           }} 
         />
         <Stack.Screen 
           name="Checkout" 
           options={{ 
+            animation: 'slide_from_right',
             header: () => <CustomHeader title={'Checkout'}/>,
           }} 
         />
         <Stack.Screen 
           name="RegisterPage" 
           options={{ 
+            animation: 'slide_from_right',
             header: () => <CustomHeader title={''} />,
           }} 
         />
         <Stack.Screen 
           name="LoginPage" 
           options={{ 
+            animation: 'slide_from_right',
             header: () => <CustomHeader title={''}/>,
           }} 
         />
         <Stack.Screen 
           name="Orders" 
           options={{ 
+            animation: 'slide_from_right',
             header: () => <CustomHeader title={'My Orders'}/>,
           }} 
         />
@@ -226,8 +242,9 @@ export default function AppLayout() {
 const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
+    alignItems: 'flex-end',
     top: '2%',
-    backgroundColor: 'rgba(0, 0, 0, 0.1)', // semi-transparent background
+    backgroundColor: 'transparent', // semi-transparent background
   },
   container: {  //main header
     top: '2%',

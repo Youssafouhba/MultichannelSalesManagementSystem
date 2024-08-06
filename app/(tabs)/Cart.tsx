@@ -144,7 +144,7 @@ const Cart = () => {
   const submitCard = async () => {
     try {
       const total = Object.entries(cartItems).reduce((sum, [productId, item]) => {
-        const product = state.products.find(p => p.id === parseInt(productId));
+        const product = data?.products.find(p => p.id === parseInt(productId));
         return sum + (product ? product.price * item.quantity : 0);
       }, 0);
       

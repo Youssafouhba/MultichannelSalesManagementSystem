@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { View, Text, TextInput, Pressable, StyleSheet } from "react-native";
 import { Image } from "expo-image";
-import { router, useLocalSearchParams, useRouter } from 'expo-router';
+import { router, useLocalSearchParams, usePathname, useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import tw from 'tailwind-react-native-classnames';
 import { useAppContext } from '@/components/AppContext';
@@ -23,7 +23,8 @@ const LoginPage = () => {
   const [email, setEmail] = useState("");
   const [errorVisible, setErrorVisible] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
-
+  const pathname = usePathname();
+  
   const isValidEmail = (email) => {
     const emailRegex = /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,})+$/;
     return emailRegex.test(email);
@@ -34,19 +35,26 @@ const LoginPage = () => {
   };
 
   const navigateAfterLogin = () => {
+  
     let targetRoute = "/";
     if (returnTo === 'ProductDetails' && productId) {
-      targetRoute = `/ProductDetails?id=${productId}`;
-    } else if (id) {
-      targetRoute = `/${id}?p=${idp}`;
+      targetRoute = `/ProductDetails?id=${productId}&&pres=LoginPage`;
+    } else if (idp) {
+      console.log(idp)
+      targetRoute = `/${id}?p=${idp}&&pres=LoginPage`;
+    }else{
+      console.log(id)
+      targetRoute = `/${id}?pres=LoginPage`;
     }
 
     // Check if the target route is different from the current route
-    if (targetRoute !== navigation.pathname) {
+    if (targetRoute !== pathname) {
+      
       if (targetRoute.startsWith('/')) {
+        console.log(targetRoute)
         router.push(targetRoute);
       } else {
-        navigation.navigate(targetRoute);
+        router.push(targetRoute);
       }
     } else {
       // If it's the same route, you might want to refresh the page or show a message
@@ -63,7 +71,6 @@ const LoginPage = () => {
     }
 
     try {
-      console.log(email + "----" + password)
       const payload = { email, password };
       const response = await axios.post(`${config.API_BASE_URL}/api/auth/singin`, payload);
       const { message, token } = response.data;

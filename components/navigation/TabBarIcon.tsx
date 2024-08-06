@@ -43,6 +43,8 @@ const styles = StyleSheet.create({
     height: 16,
     justifyContent: 'center',
     alignItems: 'center',
+    overflow: 'hidden',
+    borderColor: 'red',
   },
   badgeText: {
     color: 'white',

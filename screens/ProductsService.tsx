@@ -15,8 +15,6 @@ import { Product } from "@/constants/Classes";
 import SearchInput from "@/components/SearchInput";
 import { debounce } from "lodash";
 
-
-
 export default function ProductsService() {
   const { width, height } = useWindowDimensions();
   const [selectedLabel, setSelectedLabel] = useState<string | null>("Best Seller");
@@ -37,11 +35,23 @@ export default function ProductsService() {
   const styles = useMemo(() => createStyles(dimensions.width, dimensions.height), [dimensions]);
   const [inputsearch,setInputSearch] = useState<string>()
   const [isLoggedIn,setIsLoggedIn] = useState<boolean>(false);
- 
+  const [isRedirecting, setIsRedirecting] = useState(false);
+
+  const [hasNavigated, setHasNavigated] = useState(false);
+  const [id,setId] = useState<string>('')
+
+  useEffect(() => {
+    if (hasNavigated) {
+      setHasNavigated(false);
+      navigation.navigate(`/ProductDetails?id=${id}`);
+    }
+  }, [hasNavigated, id, navigation]);
+
   useEffect(() => {
     const subscription = Dimensions.addEventListener('change', ({ window }) => {
       setDimensions(window);
     });
+    
     return () => subscription?.remove();
   }, []);
 
@@ -53,6 +63,7 @@ export default function ProductsService() {
     const fetchData = async () => {
       try {
         setProducts(data?.products);
+        setFilteredProducts(data?.products)
         state.products = data?.products;
         setProductRatings(data?.ratings)
         console.log(data?.ratings[5])
@@ -83,31 +94,24 @@ export default function ProductsService() {
       }
     }
   },[products, selectedLabel, NewProducts, BestProducts])
-  const navigateAfter = () => {
-    let targetRoute = "/";
-    // Check if the target route is different from the current route
-    if (targetRoute !== navigation.pathname) {
-      if (targetRoute.startsWith('/')) {
-        router.push(targetRoute);
-      } else {
-        navigation.navigate(targetRoute);
-      }
-    } else {
-      // If it's the same route, you might want to refresh the page or show a message
-      console.log("Already on the target page");
-    }
-  };
+
+
+const gotodetails = (id: string) => {
+  setId(id)
+   setHasNavigated(true)
+}
+ 
 
   const renderProduct = ({ item }: { item: Product }) => (
     <View style={[{width: rectangleWidth,height: rectangleHeight},styles.productWrapper, selectedLabel === "New designs" && styles.fullWidthProduct]}>
       <Pressable 
         style={[styles.productInnerContainer, selectedLabel === "New designs" && styles.fullWidthInnerContainer]}
-        onPress={() => { router.push(`/ProductDetails?id=${item.id}`)}}
+        onPress={() => { gotodetails(item.id)}}
       >
         <Image
           contentFit="cover"
           style={[styles.productImage, selectedLabel === "New designs" && styles.fullWidthImage]}
-          source={{ uri: item.imageUrls[0]?.url || require("@/assets/rectangle-94.png") }}
+          source={{ uri: item.imageUrls[0]?.url}}
         />
         <View style={[styles.productDesc, selectedLabel === "New designs" && styles.fullWidthDesc]}>
           <Text style={[styles.productName, selectedLabel === "New designs" && styles.fullWidthName]} numberOfLines={category === "New designs"?3:2} ellipsizeMode="tail">
@@ -203,7 +207,7 @@ export default function ProductsService() {
   );
 
   const renderGroupElement = () => (
-    <View style={[tw`w-full`,{backgroundColor: Color.mainbackgroundcolor}]}>
+    <View style={[{backgroundColor: Color.colorWhite},tw`w-full blur-md`]}>
     <View style={[tw`flex-row justify-between items-center text-center mx-2 pl-2 pr-2`,]}>
       <Pressable onPress={() => {setsug(true),setSelectedLabel("Best Seller")}}>
         <Text style={[tw`text-base text-gray-400 font-normal text-lg`,sug&&{color: 'black'}]}>
@@ -251,8 +255,8 @@ export default function ProductsService() {
   };
 
   const searchContainer = useMemo(() => (
-    <View style={tw`h-16 w-full items-center overflow-hidden bg-white`}>
-      <View style={tw`flex-row items-center px-4 py-2 bg-gray-100 rounded-full`}>
+    <View style={[tw`h-16 w-full items-center overflow-hidden bg-white`]}>
+      <View style={tw`flex-row w-80 items-center px-4 py-2 bg-gray-100 rounded-full`}>
         <TextInput
           placeholder="Search..."
           value={inputsearch}
@@ -276,7 +280,7 @@ export default function ProductsService() {
       {searchContainer}
       {renderGroupElement()}
       {isLoading? (
-        <ScrollView contentContainerStyle={{alignItems: 'center',top: '40%'}} style={[styles.scrollView,{}]}>
+        <ScrollView contentContainerStyle={{alignItems: 'center',top: '40%',flex: 1,width: '100%'}}>
           <LoadingAnimation size={80} color="blue" />
           <Text style={[tw`text-base text-xs text-gray-400`]}>Loading...</Text>
         </ScrollView>):
@@ -285,7 +289,7 @@ export default function ProductsService() {
       {selectedLabel === "Ceilling Calculator" ? (
         <CeilingCalculator />
       ) : filteredProducts.length === 0 ? (
-        <View style={styles.noProductsContainer}>
+        <View style={[styles.noProductsContainer,tw`blur-md brightness-200`]}>
           <Text style={styles.noProductsText}>No products found</Text>
         </View>
       ) : (
@@ -303,6 +307,7 @@ export default function ProductsService() {
       listContainer: {
         flex: 1,
         padding: 10,
+        paddingBottom: 0,
       },
       flatListContent: {
         flexGrow: 1,
@@ -310,7 +315,7 @@ export default function ProductsService() {
       },
       row: {
         justifyContent: 'space-between',
-        marginBottom: 10,
+        marginBottom: 6,
       },
       rectangle: {
         borderRadius: 8,
@@ -321,6 +326,8 @@ export default function ProductsService() {
       width: '100%',
     },
     scrollView: {
+      backgroundColor: Color.colorWhite,
+      top: -4,
       flex: 1,
       width: '100%',
     },
@@ -338,19 +345,19 @@ export default function ProductsService() {
     },
     productInnerContainer: {
       flex: 1,
-      backgroundColor: Color.colorWhitesmoke,
+      backgroundColor: '#FBFDFF',
       borderRadius: 8,
       elevation: 3,
-      shadowColor: 'gray',
+      shadowColor: 'rgba(1 ,1, 1, 0.03)',
       shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.1,
+      shadowOpacity: 1,
       shadowRadius: 4,
     },
     fullWidthInnerContainer: {
       height: '100%',
       width: '100%',
       flexDirection: 'row',
-      backgroundColor: Color.colorWhitesmoke,
+      backgroundColor: '#FBFDFF',
     },
     productImage: {
       width: '100%',
