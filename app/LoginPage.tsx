@@ -42,7 +42,7 @@ const LoginPage = () => {
     } else if (idp) {
       console.log(idp)
       targetRoute = `/${id}?p=${idp}&&pres=LoginPage`;
-    }else{
+    }else if(id){
       console.log(id)
       targetRoute = `/${id}?pres=LoginPage`;
     }
@@ -51,9 +51,6 @@ const LoginPage = () => {
     if (targetRoute !== pathname) {
       
       if (targetRoute.startsWith('/')) {
-        console.log(targetRoute)
-        router.push(targetRoute);
-      } else {
         router.push(targetRoute);
       }
     } else {

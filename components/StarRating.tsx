@@ -4,7 +4,7 @@ import { FontAwesome } from '@expo/vector-icons';
 import tw from 'tailwind-react-native-classnames';
 
 interface StarRatingProps {
-  rating: number;
+  rating: number | undefined;
   maxRating?: number;
   starSize?: number;
   starColor?: string;

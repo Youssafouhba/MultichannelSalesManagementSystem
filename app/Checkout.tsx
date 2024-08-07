@@ -57,8 +57,8 @@ const Checkout = () => {
   };
 
 
-  useFocusEffect(
-    useCallback(() => {
+  useEffect(()=>{
+    const checksum = () => {
       const total = Object.entries(cartItems).reduce((sum, [productId, item]) => {
         const product = state.products.find(p => p.id === parseInt(productId));
         return sum + (product ? product.price * item.quantity : 0);
@@ -67,8 +67,9 @@ const Checkout = () => {
       return () => {
 
       };
-    },  [sumCheckout,cartItems, state.products])
-  );
+    }
+    checksum()
+  },  [sumCheckout,cartItems, state.products]);
   
   const handlePickUpCheck = () => {
     setCardChecked(false);
@@ -127,9 +128,7 @@ const Checkout = () => {
         orderItems: []
       }
       const Products = state.products.filter((product: Product) => cartItems[product.id]?.quantity > 0);
-      var sum: number = 0;
         Products.map((product: Product) => {
-          sum + cartItems[product.id]?.quantity*product.price;
           order.orderItems.push({id: '',quantity: cartItems[product.id]?.quantity,sub_total: cartItems[product.id]?.quantity*product.price,product: product})
         })
 
@@ -142,15 +141,17 @@ const Checkout = () => {
             setAlertVisible(true);
            
           })
+          ClearCart()
         }else{
           const response = await apiHandler(`/Order/${jwtDecode(token).userid}`,order,token).then(
             res => {
               setAlertVisible(true);
               setOrderedProducts(cartItems)
             });
+            ClearCart()
         }
         
-        ClearCart()
+        
         
        
 

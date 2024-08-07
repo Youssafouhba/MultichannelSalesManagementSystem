@@ -13,6 +13,7 @@ const initialState = {
   API_BASE_URL_ADMIN: `http://${baseurl}:9999`,
   API_BASE_URL_PRODUCT: `http://${baseurl}:8080`,
   products: [],
+  filtredproducts: [],
   offers: {},
   productId: 0,
   JWT_TOKEN: '',
@@ -73,6 +74,8 @@ function appReducer(state, action) {
     case 'SET_notificationsCount':
       const {notifscount} = action.payload;
       return { ...state, notificationsCount: notifscount };
+    case 'SET_filtredproducts':
+      return { ...state, filtredproducts: action.payload };
     default:
       return state;
   }

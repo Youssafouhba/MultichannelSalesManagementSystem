@@ -5,7 +5,7 @@ import Config from '@/components/config';
 import { Text } from 'react-native';
 import { UserDTO } from '@/constants/Classes';
 import { Notification } from '@/constants/Classes';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import LogoPage from '@/app/LogoPage';
 
 interface AppData {
   products: Product[];
@@ -141,47 +141,51 @@ export const AppDataProvider: React.FC<AppDataProviderProps> = ({ children }) =>
   }
 
   const login = async (tok: string) => {
-    try {     
-      setToken(tok)
-      const responseAuth = await axios.get(`${Config.API_BASE_URL}/api/client/getMyProfil`,{
-        headers: {
-          Authorization: `Bearer ${tok}`
-        }});
-        setUser(responseAuth.data);
-        try {
-          const responseFavorites = await axios.get<Product[]>(
-            `${Config.API_BASE_URL}/api/client/getMyFavoriteProducts`,
-            { headers: { Authorization: `Bearer ${tok}`}});
-          setFavProducts(responseFavorites.data);
-        } catch (err) {
-          console.error('favorites :', err);
-          setError('favorites failed');
-        }
-        fetchNotification()
-        fetchOrders()
-    } catch (error) {
-      return error;
-    }
+    if(tok!=null)
+      try {     
+        setToken(tok)
+        const responseAuth = await axios.get(`${Config.API_BASE_URL}/api/client/getMyProfil`,{
+          headers: {
+            Authorization: `Bearer ${tok}`
+          }});
+          setUser(responseAuth.data);
+          try {
+            const responseFavorites = await axios.get<Product[]>(
+              `${Config.API_BASE_URL}/api/client/getMyFavoriteProducts`,
+              { headers: { Authorization: `Bearer ${tok}`}});
+            setFavProducts(responseFavorites.data);
+          } catch (err) {
+            console.error('favorites :', err);
+            setError('favorites failed');
+          }
+          fetchNotification()
+          fetchOrders()
+      } catch (error) {
+        return error;
+      }
   }
 
 const fetchprofile = async () => {
-  const responseAuth = await axios.get(`${Config.API_BASE_URL}/api/client/getMyProfil`,{
-    headers: {
-      Authorization: `Bearer ${token}`
-    }});
-    setUser(responseAuth.data);
+  if(token!=null){
+    const responseAuth = await axios.get(`${Config.API_BASE_URL}/api/client/getMyProfil`,{
+      headers: {
+        Authorization: `Bearer ${token}`
+      }});
+      setUser(responseAuth.data);
+  }
 }
 
   const fetchFavorites = async () => {
-    try {
-      const responseFavorites = await axios.get<Product[]>(
-        `${Config.API_BASE_URL}/api/client/getMyFavoriteProducts`,
-        { headers: { Authorization: `Bearer ${token}`}});
-      setFavProducts(responseFavorites.data);
-    } catch (err) {
-      console.error('favorites :', err);
-      setError('favorites failed');
-    }
+    if(token!=null)
+      try {
+        const responseFavorites = await axios.get<Product[]>(
+          `${Config.API_BASE_URL}/api/client/getMyFavoriteProducts`,
+          { headers: { Authorization: `Bearer ${token}`}});
+        setFavProducts(responseFavorites.data);
+      } catch (err) {
+        console.error('favorites :', err);
+        setError('favorites failed');
+      }
   }
 
   const fetchCart = async () => {
@@ -194,81 +198,87 @@ const fetchprofile = async () => {
   }
 
   const fetchOrders = async () => {
-    try {
-      const response = await axios.get<Order[]>(`${Config.API_BASE_URL}/api/client/getMyOrders`,{
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
-      const sortedOrders = response.data.sort((a, b) => 
-        new Date(b.creationDate).getTime() - new Date(a.creationDate).getTime()
-      );
-      setOrders(sortedOrders);
-    } catch (error) {
-      //console.log(error.response.data);
-      return error.response;
-    }
+    if(token!=null)
+      try {
+        const response = await axios.get<Order[]>(`${Config.API_BASE_URL}/api/client/getMyOrders`,{
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
+        const sortedOrders = response.data.sort((a, b) => 
+          new Date(b.creationDate).getTime() - new Date(a.creationDate).getTime()
+        );
+        setOrders(sortedOrders);
+      } catch (error) {
+        //console.log(error.response.data);
+        return error.response;
+      }
   }
 
   const fetchNotification = async () => {
-    try {
-        const response = await axios.get(`${Config.API_BASE_URL}/api/adMin/notification/mynotif`, {
-            headers: {
-                Authorization: `Bearer ${token}`
-            }
-        });
-        return response.data.map((notification: any) => ({
-            ...notification,
-            isRead: notification.isRead || false // Assurez-vous que le backend renvoie cette information
-        }));
-    } catch (error: any) {
-        throw new Error(`Error fetching notification: ${error.message}`);
-    }
+    if(token!=null)
+      try {
+          const response = await axios.get(`${Config.API_BASE_URL}/api/adMin/notification/mynotif`, {
+              headers: {
+                  Authorization: `Bearer ${token}`
+              }
+          });
+          
+          return response.data.map((notification: any) => ({
+              ...notification,
+              isRead: notification.isRead || false // Assurez-vous que le backend renvoie cette information
+          }));
+      } catch (error: any) {
+          throw new Error(`Error fetching notification: ${error.message}`);
+      }
 }
 
   const deleteAccount =  async () => {
-    try{
-      const deleteResponse = await axios.delete(`${Config.API_BASE_URL}/api/client`,{
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
-    }catch(error: any){
-      return error.response;
-    }finally{
-      setUser(null);
-      setCartElements([])
-      setToken(null)
-      setFavProducts([])
-    }
+    if(token!=null)
+      try{
+        const deleteResponse = await axios.delete(`${Config.API_BASE_URL}/api/client`,{
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
+      }catch(error: any){
+        return error.response;
+      }finally{
+        setUser(null);
+        setCartElements([])
+        setToken(null)
+        setFavProducts([])
+      }
   }
 
   const updateProfile = async (userdto: UserDTO) => {
-    try{
-      const updateResponse = await axios.put(`${Config.API_BASE_URL}/api/client`,userdto,{
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
+    if(token!=null)
+      try{
+        const updateResponse = await axios.put(`${Config.API_BASE_URL}/api/client`,userdto,{
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
 
-    }catch(error: any){
-      
-      return error.response;
-    }finally{
-      
-    }
+      }catch(error: any){
+        
+        return error.response;
+      }finally{
+        
+      }
   }
 
   const  markNotificationAsRead = async (id: any) => {
-    try{
-      const response = await axios.post(`${Config.API_BASE_URL}/api/adMin/notification/MarAsRead/${id}`, {},{
-        headers: {
-            Authorization: `Bearer ${token}`
-        }
-    });
-    }catch(error: any){
-      console.log(error)
-    }
+    if(token!=null)
+      try{
+        const response = await axios.post(`${Config.API_BASE_URL}/api/adMin/notification/MarAsRead/${id}`, {},{
+          headers: {
+              Authorization: `Bearer ${token}`
+          }
+      });
+      }catch(error: any){
+        console.log(error)
+      }
   }
 
   const logout = () => {
@@ -281,7 +291,7 @@ const fetchprofile = async () => {
   return (
     <AppDataContext.Provider value={{ 
       data, user,token,cartElements,orders,BestProducts,NewProducts,fetchProductRating,login,fetchCart,fetchprofile,fetchNotification,markNotificationAsRead,updateProfile,fetchOrders,deleteAccount,favProducts, isLoading, error,fetchdt, logout,fetchFavorites }}>
-      {isLoading ? <Text>Loading...</Text> : children}
+      {isLoading ? <LogoPage/> : children}
     </AppDataContext.Provider>
   );
 };

@@ -27,11 +27,11 @@ const Cart = () => {
 
   useEffect(() => {
     const total = Object.entries(cartItems).reduce((sum, [productId, item]) => {
-      const product = data?.products.find(p => p.id == productId);
+      const product = state?.products.find(p => p.id == productId);
       return sum + (product ? product.price * item.quantity : 0);
     }, 0);
     setSumCheckout(total);
-  }, [cartItems, data?.products]);
+  }, [cartItems, state?.products]);
 
 
   const updateItemQuantity = (productId: string, change: number) => {
@@ -144,7 +144,7 @@ const Cart = () => {
   const submitCard = async () => {
     try {
       const total = Object.entries(cartItems).reduce((sum, [productId, item]) => {
-        const product = data?.products.find(p => p.id === parseInt(productId));
+        const product = state?.products.find(p => p.id === parseInt(productId));
         return sum + (product ? product.price * item.quantity : 0);
       }, 0);
       

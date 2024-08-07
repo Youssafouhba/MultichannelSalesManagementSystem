@@ -18,6 +18,7 @@
     "@cloudinary/url-gen": "^1.19.0",
     "@expo-google-fonts/inter": "^0.2.3",
     "@expo/vector-icons": "^14.0.2",
+    "@ptomasroos/react-native-multi-slider": "^2.2.2",
     "@react-native-async-storage/async-storage": "1.23.1",
     "@react-navigation/native": "^6.1.18",
     "@react-navigation/native-stack": "^6.10.1",

@@ -22,9 +22,10 @@ type IconConfig = {
 };
 
 const STATUS_ICON_CONFIG: Record<OrderStatus, IconConfig> = {
-  Delivered: { name: 'check-circle', color: 'green', Component: Icon },
-  'Picked up': { name: 'cube-outline', color: '#0077b6', Component: TabBarIcon },
+  delivered: { name: 'check-circle', color: 'green', Component: Icon },
+  "picked up": { name: 'cube-outline', color: '#0077b6', Component: TabBarIcon },
   Pending: { name: 'schedule', color: 'orange', Component: Icon },
+  "cancelled":{ name: 'schedule', color: 'orange', Component: Icon }
 };
 
 const StatusIcon: React.FC<{ status: OrderStatus }> = React.memo(({ status }) => {
@@ -73,16 +74,6 @@ const Orders: React.FC = () => {
   var isLoggedIn = state.JWT_TOKEN !=='';
   var token = state.JWT_TOKEN;
 
-
-  const ClearCart = () => {
-    dispatch({ type: 'CLEAN_CART'});
-  };
-
-
-
-  const handleLogin = () => {
-    router.push("/LoginPage?id=Orders");
-  };
 
   
 

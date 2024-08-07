@@ -11,6 +11,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAppData } from '@/components/AppDataProvider';
 import { baseurl } from '@/components/config';
 import { TouchableOpacity } from 'react-native';
+import { useRoute } from '@react-navigation/native';
+import { useRouter } from 'expo-router';
 const SockJS = require('sockjs-client/dist/sockjs.js');
 
 interface Message {
@@ -35,7 +37,7 @@ const Messages: React.FC = () => {
   const admin = "admin";
   const chatAreaRef = React.useRef<ScrollView>(null);
   const messageInputRef = React.useRef<TextInput>(null);
-  const navigation = useNavigation();
+  const navigation = useRouter();
 
   var isLoggedIn = state.JWT_TOKEN !=='';
   const SERVER_URL = `http://${baseurl}:9001`;

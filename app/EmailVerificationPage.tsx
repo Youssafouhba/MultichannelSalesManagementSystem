@@ -11,6 +11,9 @@ import tw from "tailwind-react-native-classnames";
 import * as Animatable from "react-native-animatable";
 import AnimatedCustomAlert from "@/components/AnimatedCustomAlert";
 import config from '@/components/config';
+import { AsyncStorage } from 'react-native';
+import { useAppData } from '@/components/AppDataProvider';
+import { router } from 'expo-router';
 
 type RootStackParamList = {
   EmailVerificationPage: { mail: string };
@@ -28,11 +31,10 @@ const EmailVerificationPage: React.FC = () => {
   const route = useRoute<EmailVerificationPageRouteProp>();
   const navigation = useNavigation();
   const email = route.params?.mail || null;
-
+  const { login, fetchdt, cartElements, token } = useAppData();
   const [errorOtp, setErrorOtp] = useState<string>("");
   const [otp, setOtp] = useState<string>("");
   const [apiResponse, setApiResponse] = useState<AxiosResponse<ApiResponse> | null>(null);
-  const token = state.JWT_TOKEN;
   const [alertVisible, setAlertVisible] = useState<boolean>(false);
 
   const handleDismiss = () => {
@@ -86,7 +88,23 @@ const EmailVerificationPage: React.FC = () => {
       const response2 = await apiHandler("/api/auth-client/otp/verify-otp", payload, token);
       console.log(response2.data);
       if (response2.data.message === "OTP verified successfully") {
-        navigation.navigate("LoginPage" as never);
+        const { message, token } = response2.data;
+      await login(token);
+      if (token) {
+        await login(token);
+        dispatch({ type: 'SET_JWT_TOKEN', payload: token });
+        await AsyncStorage.setItem('jwtToken', token);
+        
+        cartElements?.forEach((item) => {
+          const { product, quantity } = item;
+          dispatch({ type: 'ADD_TO_CART', payload: { ...product, quantity } });
+        });
+        
+        router.navigate("/");
+      } else {
+        throw new Error('No token received from server');
+      }
+        navigation.navigate("/" as never);
         console.log("OTP verified successfully");
       } else {
         setErrorOtp(response2.data.message);

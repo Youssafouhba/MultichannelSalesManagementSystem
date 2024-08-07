@@ -1,7 +1,3 @@
-import { TabBarIcon } from "@/components/navigation/TabBarIcon";
-import { Icon } from "react-native-paper";
-
-
 export interface UserDTO {
   fullName: string,
   email: string,
@@ -30,7 +26,8 @@ export interface Product {
     imageUrls: {id: string, url: string }[];
     category: string;
     postedDate: string;
-  }
+}
+
 export interface CommentItem {
   id: string;
   content: string;
@@ -56,19 +53,14 @@ export interface Card {
 }
 
 export interface CartElement {
-
   id: string;
-  
   quantity: number;
-
   sub_total: number;
-
   product: Product;
-
 }
 
 
-export type OrderStatus = 'Delivered' | 'Pending' | 'Picked up';
+export type OrderStatus = 'delivered' | 'Pending' | 'picked up' | 'cancelled';
 
 export type paymentMethod = 'Card' | 'Cash';
 export type OrderItem = {

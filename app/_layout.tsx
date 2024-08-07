@@ -11,6 +11,8 @@ import { Color } from '@/GlobalStyles';
 import { color } from '@rneui/themed/dist/config';
 import Menu from '@/components/Menu';
 import { AppDataProvider } from '@/components/AppDataProvider';
+import { Tabs } from 'expo-router';
+import FilterResult from './(tabs)/FilterResult';
 
 function FilterMenu({ isVisible, onClose }) {
   if (!isVisible) return null;
@@ -48,22 +50,22 @@ function CustomHeader({title}) {
 
 function CustomMainHeader({ onMenuPress}) {
   const pathname = usePathname();
-  const {pres} = useGlobalSearchParams()
   const navigation = useNavigation();
+  const { id ,pres} = useGlobalSearchParams();
+  const {filter} = useLocalSearchParams()
   const goBack = () => {
-    const previousRoute = navigation.getState().routes[navigation.getState().index - 1];
-    console.log("Previous Route:", previousRoute ? previousRoute.name : "None");
-
-    navigation.dispatch(StackActions.pop());
+    router.navigate("/Filter");
   };
+
   return (
     <View style={styles.header}>
+   
       <TouchableOpacity onPress={() => {}} style={[]}>
           <Image
-            contentFit="cover"
             source={require("../assets/rectangle-111.png")}
           />
       </TouchableOpacity>
+      
    
       <TouchableOpacity onPress={onMenuPress} style={styles.menuButton}>
         <Ionicons name="menu" size={29} color="black" />
@@ -71,6 +73,7 @@ function CustomMainHeader({ onMenuPress}) {
     </View>
   );
 }
+
 
 export default function AppLayout() {
   const [isMenuVisible, setIsMenuVisible] = useState(false);
@@ -93,7 +96,7 @@ export default function AppLayout() {
     setIsFilterMenuVisible(false);
   };
 
-  
+
   return (
     <AppDataProvider>
     <AppProvider>
@@ -117,6 +120,14 @@ export default function AppLayout() {
             header: () => <CustomHeader title={'Product Details'}/>,
           }} 
         />
+        <Stack.Screen 
+          name="Filter" 
+          options={{ 
+            animation: 'slide_from_right',
+            header: () => <CustomHeader title={'Filter'}/>,
+          }} 
+        />
+      
         <Stack.Screen 
           name="CompleteTradeCustomer" 
           options={{ 

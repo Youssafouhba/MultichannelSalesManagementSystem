@@ -16,7 +16,7 @@ function Menu({ isVisible, onClose }) {
   const { logout, token,error } = useAppData();
   if (!isVisible) return null;
   const MenuOptions = [
-    {name: 'Filter', icon: require('@/assets/images/icons8-réglages-vertical-50.png'), path: '/Profile'},
+    {name: 'Filter', icon: require('@/assets/images/icons8-réglages-vertical-50.png'), path: '/Filter'},
     {name: 'My Orders', icon: require('@/assets/images/icons8-sac-de-courses-80.png'), path: '/Orders'},
     {name: 'My Favorite', icon: require('@/assets/images/icons8-coeurs-50.png'), path: '/Wishlist'},
     {name: 'Offers', icon: require('@/assets/images/icons8-offer-58.png'), path: '/Profile'},
@@ -29,13 +29,13 @@ function Menu({ isVisible, onClose }) {
     { name: require('@/assets/images/messenger_5968771 (1).png'), id: 'fb' },
   ];
   const handleMenuItemPress = async (path) => {
-    onClose(); // Close the menu
+    onClose();
     if (path === '/') {
       state.notificationsCount = 0;
       logout();
       dispatch({ type: 'SET_JWT_TOKEN', payload: '' });
     }
-    router.push(path); // Navigate to the selected path
+    router.push(path);
   };
 
   const renderMenuItem = ({ item }) => (

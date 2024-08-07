@@ -1,7 +1,6 @@
 import React, { useEffect, useState, useMemo, useCallback } from "react";
 import {Image, View, Text, Pressable, StyleSheet, FlatList, Dimensions, ScrollView, TouchableOpacity, SafeAreaView, useWindowDimensions, TextInput } from "react-native";
 import tw from 'tailwind-react-native-classnames';
-import CeilingCalculator from "./CeillingCalculator";
 import { Color, Padding } from "@/GlobalStyles";
 import { groupecomponentstyles,headerstyles } from "@/GlobalStyles";
 import StarRating from "@/components/StarRating";
@@ -13,7 +12,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { Product } from "@/constants/Classes";
 import { debounce } from "lodash";
 
-export default function ProductsService() {
+export default function FilterResult() {
   const { width, height } = useWindowDimensions();
   const [selectedLabel, setSelectedLabel] = useState<string | null>("Best Seller");
   const { BestProducts,NewProducts,data,user,fetchProductRating,token} = useAppData();
@@ -39,215 +38,92 @@ export default function ProductsService() {
   const [hasNavigated, setHasNavigated] = useState(false);
   const [id,setId] = useState<string>('')
 
-  useEffect(() => {
-    if (hasNavigated) {
-      setHasNavigated(false);
-      navigation.navigate(`/ProductDetails?id=${id}`);
-    }
 
-  }, [hasNavigated, id, navigation]);
-
+  
   useEffect(() => {
     const subscription = Dimensions.addEventListener('change', ({ window }) => {
       setDimensions(window);
     });
-    
     return () => subscription?.remove();
   }, []);
 
-  useEffect(()=>{
-    setIsLoading(true)
-  },[state.JWT_TOKEN])
-
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setProducts(data?.products);
-        setFilteredProducts(data?.products)
-        state.products = data?.products;
-        setProductRatings(data?.ratings)
-        console.log(data?.ratings[5])
-        setIsLoading(false);
-      } catch (error) {
-        console.error('Error fetching products:', error);
-        setIsLoading(false);
-      }
-    };
-
-      fetchData();
-    
-  }, [filter,state.filtredproducts]);
-
-
-  useEffect(()=>{
-    if(products.length > 0 ){
-      switch (selectedLabel) {
-        case "New designs":
-          setsug(true)
-          setFilteredProducts(NewProducts);
-          break;
-        case "Best Seller":
-          setsug(true)
-          setFilteredProducts(BestProducts)
-          break
-        default:
-          break;
-      }
+    setIsLoading(true);
+    if (filter === 'applied') {
+      setFilteredProducts(state.filtredproducts);
+    } else {
+      setFilteredProducts(data?.products);
     }
-  },[products, selectedLabel, NewProducts, BestProducts])
-
- 
-const gotodetails = (id: string) => {
-  setId(id)
-   setHasNavigated(true)
-}
- 
+    setIsLoading(false);
+  }, [filter, state.filtredproducts, data?.products]);
 
   const renderProduct = ({ item }: { item: Product }) => (
-    <View style={[{width: rectangleWidth,height: rectangleHeight},styles.productWrapper, selectedLabel === "New designs" && styles.fullWidthProduct]}>
+    <View style={[{ width: width / 2 - 15, height: height * 0.3 }, styles.productWrapper]}>
       <Pressable 
-        style={[styles.productInnerContainer, selectedLabel === "New designs" && styles.fullWidthInnerContainer]}
-        onPress={() => { gotodetails(item.id)}}
+        style={styles.productInnerContainer}
+        onPress={() => router.navigate(`/ProductDetails?id=${item.id}`)}
       >
         <Image
-          contentFit="cover"
-          style={[styles.productImage, selectedLabel === "New designs" && styles.fullWidthImage]}
-          source={{ uri: item.imageUrls[0]?.url}}
+          style={styles.productImage}
+          source={{ uri: item.imageUrls[0]?.url }}
         />
-        <View style={[styles.productDesc, selectedLabel === "New designs" && styles.fullWidthDesc]}>
-          <Text style={[styles.productName, selectedLabel === "New designs" && styles.fullWidthName]} numberOfLines={category === "New designs"?3:2} ellipsizeMode="tail">
+        <View style={styles.productDesc}>
+          <Text style={styles.productName} numberOfLines={2} ellipsizeMode="tail">
             {item.name}
           </Text>
-          <View style={[styles.infoArea, selectedLabel === "New designs" &&{marginTop: 5}]}>
-            <Text style={[styles.priceText, selectedLabel === "New designs" && styles.fullWidthPrice]}>
+          <View style={styles.infoArea}>
+            <Text style={styles.priceText}>
               £ {item.price}
             </Text>
-            <Text style={[styles.stockText, selectedLabel === "New designs" && styles.fullWidthStock]}>
+            <Text style={styles.stockText}>
               <Text style={{color: Color.colorize_gray}}>{item.quantityInStock}</Text> in stock
             </Text>
           </View>
-          <View style={[styles.badgeArea, selectedLabel === "New designs" &&{marginTop: 5}]}>
-            <View style={[styles.offerBadge,selectedLabel === "New designs" && { marginRight: 15,}]}>
-              <Text style={[styles.offerText, selectedLabel === "New designs" && styles.fullWidthOfferText]}>Offer</Text>
+          <View style={styles.badgeArea}>
+            <View style={styles.offerBadge}>
+              <Text style={styles.offerText}>Offer</Text>
             </View>
-            <StarRating rating={productRatings[parseInt(item.id)]} />
+            <StarRating rating={data?.ratings[parseInt(item.id)]} />
           </View>
         </View>
       </Pressable>
       {item.isNew && (
         <Image
-          style={[styles.newBadge, selectedLabel === "New designs" && styles.fullWidthNewBadge]}
-          source={require("../assets/badge_143875.png")}
+          style={styles.newBadge}
+          source={require("@/assets/badge_143875.png")}
         />
       )}
     </View>
   );
 
   const renderProductList = () => (
-    <View style={[styles.listContainer, tw``]}>
-    {selectedLabel === "New designs"?(
-      <FlatList
-        style={{ flex: 1 }}
-        key={selectedLabel}
-        data={NewProducts} // Limiter à 4 éléments
-        renderItem={renderProduct}
-        keyExtractor={(item) => item.id.toString()}
-        numColumns={1}
-        showsVerticalScrollIndicator={false}
-        scrollEnabled={true} // Désactiver le défilement
-        contentContainerStyle={styles.flatListContent}
+    <FlatList
+      style={{ flex: 1 }}
+      data={filteredProducts}
+      renderItem={renderProduct}
+      keyExtractor={(item) => item.id.toString()}
+      numColumns={2}
+      columnWrapperStyle={styles.row}
+      showsVerticalScrollIndicator={false}
+      contentContainerStyle={styles.flatListContent}
     />
-    ):(
-      <FlatList
-        style={{ flex: 1 }}
-        key={selectedLabel}
-        data={selectedLabel === "Best Seller"?BestProducts:filteredProducts} // Limiter à 4 éléments
-        renderItem={renderProduct}
-        keyExtractor={(item) => item.id.toString()}
-        numColumns={2}
-        columnWrapperStyle={styles.row}
-        showsVerticalScrollIndicator={false}
-        scrollEnabled={true} // Désactiver le défilement
-        contentContainerStyle={styles.flatListContent}
-    />
-    )}
-    
-  </View>
   );
-
-  const filterProducts = (categoryName: string | null) => {
-   setSelectedLabel(categoryName)
-  };
-
-  const renderCategoryButton = (label: string) => (
-    <Pressable
-      key={label}
-      onPress={() => filterProducts(label)}
-      style={({ pressed }) => [
-        tw`w-28`,
-        pressed && groupecomponentstyles.pressed
-      ]}
-    >
-      <View
-        style={[
-          groupecomponentstyles.variantneutralStatehover,
-          selectedLabel === label && groupecomponentstyles.selectedButton
-        ]}
-      >
-        <Text
-          style={[
-            groupecomponentstyles.texto,
-            selectedLabel === label && groupecomponentstyles.selectedButtonText,
-            tw`text-base font-normal text-sm`
-          ]}
-        >
-          {label}
-        </Text>
-      </View>
-    </Pressable>
-  );
-
-  const renderGroupElement = () => (
-    <View style={[{backgroundColor: Color.colorWhite},tw`w-full blur-md`]}>
-    <View style={[tw`flex-row justify-between items-center text-center mx-2 pl-2 pr-2`,]}>
-      <Pressable onPress={() => {setsug(true),setSelectedLabel("Best Seller")}}>
-        <Text style={[tw`text-base text-gray-400 font-normal text-lg`,sug&&{color: 'black'}]}>
-            {`Suggestions `}
-        </Text>
-      </Pressable>
-      <Pressable onPress={() => {setSelectedLabel("all"),setFilteredProducts(products),setInputSearch(''),setsug(false)}} >
-        <View style={[styles.modelightStateenabled]}>
-          <Text style={[styles.textTypo,tw`text-base text-gray-400 font-normal text-lg`,!sug&&{color: 'black'}]}>View All</Text>
-        </View>
-      </Pressable>
-    </View>
-    <View style={tw`flex-row justify-around my-2`}>
-      {renderCategoryButton("Best Seller")}
-      {renderCategoryButton("New designs")}
-      {renderCategoryButton("Ceilling Calculator")}
-    </View>
-  </View>
-  )
 
   const debouncedSearch = useCallback(
     debounce((key: string) => {
       if (key.trim() === '') {
-        setFilteredProducts(products);
-        setSelectedLabel('all');
-        setsug(true);
+        setFilteredProducts(state.filtredproducts || data?.products);
       } else {
-        const filtered = products.filter(
-          (product) =>
+        const filtered = (state.filtredproducts || data?.products)?.filter(
+          (product: Product) =>
             product.name.toLowerCase().includes(key.toLowerCase()) ||
             product.category.toLowerCase().includes(key.toLowerCase()) ||
             product.price.toString().includes(key)
         );
         setFilteredProducts(filtered);
-        setSelectedLabel('all');
-        setsug(false);
       }
     }, 300),
-    [filteredProducts]
+    [state.filtredproducts, data?.products]
   );
 
   const handleInputChange = (text: string) => {
@@ -256,7 +132,7 @@ const gotodetails = (id: string) => {
   };
 
   const searchContainer = useMemo(() => (
-    <View style={[tw`h-16 w-full items-center overflow-hidden bg-white`]}>
+    <View style={tw`h-16 w-full items-center overflow-hidden bg-white`}>
       <View style={tw`flex-row w-80 items-center px-4 py-2 bg-gray-100 rounded-full`}>
         <TextInput
           placeholder="Search..."
@@ -267,38 +143,29 @@ const gotodetails = (id: string) => {
         />
         <Ionicons name="search" size={25} color="gray" style={tw`ml-3`} />
       </View>
-      {isLoggedIn && (
-      <View style={[tw``,{right: '35%'}]}>
-        <Text style={tw`text-blue-400 text-sm`}>Hi Youssef</Text>
-      </View>
-      )}
-       
     </View>
-  ), [inputsearch, user, handleInputChange]);
+  ), [inputsearch, handleInputChange]);
 
   return (
     <View style={styles.container}>
       {searchContainer}
-      {renderGroupElement()}
-      {isLoading? (
-        <ScrollView contentContainerStyle={{alignItems: 'center',top: '40%',flex: 1,width: '100%'}}>
+      {isLoading ? (
+        <ScrollView contentContainerStyle={tw`items-center justify-center flex-1 w-full`}>
           <LoadingAnimation size={80} color="blue" />
-          <Text style={[tw`text-base text-xs text-gray-400`]}>Loading...</Text>
-        </ScrollView>):
-      (
-      <SafeAreaView style={styles.scrollView}>
-      {selectedLabel === "Ceilling Calculator" ? (
-        <CeilingCalculator />
-      ) : filteredProducts.length === 0 ? (
-        <View style={[styles.noProductsContainer,tw`blur-md brightness-200`]}>
-          <Text style={styles.noProductsText}>No products found</Text>
-        </View>
+          <Text style={tw`text-base text-xs text-gray-400`}>Loading...</Text>
+        </ScrollView>
       ) : (
-        renderProductList()
+        <SafeAreaView style={styles.scrollView}>
+          {filteredProducts?.length === 0 ? (
+            <View style={[styles.noProductsContainer, tw`blur-md brightness-200`]}>
+              <Text style={styles.noProductsText}>No products found</Text>
+            </View>
+          ) : (
+            renderProductList()
+          )}
+        </SafeAreaView>
       )}
-      </SafeAreaView>)}
     </View>
-
   );
 
 
@@ -338,6 +205,7 @@ const gotodetails = (id: string) => {
       marginBottom: 10,
       borderRadius: 8,
       overflow: 'hidden',
+      marginHorizontal: 6,
     },
     fullWidthProduct: {
       height: ((screenHeight*0.62)/3),//nwe

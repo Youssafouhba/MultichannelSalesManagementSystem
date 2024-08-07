@@ -1,22 +1,13 @@
 import { useNavigation } from "@react-navigation/native";
-import { Image } from "expo-image";
 import React, { useEffect } from 'react';
-import { StyleSheet, View } from "react-native";
+import { StyleSheet, View ,Image} from "react-native";
 import { Border, Color } from "../GlobalStyles";
-
+import LoadingAnimation from "@/components/LoadingAnimation";
 
 const LogoPage = () => {
   return (
     <View style={styles.LogoPage}>
-      <Image
-        style={[styles.LogoPageChild, styles.childLayout]}
-        contentFit="cover"
-        source={require("../assets/rectangle-1.png")}
-      />
-      <View style={[styles.homeIndicator, styles.homePosition]}>
-        <View style={styles.homeIndicator1} />
-        <View style={[styles.homeIndicatorChild, styles.homePosition]} />
-      </View>
+      <LoadingAnimation size={160} color="aliceblue" circleCount={15}/>
     </View>
   );
 };

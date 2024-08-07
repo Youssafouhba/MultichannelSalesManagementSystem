@@ -32,6 +32,7 @@ export default function Notifications() {
 
     const readonescount = async ()=>{
         const data = await fetchNotification();
+        setNotifications(data);
         const notifscount = data.filter((item: Notification) => !item.isRead).length;
         state.notificationsCount = notifscount;
         dispatch({ type: 'SET_notificationsCount', payload: { notifscount } });
@@ -40,9 +41,7 @@ export default function Notifications() {
     useEffect(() => {
         const getNotifications = async () => {
             try {
-                const data = await fetchNotification();
                 readonescount()
-                setNotifications(data);
             } catch (error) {
                 console.error('Error fetching notifications:', error);
             } finally {

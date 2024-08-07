@@ -133,7 +133,7 @@ const Infos = ({ fullName, email, phoneNumber, dateOfCreation }: { fullName: str
         />
         
         <View style={[tw`flex-row justify-around items-center my-4`]}>
-          <TouchableOpacity>
+          <TouchableOpacity onPress={handleDeleteAccount}>
             <Button buttonColor="red" textColor="white" style={[tw`text-base font-medium`, { color: Color.colorRed }]}>
               DELETE ACCOUNT
             </Button>

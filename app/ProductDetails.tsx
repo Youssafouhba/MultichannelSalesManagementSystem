@@ -36,13 +36,13 @@ export default function ProductDetails() {
     useFocusEffect(
         useCallback(() => {
             const fetchProduct = async () => {
-                const filtered = state.products.find((product: Product) => product.id == id);
+                const filtered = state?.products.find((product: Product) => product.id == id);
                 setProduct(filtered);
                 setImageUrl(filtered.imageUrls[0].url);  
             }
             checkFavoriteStatus();
             fetchProduct();
-        }, [id, p, data?.products])
+        }, [id, p, state?.products])
     );
 
     const checkFavoriteStatus = async () => {
