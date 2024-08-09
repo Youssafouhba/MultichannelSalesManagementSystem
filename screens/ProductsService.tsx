@@ -12,11 +12,13 @@ import { useAppData } from "@/components/AppDataProvider";
 import { Ionicons } from "@expo/vector-icons";
 import { Product } from "@/constants/Classes";
 import { debounce } from "lodash";
+import config from "@/components/config";
+import EventSource, { EventSourceListener } from "react-native-sse";
 
 export default function ProductsService() {
   const { width, height } = useWindowDimensions();
   const [selectedLabel, setSelectedLabel] = useState<string | null>("Best Seller");
-  const { BestProducts,NewProducts,data,user,fetchProductRating,token} = useAppData();
+  const { BestProducts,NewProducts,data,user,Products,token} = useAppData();
   const rectangleWidth = width / 2 - 15; // 15 est la marge entre les rectangles
   const rectangleHeight =(width/height) > 0.5 ? height /4+4:height *(width/height)-124; // Ajustez cette valeur selon vos besoi28
   const imgheight = (width/height) > 0.5 ? '55%': '62%';
@@ -47,6 +49,7 @@ export default function ProductsService() {
 
   }, [hasNavigated, id, navigation]);
 
+
   useEffect(() => {
     const subscription = Dimensions.addEventListener('change', ({ window }) => {
       setDimensions(window);
@@ -62,9 +65,9 @@ export default function ProductsService() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        setProducts(data?.products);
-        setFilteredProducts(data?.products)
-        state.products = data?.products;
+        setProducts(Products);
+        setFilteredProducts(Products)
+        state.products = Products;
         setProductRatings(data?.ratings)
         console.log(data?.ratings[5])
         setIsLoading(false);
@@ -76,7 +79,7 @@ export default function ProductsService() {
 
       fetchData();
     
-  }, [filter,state.filtredproducts]);
+  }, [filter,Products]);
 
 
   useEffect(()=>{
@@ -94,7 +97,7 @@ export default function ProductsService() {
           break;
       }
     }
-  },[products, selectedLabel, NewProducts, BestProducts])
+  },[products, selectedLabel, NewProducts, BestProducts,Products])
 
  
 const gotodetails = (id: string) => {

@@ -1,11 +1,13 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import axios, { AxiosError, AxiosResponse } from 'axios';
+import axios from 'axios';
 import { CartElement, CommentItem, Order, OrderItem, Product } from '@/constants/Classes';
 import Config from '@/components/config';
-import { Text } from 'react-native';
 import { UserDTO } from '@/constants/Classes';
 import { Notification } from '@/constants/Classes';
 import LogoPage from '@/app/LogoPage';
+import { Client } from '@stomp/stompjs';
+import { set } from 'lodash';
+var SockJS = require('sockjs-client/dist/sockjs.js');
 
 interface AppData {
   products: Product[];
@@ -19,6 +21,7 @@ interface AppDataContextType {
   cartElements: CartElement[];
   orders: Order[];
   favProducts: Product[];
+  Products: Product[];
   BestProducts: Product[];
   NewProducts: Product[];
   user: UserDTO | null;
@@ -62,7 +65,9 @@ export const AppDataProvider: React.FC<AppDataProviderProps> = ({ children }) =>
   const [favProducts, setFavProducts] = useState<Product[]>([]);
   const [NewProducts, setNewProducts] = useState<Product[]>([]);
   const [BestProducts, setBestProducts] = useState<Product[]>([]);
+  const [Products, setProducts] = useState<Product[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
+  const [stompClient, setStompClient] = useState<Client | null>(null);
  
   const fetchProductRating = async (productId: number): Promise<number> => {
     try {
@@ -76,6 +81,11 @@ export const AppDataProvider: React.FC<AppDataProviderProps> = ({ children }) =>
       return 0;
     }
   };
+
+
+
+
+
   useEffect( () => {
 
     const checkFavoriteStatus = async (productId: string) => {
@@ -98,7 +108,7 @@ export const AppDataProvider: React.FC<AppDataProviderProps> = ({ children }) =>
         // Fetch products
         const productsResponse = await axios.get(`${Config.API_BASE_URL}/api/Products`);
         const products = productsResponse.data;
-
+        
         // Fetch ratings
         const ratingsPromises = products.map((product: Product) => fetchProductRating(parseInt(product.id)));
         const ratingValues = await Promise.all(ratingsPromises);
@@ -113,12 +123,12 @@ export const AppDataProvider: React.FC<AppDataProviderProps> = ({ children }) =>
           isFavorite: await checkFavoriteStatus(product.id),
         }));
         const productsWithFavorites = await Promise.all(favoriteStatusPromises);
-        console.log(productsWithFavorites)
         // Update state
         setData({
           products: productsWithFavorites,
           ratings: Object.fromEntries(products.map((product, index) => [parseInt(product.id), ratingValues[index]])),
         });
+        setProducts(products);
         setNewProducts(newProductsList);
         setBestProducts(bestProductsList);
       } catch (error) {
@@ -129,7 +139,73 @@ export const AppDataProvider: React.FC<AppDataProviderProps> = ({ children }) =>
       }
     };
 
+    const onConnected = (client: Client) => {
+      console.log('Connected to WebSocket');
+      client.subscribe('/updates/product', onPublicNotificationReceived); // Adjust the topic as needed
+  };
+
+
+  const onPublicNotificationReceived = (payload: any) => {
+    try {
+      const { product, action } = JSON.parse(payload.body);
+  
+      console.log('Received product update:', product, 'Action:', action);
+  
+      setProducts(prevProducts => {
+        switch (action) {
+          case 'update':
+            const indexToUpdate = prevProducts.findIndex(p => p.id === product.id);
+            if (indexToUpdate >= 0) {
+              const updatedProducts = [...prevProducts];
+              updatedProducts[indexToUpdate] = product;
+              return updatedProducts;
+            } else {
+              return [product, ...prevProducts];
+            }
+  
+          case 'delete':
+            return prevProducts.filter(p => p.id !== product.id);
+          case 'add':
+            return [product, ...prevProducts];
+          default:
+            return prevProducts;
+        }
+      });
+
+    } catch (error) {
+      console.error('Error parsing product update:', error);
+    }
+  };
+  
+  
+
+    const websocket = async () => {
+          if(isLoading){
+
+            const onError = (error: any) => {
+              console.error('STOMP error:', error);
+            };
+
+          // Initialize the WebSocket connection and STOMP client
+          const client = new Client({
+            debug: (str) => { console.log(str); },
+            brokerURL: `${Config.API_BASE_URL}/products`, // Ensure this URL is correct
+            connectHeaders: {
+                // Add headers if needed
+            },
+            webSocketFactory: () => new SockJS(`${Config.API_BASE_URL}/products`), // Ensure this URL matches your server configuration
+            onConnect: () => onConnected(client),
+            onStompError: onError
+        });
+
+        client.activate();
+        setStompClient(client);  
+          }         
+    }
+
+    websocket();
     fetchAppData();
+    
   }, []);
 
   const fetchdt = async () => {
@@ -290,7 +366,7 @@ const fetchprofile = async () => {
 
   return (
     <AppDataContext.Provider value={{ 
-      data, user,token,cartElements,orders,BestProducts,NewProducts,fetchProductRating,login,fetchCart,fetchprofile,fetchNotification,markNotificationAsRead,updateProfile,fetchOrders,deleteAccount,favProducts, isLoading, error,fetchdt, logout,fetchFavorites }}>
+      data, user,token,cartElements,orders,BestProducts,Products,NewProducts,fetchProductRating,login,fetchCart,fetchprofile,fetchNotification,markNotificationAsRead,updateProfile,fetchOrders,deleteAccount,favProducts, isLoading, error,fetchdt, logout,fetchFavorites }}>
       {isLoading ? <LogoPage/> : children}
     </AppDataContext.Provider>
   );

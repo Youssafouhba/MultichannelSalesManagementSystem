@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react'
-import { StyleSheet, Text, View, Pressable, TouchableOpacity, FlatList, SafeAreaView, ScrollView } from "react-native";
-import { Image } from "expo-image";
+import { StyleSheet,Image, Text, View, Pressable, TouchableOpacity, FlatList, SafeAreaView, ScrollView } from "react-native";
+
 import { TabBarIcon } from '@/components/navigation/TabBarIcon';
 import { cardstyles, Color, FontFamily } from '@/GlobalStyles';
 import tw from 'tailwind-react-native-classnames';

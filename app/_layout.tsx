@@ -33,7 +33,8 @@ function FilterMenu({ isVisible, onClose }) {
 }
 
 function CustomHeader({title}) {
-  const { id ,pres} = useGlobalSearchParams();
+  const { id } = useGlobalSearchParams();
+  const {pres} = useLocalSearchParams()
   const navigation = useNavigation();
   const goBack = () => {
     pres === "LoginPage" ? router.push("/") : navigation.dispatch(StackActions.pop());
