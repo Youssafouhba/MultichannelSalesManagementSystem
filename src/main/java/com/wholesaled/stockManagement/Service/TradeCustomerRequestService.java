@@ -27,7 +27,7 @@ public class TradeCustomerRequestService {
 
     
     private final TradeCustomerRequestRepository repository;
-    private final NotificationService notificationService;
+   // private final NotificationService notificationService;
     private final RequestTradeMapper requestTradeMapper;
     private final ClientSideProducts clientSideProducts;
 
@@ -55,7 +55,7 @@ public class TradeCustomerRequestService {
         }
        
         String requestedBy = SecurityContextHolder.getContext().getAuthentication().getName();
-        notificationService.notifySuperAdmin("New trade customer request by " + requestedBy);
+   //     notificationService.notifySuperAdmin("New trade customer request by " + requestedBy);
 
         return ResponseEntity.ok("Trade customer request submitted successfully.");
     }
@@ -111,7 +111,7 @@ public class TradeCustomerRequestService {
     }
    
 
-        notificationService.notifyUser(request.getEmailAddress(), "Your trade customer request has been " + status.toLowerCase());
+      //  notificationService.notifyUser(request.getEmailAddress(), "Your trade customer request has been " + status.toLowerCase());
 
         return ResponseEntity.ok("Trade customer request " + status + " successfully.");
     }

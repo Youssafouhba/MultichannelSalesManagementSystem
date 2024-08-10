@@ -29,7 +29,7 @@ public class StockService {
     private final ProductRepository productRepository;
     private final ClientSideProducts clientSideProducts;
     private final StockActionRepository stockActionRepository;
-    private final NotificationService notificationService;
+    //private final NotificationService notificationService;
 
 
     @PreAuthorize("hasRole('StockManager')")
@@ -51,7 +51,7 @@ public class StockService {
 
         stockActionRepository.save(stockAction);
 
-       notificationService.notifySuperAdmin("New stock action requested by " + requestedBy);
+     //  notificationService.notifySuperAdmin("New stock action requested by " + requestedBy);
 
         return ResponseEntity.ok("Stock action requested successfully.");
     }
@@ -96,7 +96,7 @@ public class StockService {
     
         stockActionRepository.save(stockAction);
     
-        notificationService.notifySuperAdmin("Stock action " + status + " by " + approvedBy);
+      //  notificationService.notifySuperAdmin("Stock action " + status + " by " + approvedBy);
     
         return ResponseEntity.ok("Stock action " + status + " successfully.");
     }
@@ -154,7 +154,7 @@ public class StockService {
 
         for (Product product : products) {
             if (product.getQuantityInStock() <= threshold) {
-                notificationService.notifySuperAdmin("Alert: Low stock for product " + product.getName());
+     //           notificationService.notifySuperAdmin("Alert: Low stock for product " + product.getName());
             }
         }
     }

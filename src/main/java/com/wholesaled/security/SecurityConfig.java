@@ -46,6 +46,8 @@ public class SecurityConfig {
                     .requestMatchers("/Stock/Management/stocks/review/**").hasAnyRole("Admin" , "SuperAdmin")
                     .requestMatchers("/Stock/Management/stocks/report").hasRole("SuperAdmin")
                     .requestMatchers("/Stock/Management/stocks/alert").hasAnyRole("SuperAdmin", "StockManager", "Admin")
+                    .requestMatchers("/updates/**").permitAll()
+
 
                     .requestMatchers("/Stock/Management/discount/**").hasAnyRole("SuperAdmin", "Admin")
                     .anyRequest().authenticated()

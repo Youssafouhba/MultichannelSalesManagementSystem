@@ -23,7 +23,7 @@ public interface ClientSideProducts {
     ResponseEntity<String> updateProduct(@RequestBody ProductDto product);
 
     @DeleteMapping("/api/Products/{id}")
-    ResponseEntity<?> deleteProduct(@PathVariable("id") Long id);
+    ResponseEntity<String> deleteProduct(@PathVariable("id") Long id);
     
     @PostMapping("/api/client/set-trade-customer/{userId}")
     ResponseEntity<String> setUserToTradeCustomer(@PathVariable(value = "userId") Long userId);

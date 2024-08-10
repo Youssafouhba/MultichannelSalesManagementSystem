@@ -18,6 +18,7 @@ import com.wholesaled.stockManagement.Dto.RegisterStockDto;
 import com.wholesaled.stockManagement.Dto.ReportRequestDto;
 import com.wholesaled.stockManagement.Dto.StockReport;
 import com.wholesaled.stockManagement.Model.StockAction;
+import com.wholesaled.stockManagement.Repository.StockActionRepository;
 import com.wholesaled.stockManagement.Service.StockService;
 
 import lombok.AllArgsConstructor;
@@ -29,6 +30,7 @@ import lombok.AllArgsConstructor;
 public class StockController {
 
     private final StockService stockService;
+    private final StockActionRepository stockRepository;
 
     @PostMapping("/in")
     @PreAuthorize("hasRole('StockManager')")
@@ -99,7 +101,7 @@ public class StockController {
     @PreAuthorize("hasRole('Admin')")
     public ResponseEntity<List<StockAction>> getAllPendingStockActions() {
         try {
-            List<StockAction> pendingActions = stockService.getPendingStockActions();
+            List<StockAction> pendingActions = stockRepository.findAll();
             return ResponseEntity.ok(pendingActions);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(null);
