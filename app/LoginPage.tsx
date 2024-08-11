@@ -13,27 +13,32 @@ import {
   Dimensions,
   SafeAreaView
 } from "react-native";
-import { router, useLocalSearchParams, usePathname, useRouter } from 'expo-router';
+import { router, useLocalSearchParams, useNavigation, usePathname, useRouter } from 'expo-router';
 import { useAppContext } from '@/components/AppContext';
 import { Color, FontSize, Padding, Border } from "../GlobalStyles";
 import { useAppData } from "@/components/AppDataProvider";
 import LoginError from "@/components/LoginError";
 import axios from "axios";
 import config from "@/components/config";
+import { ProductInfos } from "@/constants/Classes";
+import { useRoute } from "@react-navigation/native";
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
-
+interface RouteParams {
+  payload: ProductInfos; // Replace 'any' with the actual type of payload
+}
 const LoginPage = () => {
   const { id, idp } = useLocalSearchParams();
   const { login, userInfos, cartElements, token } = useAppData();
   const { returnTo, productId } = useLocalSearchParams();
-  const navigation = useRouter();
+  const navigation = useNavigation<any>();
   const { state, dispatch } = useAppContext();
   const [password, setPassword] = useState("");
   const [email, setEmail] = useState("");
   const [errorVisible, setErrorVisible] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const pathname = usePathname();
+  const route = useRoute()
   
   const isValidEmail = (email) => {
     const emailRegex = /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,})+$/;
@@ -47,8 +52,11 @@ const LoginPage = () => {
   const navigateAfterLogin = () => {
   
     let targetRoute = "/";
-    if (returnTo === 'ProductDetails' && productId) {
-      targetRoute = `/ProductDetails?id=${productId}&&pres=LoginPage`;
+    if ((route.params as RouteParams)?.payload) {
+      const payload = {
+        ...(route.params as RouteParams)?.payload,
+      };
+      navigation.navigate(`ProductDetails?id=${productId}&&pres=LoginPage`,{payload})
     } else if (idp) {
       console.log(idp)
       targetRoute = `/${id}?p=${idp}&&pres=LoginPage`;

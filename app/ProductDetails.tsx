@@ -19,6 +19,7 @@ import { useAppData } from '@/components/AppDataProvider';
 import { router, useNavigation } from "expo-router";
 import config from '@/components/config';
 import { useRoute } from '@react-navigation/native';
+import { Item } from 'react-native-paper/lib/typescript/components/Drawer/Drawer';
 
 interface RouteParams {
     payload: ProductInfos; // Replace 'any' with the actual type of payload
@@ -27,40 +28,30 @@ interface RouteParams {
 export default function ProductDetails() {
     const { state, dispatch } = useAppContext();
     const route = useRoute();
-    const { p } = useGlobalSearchParams();
+    const { id} = useGlobalSearchParams();
     const [alertVisible, setAlertVisible] = useState(false);
     const [LogInAlertVisible, setLogInAlertVisible] = useState(false);
     const [pressed, setPressed] = useState<boolean>(false)
-    const [isFavorite, setIsFavorite] = useState<boolean>(false);
     const [imageUrl, setImageUrl] = useState<string>('')
     const [quantity, setQuantity] = useState<number>(1)
+    const navigation = useNavigation<any>();
     const [addedItem, setAddedItem] = useState({ name: '', quantity: 0 });
     var isLoggedIn = state.JWT_TOKEN !=='';
-    const { data,token} = useAppData();
+    const [isFavorit,setIsfavorit] = useState<boolean>(false)
+    
+    const { userInfos,ProductsInfos,data,token} = useAppData();
     const {product,comments,raiting} = (route.params as RouteParams)?.payload;
     useFocusEffect(
         useCallback(() => {
             const fetchProduct = async () => {
+                console.log(userInfos.wishlist.map(p=>p.id))
+                setIsfavorit(userInfos.wishlist.filter(p=>p.id==product.id).length > 0)
                 setImageUrl(product.imageUrls[0].url);
             }
-           // checkFavoriteStatus();
             fetchProduct();
-        }, [p,product])
+        }, [product])
     );
 
-    const checkFavoriteStatus = async () => {
-        if (token!=undefined) {
-            try {
-                const response = await axios.get(`${config.API_BASE_URL}/api/client/isFavorite/${state.product.id}`, {
-                    headers: { Authorization: `Bearer ${token}` },
-                });
-                console.log(response.data)
-                setIsFavorite(response.data);
-            } catch (error) {
-                console.error("Error checking favorite status:", error);
-            }
-        }
-    };
 
     const handleCancel = () => {
         setLogInAlertVisible(false);
@@ -68,7 +59,10 @@ export default function ProductDetails() {
     
     const handleConfirm = () => {
         setLogInAlertVisible(false);
-        router.push(`/LoginPage?returnTo=ProductDetails&productId=${product.id}`);
+        const payload = {
+            ...{product,comments,raiting},
+          };
+          navigation.navigate(`LoginPage`,{payload})
     };
     
     const toggleFavorite = async () => {
@@ -78,22 +72,25 @@ export default function ProductDetails() {
         }
 
         try {
-            const url = isFavorite
+            const url = isFavorit
                 ? `${config.API_BASE_URL}/api/client/deleteFromFavorite/${product.id}`
-                : `${config.API_BASE_URL}/api/client/addToFavorite/${id}`;
+                : `${config.API_BASE_URL}/api/client/addToFavorite/${product.id}`;
             
-            const response = isFavorite? await axios.delete(url,{
+            const response =  isFavorit? await axios.delete(url,{
                 headers: { Authorization: `Bearer ${token}` },
             }): await axios.post(url, {}, {
                 headers: { Authorization: `Bearer ${token}` },
             });
 
             if (response.status === 200) {
-                setIsFavorite(!isFavorite);
-                console.log(isFavorite ? "Removed from favorites" : "Added to favorites");
+                isFavorit?userInfos.wishlist = userInfos.wishlist.filter(p=>p.id!=product.id):userInfos.wishlist.push(product)
+               setIsfavorit(!isFavorit)
+
+                console.log(isFavorit ? "Removed from favorites" : "Added to favorites");
             }
         } catch (error) {
             console.error("Error updating favorite status:", error);
+  
         }
     };
 
@@ -121,7 +118,7 @@ export default function ProductDetails() {
                 style={[tw`absolute -mt-2 ml-1 rounded-3xl bg-white justify-center`]} 
                 onPress={toggleFavorite}
             >
-                <TabBarIcon name={isFavorite ? 'heart' : 'heart-outline'} color={'orangered'} />
+                <TabBarIcon name={isFavorit? 'heart' : 'heart-outline'} color={'orangered'} />
             </TouchableOpacity>
         </View>
     );

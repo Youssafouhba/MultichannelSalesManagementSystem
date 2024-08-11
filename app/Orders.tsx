@@ -87,7 +87,7 @@ const Orders: React.FC = () => {
 
   useFocusEffect(
     useCallback(()=>{
-      if(id=="Cart"){
+      if(id=="c"){
         setisRatingModalVisible(true)
         setOrderedProducts(cartItems)
         dispatch({ type: 'CLEAN_CART'});
@@ -215,7 +215,7 @@ useEffect(()=>{
   const renderItem = useCallback(({ item }: { item: Order }) => (
     <OrderItem
       order={item}
-      onPress={() => router.navigate(`/OrderDetails?id=${item.id }`)}
+      onPress={() => router.navigate(`/OrderDetails?id=${item.id }&&pres=Orders`)}
     />
   ), [navigation]);
 

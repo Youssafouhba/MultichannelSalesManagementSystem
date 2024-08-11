@@ -34,10 +34,11 @@ function FilterMenu({ isVisible, onClose }) {
 
 function CustomHeader({title}) {
   const { id } = useGlobalSearchParams();
-  const {pres} = useLocalSearchParams()
+  const {pres} = useGlobalSearchParams()
   const navigation = useNavigation();
   const goBack = () => {
-    pres === "LoginPage" ? router.push("/") : navigation.dispatch(StackActions.pop());
+
+    pres === "LoginPage" || "Orders" ? router.push("/") : navigation.dispatch(StackActions.pop());
   };
   return (
     <View style={[styles.header, { backgroundColor: Color.colorWhite }]}>

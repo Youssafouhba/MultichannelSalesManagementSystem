@@ -165,18 +165,13 @@ const Cart = () => {
           product: productinf.product
         });
       });
-
-      if (token) {
-        const response = await apiHandler(`/api/Cart/${jwtDecode(token).userid}`, card, token);
-        if (response.status === 200) {
-          // Naviguer vers la page de checkout en passant les données du panier
-          navigation.navigate('Checkout', { cartData: card });
-        } else {
-          Alert.alert('Error', 'Failed to submit the cart. Please try again.');
-        }
-
+      const response = await apiHandler(`/api/Cart/${jwtDecode(token).userid}`, card, token);
+      if (response.status === 200) {
+        // Naviguer vers la page de checkout en passant les données du panier
+        navigation.navigate('Checkout', { cartData: card });
+      } else {
+        Alert.alert('Error', 'Failed to submit the cart. Please try again.');
       }
-   
     } catch (error) {
       console.error('Error preparing cart for checkout:', error);
       Alert.alert('Error', 'Failed to proceed to checkout. Please try again.');

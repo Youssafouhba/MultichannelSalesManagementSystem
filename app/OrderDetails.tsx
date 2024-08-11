@@ -13,6 +13,7 @@ import { jwtDecode } from 'jwt-decode';
 import CustomAlert from '@/components/CustomAlert';
 
 import ModernCustomAlert from '@/components/ModernCustomAlert';
+import { useAppData } from '@/components/AppDataProvider';
 
 type OrderStatus = 'Pending' | 'Picked up' | 'Delivered';
 
@@ -54,19 +55,15 @@ export default function OrderDetails() {
   const { state,dispatch } = useAppContext();
   const [alertVisible, setAlertVisible] = useState(false);
   const [order, setOrder] = useState<Order | null>(null);
+  const { userInfos,token,data, fetchFavorites,error} = useAppData();
   const { id } = useLocalSearchParams();
   const offers = state.offers || [];
-  var token = state.JWT_TOKEN;
 
   useFocusEffect(
     useCallback(() => {
       const fetchOrder = async () => {
-        const response = await axios.get<Order[]>(`${state.API_BASE_URL}/api/client/getMyOrders`, {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        });
-        const foundOrder = response.data.find((item) => item.id == id);
+     
+        const foundOrder =userInfos.myOrders.find((item) => item.id == id);
         setOrder(foundOrder || null);
         console.log(foundOrder)
       };

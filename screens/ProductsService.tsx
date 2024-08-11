@@ -36,11 +36,6 @@ export default function ProductsService() {
   const [isRedirecting, setIsRedirecting] = useState(false);
   const [isSuggestionsMode, setIsSuggestionsMode] = useState<boolean>(true);
   const {filter} = useGlobalSearchParams()
-  const [viewAllCache, setViewAllCache] = useState<ProductInfos[] | null>(null);
-
-  const [hasNavigated, setHasNavigated] = useState(false);
-  const [product,setProduct] = useState<Product>()
-
 
 
   useEffect(() => {
@@ -69,7 +64,7 @@ export default function ProductsService() {
 
       fetchData();
     
-  }, [filter,productsInfos]);
+  }, [filter,ProductsInfos]);
 
 
   useEffect(() => {
@@ -88,9 +83,9 @@ export default function ProductsService() {
           setFilteredProducts(BestProducts); // Default to Best Seller
       }
     } else {
-      setFilteredProducts(productsInfos);
+      setFilteredProducts(ProductsInfos);
     }
-  }, [isSuggestionsMode, selectedLabel, NewProducts, BestProducts, productsInfos]);
+  }, [isSuggestionsMode, selectedLabel, NewProducts, BestProducts, ProductsInfos]);
  
   const gotodetails = (productinfos: ProductInfos) => {
     const payload = {
@@ -157,7 +152,7 @@ export default function ProductsService() {
       <FlatList
         style={{ flex: 1 }}
         key={selectedLabel}
-        data={selectedLabel === "Best Seller"?BestProducts:filteredProducts} // Limiter à 4 éléments
+        data={selectedLabel === "Best Seller"?BestProducts:ProductsInfos} // Limiter à 4 éléments
         renderItem={renderProduct}
         keyExtractor={(item) => item.product.id.toString()}
         numColumns={2}

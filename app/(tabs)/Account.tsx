@@ -13,16 +13,12 @@ import { tokens } from "react-native-paper/lib/typescript/styles/themes/v3/token
 
 
 export default function Account() {
-  const { userInfos,token,fetchprofile, deleteAccount,error } = useAppData();
+  const { userInfos,token, deleteAccount,error } = useAppData();
   const { state, dispatch } = useAppContext();
   const isLoggedIn = state.JWT_TOKEN !== '';
 
   React.useEffect(()=>{
-    const fetchaccount = async ()=>{
-      fetchprofile()
-      console.log(token)
-    }
-    fetchaccount()
+
   },[])
   
   

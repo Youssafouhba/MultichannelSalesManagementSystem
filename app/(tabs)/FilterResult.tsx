@@ -9,13 +9,13 @@ import LoadingAnimation from "@/components/LoadingAnimation";
 import { useAppContext } from "@/components/AppContext";
 import { useAppData } from "@/components/AppDataProvider";
 import { Ionicons } from "@expo/vector-icons";
-import { Product } from "@/constants/Classes";
+import { Product, ProductInfos } from "@/constants/Classes";
 import { debounce } from "lodash";
 
 export default function FilterResult() {
   const { width, height } = useWindowDimensions();
   const [selectedLabel, setSelectedLabel] = useState<string | null>("Best Seller");
-  const { BestProducts,NewProducts,data,user,fetchProductRating,token} = useAppData();
+  const { ProductsInfos,data,user,fetchProductRating,token} = useAppData();
   const rectangleWidth = width / 2 - 15; // 15 est la marge entre les rectangles
   const rectangleHeight =(width/height) > 0.5 ? height /4+4:height *(width/height)-124; // Ajustez cette valeur selon vos besoi28
   const imgheight = (width/height) > 0.5 ? '55%': '62%';
@@ -25,20 +25,11 @@ export default function FilterResult() {
   const navigation = useRouter();
   const [sug,setsug] = useState<boolean>(true)
   const [isLoading, setIsLoading] = useState(true);
-  const [category, setCategory] = useState("all");
-  const [products, setProducts] = useState<Product[] | undefined>([]);
-  const [productRatings, setProductRatings] = useState<{[key: number]: number} | undefined>({});
-  const [filteredProducts, setFilteredProducts] = useState<Product[] | undefined>([]);
+  const [filteredProducts, setFilteredProducts] = useState<ProductInfos[] | undefined>([]);
   const styles = useMemo(() => createStyles(dimensions.width, dimensions.height), [dimensions]);
   const [inputsearch,setInputSearch] = useState<string>()
-  const [isLoggedIn,setIsLoggedIn] = useState<boolean>(false);
-  const [isRedirecting, setIsRedirecting] = useState(false);
+
   const {filter} = useGlobalSearchParams()
-
-  const [hasNavigated, setHasNavigated] = useState(false);
-  const [id,setId] = useState<string>('')
-
-
   
   useEffect(() => {
     const subscription = Dimensions.addEventListener('change', ({ window }) => {
@@ -52,42 +43,42 @@ export default function FilterResult() {
     if (filter === 'applied') {
       setFilteredProducts(state.filtredproducts);
     } else {
-      setFilteredProducts(data?.products);
+      setFilteredProducts(ProductsInfos.map(P=>P.product));
     }
     setIsLoading(false);
   }, [filter, state.filtredproducts, data?.products]);
 
-  const renderProduct = ({ item }: { item: Product }) => (
+  const renderProduct = ({ item }: { item: ProductInfos }) => (
     <View style={[{ width: width / 2 - 15, height: height * 0.3 }, styles.productWrapper]}>
       <Pressable 
         style={styles.productInnerContainer}
-        onPress={() => router.navigate(`/ProductDetails?id=${item.id}`)}
+        onPress={() => router.navigate(`/ProductDetails?id=${item.product.id}`)}
       >
         <Image
           style={styles.productImage}
-          source={{ uri: item.imageUrls[0]?.url }}
+          source={{ uri: item.product.imageUrls[0]?.url }}
         />
         <View style={styles.productDesc}>
           <Text style={styles.productName} numberOfLines={2} ellipsizeMode="tail">
-            {item.name}
+            {item.product.name}
           </Text>
           <View style={styles.infoArea}>
             <Text style={styles.priceText}>
-              £ {item.price}
+              £ {item.product.price}
             </Text>
             <Text style={styles.stockText}>
-              <Text style={{color: Color.colorize_gray}}>{item.quantityInStock}</Text> in stock
+              <Text style={{color: Color.colorize_gray}}>{item.product.quantityInStock}</Text> in stock
             </Text>
           </View>
           <View style={styles.badgeArea}>
             <View style={styles.offerBadge}>
               <Text style={styles.offerText}>Offer</Text>
             </View>
-            <StarRating rating={data?.ratings[parseInt(item.id)]} />
+            <StarRating rating={item.raiting} />
           </View>
         </View>
       </Pressable>
-      {item.isNew && (
+      {item.product.isNew && (
         <Image
           style={styles.newBadge}
           source={require("@/assets/badge_143875.png")}
@@ -101,7 +92,7 @@ export default function FilterResult() {
       style={{ flex: 1 }}
       data={filteredProducts}
       renderItem={renderProduct}
-      keyExtractor={(item) => item.id.toString()}
+      keyExtractor={(item) => item.product.id.toString()}
       numColumns={2}
       columnWrapperStyle={styles.row}
       showsVerticalScrollIndicator={false}
@@ -115,10 +106,10 @@ export default function FilterResult() {
         setFilteredProducts(state.filtredproducts || data?.products);
       } else {
         const filtered = (state.filtredproducts || data?.products)?.filter(
-          (product: Product) =>
-            product.name.toLowerCase().includes(key.toLowerCase()) ||
-            product.category.toLowerCase().includes(key.toLowerCase()) ||
-            product.price.toString().includes(key)
+          (product: ProductInfos) =>
+            product.product.name.toLowerCase().includes(key.toLowerCase()) ||
+            product.product.category.toLowerCase().includes(key.toLowerCase()) ||
+            product.product.price.toString().includes(key)
         );
         setFilteredProducts(filtered);
       }

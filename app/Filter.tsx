@@ -1,25 +1,24 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import { StyleSheet, Text, TextInput, View, Pressable } from "react-native";
 import { CheckBox } from "@rneui/themed";
 import { Picker } from "@react-native-picker/picker";
 import MultiSlider from "@ptomasroos/react-native-multi-slider";
 import { Color, FontSize, StyleVariable } from "../GlobalStyles";
 import { useAppData } from "@/components/AppDataProvider";
-import { Product } from "@/constants/Classes";
+import { Product, ProductInfos } from "@/constants/Classes";
 import { useAppContext } from "@/components/AppContext";
 import { useRouter } from "expo-router";
 import tw from "tailwind-react-native-classnames";
 
 const Filter = () => {
+  const { ProductsInfos,data } = useAppData();
   const [filters, setFilters] = useState({
-    price: { enabled: false, range: [75, 5000] },
+    price: { enabled: false, range: [Math.min(...ProductsInfos.map((p: Product) => p.product.price)), Math.max(...ProductsInfos.map((p: Product) => p.product.price))] },
     category: { enabled: false, value: "" },
     size: { enabled: false, range: [0, 100] },
   });
   const navigation = useRouter();
   const { state, dispatch } = useAppContext();
-  const { data } = useAppData();
-
   const handleFilterChange = useCallback((filterType, key, value) => {
     setFilters(prev => ({
       ...prev,
@@ -32,18 +31,18 @@ const Filter = () => {
   }, [handleFilterChange]);
 
   const submitFiltering = useCallback(() => {
-    const filteredProducts = data?.products.filter(product => {
+    const filteredProducts = ProductsInfos.filter((productinf: ProductInfos) => {
       const { price, category, size } = filters;
       return (
-        (!price.enabled || (product.price >= price.range[0] && product.price <= price.range[1])) &&
-        (!category.enabled || product.category.toLowerCase().includes(category.value.toLowerCase())) &&
-        (!size.enabled || (product.size >= size.range[0] && product.size <= size.range[1]))
+        (!price.enabled || (productinf.product.price >= price.range[0] && productinf.product.price <= price.range[1])) &&
+        (!category.enabled || productinf.product.category.toLowerCase().includes(category.value.toLowerCase())) &&
+        (!size.enabled || (productinf.product.size >= size.range[0] && productinf.product.size <= size.range[1]))
       );
     });
 
     dispatch({ type: 'SET_filtredproducts', payload: filteredProducts });
     navigation.navigate(`/FilterResult?filter=applied`);
-    filteredProducts?.map((item)=>console.log(item.price))
+    filteredProducts?.map((item)=>console.log(item.product.price))
   }, [filters, data, dispatch, navigation]);
 
   const renderFilterSection = (title, filterType, children) => (

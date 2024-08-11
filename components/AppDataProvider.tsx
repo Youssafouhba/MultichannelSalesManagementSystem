@@ -139,24 +139,19 @@ export const AppDataProvider: React.FC<AppDataProviderProps> = ({ children }) =>
       setProductsInfos(prevProducts => {
         switch (action) {
           case 'update':
-            console.log(object);
             const indexToUpdate = prevProducts.findIndex((pinf) => pinf.product.id === object.id);
             if (indexToUpdate >= 0) {
               const updatedProducts = [...prevProducts];
               updatedProducts[indexToUpdate].product = object;
               fetchBestAnfNew(updatedProducts);
               return updatedProducts;
-            } else {
-              const newProducts = [{ product: object, rating: 0 }, ...prevProducts];
-              fetchBestAnfNew(newProducts);
-              return newProducts;
-            }
+            } 
           case 'delete':
             const filteredProducts = prevProducts.filter((pinf) => pinf.product.id !== object.id);
             fetchBestAnfNew(filteredProducts);
             return filteredProducts;
           case 'add':
-            const productsWithNewItem = [{ product: object, rating: 0 }, ...prevProducts];
+            const productsWithNewItem = [{ product: object, raiting: 0 ,comments: []}, ...prevProducts];
             fetchBestAnfNew(productsWithNewItem);
             return productsWithNewItem;
           default:

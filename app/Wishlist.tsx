@@ -21,12 +21,14 @@ const Wishlist: React.FC = () => {
 
     const removefromfavorite = async (id: string) => {
         try {
+
             const url = `${config.API_BASE_URL}/api/client/deleteFromFavorite/${id}`;
             const response = await axios.delete(url,{
                 headers: { Authorization: `Bearer ${token}` },
             })
 
             if (response.status === 200) {
+                userInfos.wishlist = userInfos.wishlist.filter(p=>p.id!=id)
                 await fetchFavorites();
             }
         } catch (error) {

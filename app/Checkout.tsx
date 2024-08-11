@@ -101,21 +101,29 @@ const Checkout = () => {
   const getProductTotalPrice = (price, quantity) => {
     return (price * quantity);
   };
-
+  const order: Order = {
+    id: '',
+    creationDate: '',
+    adresse: adresse,
+    totalAmount:  0,
+    status: 'Pending',
+    paymentMethod: CardChecked ? 'Card' : 'Cash',
+    shepingDate: date,
+    orderItems: []
+  }
 
   const handleDismiss = async () => {
     setAlertVisible(false);
     await fetchOrders()
-    router.navigate("/Orders?id=Cart")
+    router.navigate("/Orders?id=c")
   };
 
   const submitOrder = async () => {
-    const items : OrderItem[] = []
 
     console.log(cartItems)
-    const total = Object.entries(cartItems).reduce((sum, [productId, item]) => {
+    order.totalAmount = Object.entries(cartItems).reduce((sum, [productId, item]) => {
       const productinf = ProductsInfos.find((productinfos: ProductInfos) => productinfos.product.id == productId);
-      items.push({
+      order.orderItems.push({
         id: '',
         quantity: item.quantity,
         sub_total: productinf.product.price * item.quantity,
@@ -123,20 +131,10 @@ const Checkout = () => {
       })
       return sum + (productinf ? productinf.product.price * item.quantity : 0);
     }, 0);
-    console.log("total is : "+total)
-    console.log("items are : "+items)
+
     
 
-    const order: Order = {
-      id: '',
-      creationDate: '',
-      adresse: adresse,
-      totalAmount:  total,
-      status: 'Pending',
-      paymentMethod: CardChecked ? 'Card' : 'Cash',
-      shepingDate: date,
-      orderItems: items
-    }
+
 
 
     console.log("order is "+order.totalAmount)
@@ -145,6 +143,9 @@ const Checkout = () => {
         res => {
           setAlertVisible(true);
           setOrderedProducts(cartItems)
+          setAdresse('')
+          setCardChecked(false)
+          setCashChecked(false)
         });
   }catch (error) {
     console.error('Error submitting order:', error);
