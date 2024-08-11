@@ -13,7 +13,7 @@ import { tokens } from "react-native-paper/lib/typescript/styles/themes/v3/token
 
 
 export default function Account() {
-  const { user,token,fetchprofile, deleteAccount,error } = useAppData();
+  const { userInfos,token,fetchprofile, deleteAccount,error } = useAppData();
   const { state, dispatch } = useAppContext();
   const isLoggedIn = state.JWT_TOKEN !== '';
 
@@ -30,10 +30,10 @@ export default function Account() {
     <View style={styles.profile}>
       {isLoggedIn ? (
         <Infos
-          fullName={user?.fullName}
-          email={user?.email}
-          phoneNumber={user?.phoneNumber}
-          dateOfCreation={user?.dateOfCreation}
+          fullName={userInfos.user?.fullName}
+          email={userInfos.user?.email}
+          phoneNumber={userInfos.user?.phoneNumber}
+          dateOfCreation={userInfos.user.dateOfCreation}
         />
       ) : (
         <LogInRequiredPage message='Please log in to view your profile' page='Account'/>

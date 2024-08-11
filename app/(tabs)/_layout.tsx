@@ -38,7 +38,10 @@ export default function TabLayout() {
         options={{
           title: 'Messages',
           tabBarIcon: ({ color, focused }) => (
-            <TabBarIcon name={'mail-outline'} color={color} />
+            <TabBarIcon name={'mail-outline'} color={color}
+            badgeCount={state.messagesCount || 0}
+             />
+            
           ),
         }}
       />

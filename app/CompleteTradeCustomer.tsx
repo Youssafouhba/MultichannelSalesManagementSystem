@@ -1,238 +1,229 @@
-import { Color, FontFamily, FontSize, StyleVariable } from "@/GlobalStyles";
-import { Picker } from "@react-native-picker/picker";
-import { useRoute } from "@react-navigation/native";
+import React, { useState } from 'react';
+import { View, Text, TextInput, ScrollView, StyleSheet, Pressable, KeyboardAvoidingView, Platform } from 'react-native';
 import { CheckBox } from "@rneui/themed";
-import axios from "axios";
+import { Picker } from "@react-native-picker/picker";
 import { Image } from "expo-image";
-import React, { useRef, useState } from "react";
-import { Alert, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
-import config from "@/components/config";
-import tw from "tailwind-react-native-classnames";
-import { ScrollView } from "react-native";
-import { useAppData } from "@/components/AppDataProvider";
-import { useNavigation } from "expo-router";
+import axios from "axios";
 import { jwtDecode } from "jwt-decode";
+import config from "@/components/config";
+import { useAppData } from "@/components/AppDataProvider";
 import AnimatedCustomAlert from "@/components/AnimatedCustomAlert";
 import LoginError from "@/components/LoginError";
-
+import tw from "tailwind-react-native-classnames";
+import { FontFamily, FontSize, StyleVariable, Color } from '@/GlobalStyles';
+import { useAppContext } from '@/components/AppContext';
+import { useNavigation, useRoute } from "@react-navigation/native";
+import { router } from 'expo-router';
 interface RouteParams {
-    payload: any; // Replace 'any' with the actual type of payload
+  payload: any; // Replace 'any' with the actual type of payload
 }
-
-
-
 const CompleteTradeCustomer = () => {
   const { token } = useAppData();
   const [alertVisible, setAlertVisible] = useState(false);
   const [errorVisible, setErrorVisible] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const navigation = useNavigation<any>();
+  const route = useRoute();
+  const payload = (route.params as RouteParams)?.payload;
   const [formData, setFormData] = useState({
-      checkSquarechecked: false,
-      productsOfInterest: "",
-      additionalInformation: "",
-      howDidYouHearAboutUs: "",
-      annualSalesVolume: "",
-      vatNumber: "",
-      businessRegistrationNumber: "",
+    checkSquarechecked: false,
+    productsOfInterest: "",
+    howDidYouHearAboutUs: "",
+    emailAddress: "",
+    phoneNumber: "",
+    vatNumber: "",
+    businessRegistrationNumber: "",
   });
   const [errors, setErrors] = useState({});
 
-  const route = useRoute();
-  const payload = (route.params as RouteParams)?.payload;
-  const handleInputChange = (name: string, value: string | boolean) => {
-      setFormData(prevData => ({ ...prevData, [name]: value }));
-      // Clear error when user starts typing
-      if (errors[name]) {
-          setErrors(prevErrors => ({ ...prevErrors, [name]: null }));
-      }
+  const handleInputChange = (name, value) => {
+    setFormData(prevData => ({ ...prevData, [name]: value }));
+    if (errors[name]) {
+      setErrors(prevErrors => ({ ...prevErrors, [name]: null }));
+    }
   };
-  const handleDismiss = () => {
-    setAlertVisible(false);
-  };
+
   const validateForm = () => {
-      let newErrors = {};
-      if (!formData.checkSquarechecked) {
-          newErrors['checkSquarechecked'] = 'Please agree to the declaration';
-      }
-      if (!formData.productsOfInterest) {
-          newErrors['productsOfInterest'] = 'Please select a product of interest';
-      }
-      if (!formData.annualSalesVolume) {
-          newErrors['annualSalesVolume'] = 'Please enter your annual sales volume';
-      }
-      setErrors(newErrors);
-      return Object.keys(newErrors).length === 0;
+    let newErrors = {};
+    if (!formData.checkSquarechecked) {
+      newErrors['checkSquarechecked'] = 'Please agree to the declaration';
+    }
+    if (!formData.productsOfInterest) {
+      newErrors['productsOfInterest'] = 'Please select a product of interest';
+    }
+    if (!formData.phoneNumber) {
+      newErrors['phoneNumber'] = 'Phone number is required';
+    }
+    if (!formData.emailAddress) {
+      newErrors['emailAddress'] = 'Email address is required';
+    }
+    if (!formData.howDidYouHearAboutUs) {
+      newErrors['howDidYouHearAboutUs'] = 'Please tell us how you heard about us';
+    }
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async () => {
-    console.log(payload)
-      if (validateForm()) {
-          const updatedPayload = {
-              ...payload,
-              ...formData,
-              userId: jwtDecode(token).userid
-          };
-
-          try {
-         
-            console.log(updatedPayload)
-              const response = await axios.post(
-                  `${config.API_BASE_URL}/api/client/request-trade-customer`,
-                  updatedPayload,
-                  {
-                      headers: {
-                          "Content-Type": "application/json",
-                          Authorization: `Bearer ${token}`
-                      },
-                  }
-              );
-              if (response.data === "Trade customer request submitted successfully.") {
-                setAlertVisible(true)
-              }
-          } catch (error) {
-            setAlertVisible(true)
-            setErrorMessage("There was an error submitting your request. Please try again.")
+    if (validateForm()) {
+      try {
+        const updatedPayload = {
+          ...payload,
+          ...formData,
+          userId: jwtDecode(token).userid
+      };
+      console.log(updatedPayload)
+        const response = await axios.post(
+          `${config.API_BASE_URL}/api/client/request-trade-customer`,updatedPayload,
+          {
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`
+            },
           }
-      } else {
-        setAlertVisible(true)
-        setErrorMessage("Please fill in all required fields and agree to the declaration.");
+        );
+        if (response.data === "Trade customer request submitted successfully.") {
+          setAlertVisible(true);
+        }
+      } catch (error) {
+        setErrorVisible(true);
+        setErrorMessage("There was an error submitting your request. Please try again.");
       }
+    } else {
+      setErrorVisible(true);
+      setErrorMessage("Please fill in all required fields and agree to the declaration.");
+    }
   };
-    return (
-      <KeyboardAvoidingView 
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
-          style={{ flex: 1 }}
+
+  const hearAboutUsSuggestions = [
+    "Search Engine",
+    "Social Media",
+    "Word of Mouth",
+    "Advertisement",
+    "Trade Show",
+    "Other"
+  ];
+
+  return (
+    <KeyboardAvoidingView 
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      style={{ flex: 1 }}
+    >
+      
+      <AnimatedCustomAlert
+        visible={alertVisible}
+        title="Success"
+        message="Your trade customer request has been submitted successfully."
+        onDismiss={() => {setAlertVisible(false),router.push("/");}}
+        duration={2000}
+      />
+      <ScrollView
+        style={[tw``, styles.CompleteTradeCustomer2]}
+        contentContainerStyle={tw`pb-8`}
       >
-          <AnimatedCustomAlert
-              visible={alertVisible}
-              title="Success"
-              message="Your trade customer request has been submitted successfully."
-              onDismiss={handleDismiss}
-              duration={2000} // 3 seconds
+        <View style={[tw`flex-col px-4`]}>
+          {/* Contact Information Section */}
+          <View style={[tw`flex-row items-center mb-4 mt-4`]}>
+            <Image
+              style={styles.image11Icon}
+              contentFit="cover"
+              source={require("@/assets/image-10.png")}
             />
-          <LoginError 
-            visible={errorVisible}
-            title="Error..."
-            message={errorMessage}
-            onDismiss={() => setErrorVisible(false)}
-            duration={3000}
-            iconName="alert-circle"
-            iconColor="#f44336"
+            <Text style={styles.salesInformation}>Contact Information</Text>
+          </View>
+
+          <TextInput
+            style={[styles.inputField, styles.inputTypo, errors.phoneNumber && styles.inputError]}
+            placeholder="Phone Number *"
+            placeholderTextColor="#b3b3b3"
+            onChangeText={(text) => handleInputChange('phoneNumber', text)}
+            value={formData.phoneNumber}
           />
-          <ScrollView
-              style={[tw`py-4`, styles.CompleteTradeCustomer2]}
-              contentContainerStyle={tw`pb-8`}
+          <TextInput
+            style={[styles.inputField, styles.inputTypo, errors.emailAddress && styles.inputError]}
+            placeholder="Email Address *"
+            placeholderTextColor="#b3b3b3"
+            onChangeText={(text) => handleInputChange('emailAddress', text)}
+            value={formData.emailAddress}
+          />
+          {/* Business Details Section */}
+          <View style={[tw`flex-row items-center mb-4`]}>
+            <Image
+              style={styles.image10Icon}
+              contentFit="cover"
+              source={require("@/assets/image-11.png")}
+            />
+            <Text style={styles.businessDetails}>Business Details</Text>
+          </View>
+
+          <TextInput
+            style={[styles.inputField, styles.inputTypo,{ borderStyle: 'dashed',}]}
+            placeholder="VAT Number (if applicable):"
+            placeholderTextColor="#b3b3b3"
+            onChangeText={(text) => handleInputChange('vatNumber', text)}
+            value={formData.vatNumber}
+          />
+          <TextInput
+            style={[styles.inputField, styles.inputTypo,{ borderStyle: 'dashed',fontSize: 14}]}
+            placeholder="Business Registration Number (if applicable)"
+            placeholderTextColor="#b3b3b3"
+            onChangeText={(text) => handleInputChange('businessRegistrationNumber', text)}
+            value={formData.businessRegistrationNumber}
+          />
+          <Text style={[styles.label,tw`text-base font-medium text-gray-400`,errors.productsOfInterest && {color: 'red'}]}>Products of Interest <Text style={tw`text-red-400`}>*</Text></Text>
+          <Picker
+            selectedValue={formData.productsOfInterest}
+            style={[styles.input, styles.inputBorder, errors.productsOfInterest && styles.inputError]}
+            onValueChange={(itemValue) => handleInputChange('productsOfInterest', itemValue)}
           >
-              <View style={[tw`flex-col px-4 py-4`]}>
-                  {/* Business Details Section */}
-                  <View style={[tw`flex-row items-center mb-4`]}>
-                      <Image
-                          style={styles.image10Icon}
-                          contentFit="cover"
-                          source={require("@/assets/image-10.png")}
-                      />
-                      <Text style={styles.businessDetails}>Business Details</Text>
-                  </View>
+            <Picker.Item label="Select an option" value="" />
+            <Picker.Item label="LED Lighting" value="LED Lighting" />
+            <Picker.Item label="Suspended ceiling & Aluminium grid" value="Suspended ceiling & Aluminium grid" />
+            <Picker.Item label="Both" value="Both" />
+          </Picker>
+     
+          <View style={tw``}>
+            <Text style={[styles.label,tw`text-base font-medium text-gray-400`, errors.howDidYouHearAboutUs &&{color: 'red' }]}>How did you hear about us? <Text style={tw`text-red-400`}>*</Text></Text>
+            <Picker
+              selectedValue={formData.howDidYouHearAboutUs}
+              style={[styles.input, styles.inputBorder, errors.howDidYouHearAboutUs && styles.inputError]}
+              onValueChange={(itemValue) => handleInputChange('howDidYouHearAboutUs', itemValue)}
+            >
+              <Picker.Item label="Select an option" value="" />
+              {hearAboutUsSuggestions.map((item, index) => (
+                <Picker.Item key={index} label={item} value={item} />
+              ))}
+            </Picker>
+          </View>
+          {/* Declaration Section */}
+          <View style={[tw`-ml-2`, styles.declaration]}>
+            <View style={tw`flex-row items-start`}>
+              <CheckBox
+                checked={formData.checkSquarechecked}
+                onPress={() => handleInputChange('checkSquarechecked', !formData.checkSquarechecked)}
+                checkedColor="#000"
+                containerStyle={styles.checkSquareLayout}
+              />
+              <Text style={[tw`flex-1`, styles.declarationText]}>
+                <Text style={styles.declaration1}>Declaration</Text>
+                <Text style={styles.text}>{` : `}</Text>
+                <Text style={styles.iweCertifyThat}>
+                  I/we certify that the information provided above is true and
+                  accurate to the best of my/our knowledge. I/we agree to abide
+                  by Wholesale Ltd.'s terms and conditions for trade customers
+                </Text>
+                <Text style={styles.text}>{`.`}</Text>
+              </Text>
+            </View>
+          </View>
+          {errors.checkSquarechecked && <Text style={styles.errorText}>{errors.checkSquarechecked}</Text>}
 
-                  <TextInput
-                      style={[styles.inputField, styles.inputTypo]}
-                      placeholder="VAT Number (if applicable):"
-                      placeholderTextColor="#b3b3b3"
-                      onChangeText={(text) => handleInputChange('vatNumber', text)}
-                      value={formData.vatNumber}
-                  />
-                  <TextInput
-                      style={[styles.inputField, styles.inputTypo]}
-                      placeholder="Business Registration Number (if applicable)"
-                      placeholderTextColor="#b3b3b3"
-                      onChangeText={(text) => handleInputChange('businessRegistrationNumber', text)}
-                      value={formData.businessRegistrationNumber}
-                  />
-
-                  <Picker
-                      selectedValue={formData.productsOfInterest}
-                      style={[styles.selectField, styles.inputTypo]}
-                      onValueChange={(itemValue) => handleInputChange('productsOfInterest', itemValue)}
-                  >
-                      <Picker.Item label="Products of Interest" value="" />
-                      <Picker.Item label="LED Lighting" value="LED Lighting" />
-                      <Picker.Item label="Suspended ceiling & Aluminium grid" value="Suspended ceiling & Aluminium grid" />
-                      <Picker.Item label="Both" value="Both" />
-                  </Picker>
-                  {errors.productsOfInterest && <Text style={styles.errorText}>{errors.productsOfInterest}</Text>}
-
-                  {/* Sales Information Section */}
-                  <View style={[tw`flex-row items-center mb-4 mt-4`]}>
-                      <Image
-                          style={styles.image11Icon}
-                          contentFit="cover"
-                          source={require("@/assets/image-11.png")}
-                      />
-                      <Text style={styles.salesInformation}>Sales Information</Text>
-                  </View>
-
-                  <TextInput
-                      style={[styles.inputField, styles.inputTypo]}
-                      placeholder="Annual Sales Volume"
-                      placeholderTextColor="#b3b3b3"
-                      onChangeText={(text) => handleInputChange('annualSalesVolume', text)}
-                      value={formData.annualSalesVolume}
-                  />
-                  {errors.annualSalesVolume && <Text style={styles.errorText}>{errors.annualSalesVolume}</Text>}
-
-                  <View style={tw`mt-4`}>
-                      <Text style={styles.label}>How did you hear about us?</Text>
-                      <TextInput
-                          style={[styles.input, styles.inputBorder]}
-                          placeholder="Please describe"
-                          onChangeText={(text) => handleInputChange('howDidYouHearAboutUs', text)}
-                          value={formData.howDidYouHearAboutUs}
-                      />
-                  </View>
-
-                  <View style={tw`mt-4`}>
-                      <Text style={styles.label}>Additional Information</Text>
-                      <TextInput
-                          style={[styles.input, styles.inputBorder, { height: 100 }]}
-                          multiline
-                          numberOfLines={4}
-                          placeholder="Any other relevant information you would like us to know"
-                          placeholderTextColor="#b3b3b3"
-                          onChangeText={(text) => handleInputChange('additionalInformation', text)}
-                          value={formData.additionalInformation}
-                          textAlignVertical="top"
-                      />
-                  </View>
-
-                  {/* Declaration Section */}
-                  <View style={[tw`mt-6 -ml-2`, styles.declaration]}>
-                      <View style={tw`flex-row items-start`}>
-                          <CheckBox
-                              checked={formData.checkSquarechecked}
-                              onPress={() => handleInputChange('checkSquarechecked', !formData.checkSquarechecked)}
-                              checkedColor="#000"
-                              containerStyle={styles.checkSquareLayout}
-                          />
-                          <Text style={[tw`flex-1`, styles.declarationText]}>
-                              <Text style={styles.declaration1}>Declaration</Text>
-                              <Text style={styles.text}>{` : `}</Text>
-                              <Text style={styles.iweCertifyThat}>
-                                  I/we certify that the information provided above is true and
-                                  accurate to the best of my/our knowledge. I/we agree to abide
-                                  by Wholesale Ltd.'s terms and conditions for trade customers
-                              </Text>
-                              <Text style={styles.text}>{`.`}</Text>
-                          </Text>
-                      </View>
-                  </View>
-                  {errors.checkSquarechecked && <Text style={styles.errorText}>{errors.checkSquarechecked}</Text>}
-
-                  <Pressable style={[tw`mt-4`, styles.buttonDanger]} onPress={handleSubmit}>
-                      <Text style={styles.button}>SEND</Text>
-                  </Pressable>
-              </View>
-          </ScrollView>
-      </KeyboardAvoidingView>
+          <Pressable style={[tw`mt-4`, styles.buttonDanger]} onPress={handleSubmit}>
+            <Text style={styles.button}>SEND</Text>
+          </Pressable>
+        </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 };
   
@@ -245,7 +236,6 @@ const styles = StyleSheet.create({
   errorText: {
     color: 'red',
     fontSize: 12,
-    marginTop: 5,
 },
   iconLayout: {
     display: "none",
@@ -270,7 +260,8 @@ const styles = StyleSheet.create({
     paddingVertical: StyleVariable.space300,
     paddingHorizontal: 10,
     borderColor: Color.BorderDefaultDefault,
-    marginTop: 8,
+    //marginTop: 8,
+    minHeight: 50,
     alignSelf: 'stretch',
     alignItems: "center",
     flexDirection: "row",
@@ -338,7 +329,6 @@ const styles = StyleSheet.create({
   },
   declaration: {
     width: 360,
-    height: 172,
   },
   label: {
     color: Color.textDefaultDefault,
@@ -415,7 +405,8 @@ const styles = StyleSheet.create({
     width: 23,
     height: 24,
   },
-  view1: {
+  inputError: {
+    borderColor: 'red',
   },
   icon: {
     marginLeft: -176,
@@ -439,7 +430,7 @@ inputField: {
     fontSize: FontSize.presetsBody2_size,
 },
 input: {
-    minHeight: 44,
+   minHeight: 44,
     paddingHorizontal: 10,
     fontSize: FontSize.presetsBody2_size,
 },

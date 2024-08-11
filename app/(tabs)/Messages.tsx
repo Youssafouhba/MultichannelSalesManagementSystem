@@ -1,18 +1,18 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useNavigation } from '@react-navigation/core';
-import { Client, StompSubscription } from '@stomp/stompjs';
-import axios from "axios";
-import { jwtDecode } from "jwt-decode";
-import * as React from "react";
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, View, Alert, NativeSyntheticEvent, TextInputChangeEventData } from "react-native";
-import { Color, FontSize, StyleVariable } from "@/GlobalStyles";
-import { useAppContext } from '@/components/AppContext';
+import React, { useState, useEffect, useRef } from 'react';
+import { View, Text, ScrollView, TextInput, Image, Pressable, StyleSheet, TouchableOpacity, Modal, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useRouter } from 'expo-router';
+import { Client } from '@stomp/stompjs';
+import { jwtDecode } from "jwt-decode";
+import axios from "axios";
+import { Color, FontSize } from "@/GlobalStyles";
+import { useAppContext } from '@/components/AppContext';
 import { useAppData } from '@/components/AppDataProvider';
 import { baseurl } from '@/components/config';
-import { TouchableOpacity } from 'react-native';
-import { useRoute } from '@react-navigation/native';
-import { useRouter } from 'expo-router';
+import tw from 'tailwind-react-native-classnames';
+import { set } from 'lodash';
+
 const SockJS = require('sockjs-client/dist/sockjs.js');
 
 interface Message {
@@ -27,8 +27,8 @@ interface UserChat {
 }
 
 const Messages: React.FC = () => {
-  const { state, dispatche } = useAppContext();
-  const { data, cartElements, token, error } = useAppData();
+  const { state,dispatch } = useAppContext();
+  const { data, cartElements, token } = useAppData();
   const [stompClient, setStompClient] = React.useState<Client | null>(null);
   const [connected, setConnected] = React.useState<boolean>(false);
   const [messages, setMessages] = React.useState<Message[]>([]);
@@ -39,8 +39,15 @@ const Messages: React.FC = () => {
   const messageInputRef = React.useRef<TextInput>(null);
   const navigation = useRouter();
 
-  var isLoggedIn = state.JWT_TOKEN !=='';
+  const isLoggedIn = state.JWT_TOKEN !== '';
   const SERVER_URL = `http://${baseurl}:9001`;
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [showSuggestions1, setShowSuggestions1] = useState(true);
+  const [suggestions] = useState([
+    "Do you have any questions about our products ?",
+    "Would you like a personalized quote ?",
+    "Can I help you with a specific issue ?",
+  ]);
 
   const apiGetHandler = async (url: string, token: string) => {
     if (token) {
@@ -56,7 +63,7 @@ const Messages: React.FC = () => {
     }
   }
 
-  React.useEffect(() => {
+  useEffect(() => {
     const checkToken = async () => {
       const storedToken = await AsyncStorage.getItem('jwtToken');
       if (storedToken) {
@@ -65,10 +72,14 @@ const Messages: React.FC = () => {
         setUsername(decodedToken.email);
       }
     };
+    setTimeout(() => {
+      setShowSuggestions1(false)
+    }, 2000);
+    setShowSuggestions1(true)
     checkToken();
   }, []);
 
-  React.useEffect(() => {
+  useEffect(() => {
     console.log(`token: ${token}`)
     console.log(`username: ${username}`)
     if (token && username) {
@@ -92,11 +103,12 @@ const Messages: React.FC = () => {
     }
   }, [token, username]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (chatAreaRef.current) {
       chatAreaRef.current.scrollToEnd({ animated: true });
     }
   }, [messages]);
+
 
   const onConnected = (client: Client) => {
     setConnected(true);
@@ -113,10 +125,10 @@ const Messages: React.FC = () => {
 
   const onMessageReceived = (payload) => {
     const message = JSON.parse(payload.body);
+    state.messagesCount = state.messagesCount + 1
     if (message.id != null) {
       setMessages(prevMessages => [...prevMessages, message]);
     }
-   
   };
 
   const sendMessage = () => {
@@ -129,11 +141,10 @@ const Messages: React.FC = () => {
         content: messageContent,
       };
       console.log(joinMessage);
-     stompClient.publish({destination:"/app/client/message", body:JSON.stringify(joinMessage) , headers: {"Authorization" : `Bearer ${token}`}});
+      stompClient.publish({ destination: "/app/client/message", body: JSON.stringify(joinMessage), headers: { "Authorization": `Bearer ${token}` } });
       setMessages(prevMessages => [...prevMessages, joinMessage]);
       setInputValue('');
     }
-      
   };
 
   const findMyChat = async (token: string) => {
@@ -157,6 +168,7 @@ const Messages: React.FC = () => {
       console.log("Token not stored yet");
     }
   };
+
   const handleLogin = () => {
     navigation.navigate("LoginPage?id=Messages");
   };
@@ -181,23 +193,51 @@ const Messages: React.FC = () => {
     </View>
   );
 
-  if(!isLoggedIn)
-    return(
-        <View style={styles.container}>
-            <View style={styles.loginContainer}>
-                <Text style={styles.loginText}>Please log in to view your Messages</Text>
-                <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
-                <Text style={styles.loginButtonText}>Log In</Text>
-                </TouchableOpacity>
-            </View>
+  const handleSuggestionClick = (suggestion: string) => {
+    setInputValue(suggestion);
+    setShowSuggestions(false);
+  };
+
+  const toggleSuggestions = () => {
+    setShowSuggestions(!showSuggestions);
+  };
+
+  if (!isLoggedIn) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.loginContainer}>
+          <Text style={styles.loginText}>Please log in to view your Messages</Text>
+          <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
+            <Text style={styles.loginButtonText}>Log In</Text>
+          </TouchableOpacity>
         </View>
-      )
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
-      <ScrollView ref={chatAreaRef} style={styles.chatMessages} contentContainerStyle={styles.contentContainer}>
+      <ScrollView ref={chatAreaRef} style={styles.chatMessages} showsVerticalScrollIndicator={false} contentContainerStyle={styles.contentContainer}>
         {messages.map((message, index) => renderMessage(message, index))}
       </ScrollView>
+ 
+          <View style={[tw`flex-col `]}>
+            {showSuggestions1?
+              <View style={[styles.suggestionsList1]}>
+              <TouchableOpacity
+                  style={[]}
+                  onPress={() => setShowSuggestions(true)}
+                >
+                  <Text>Hello, how can I assist you today ?</Text>
+              </TouchableOpacity>
+            </View>
+            :``}
+            <TouchableOpacity onPress={toggleSuggestions} style={styles.robotIconContainer}>
+                <Image style={[{ width: 50, height: 50, borderRadius: 50, }]} source={require("@/assets/images/robot_10817242.png")} />
+            </TouchableOpacity>
+          </View>
+      
+
       <View style={styles.send}>
         <TextInput
           style={styles.input}
@@ -212,16 +252,101 @@ const Messages: React.FC = () => {
           <Ionicons name='send-sharp' size={26} color={connected ? 'black' : 'gray'} />
         </Pressable>
       </View>
+      <Modal
+        visible={showSuggestions}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setShowSuggestions(false)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.suggestionsList}>
+            {suggestions.map((suggestion, index) => (
+              <TouchableOpacity
+                key={index}
+                style={styles.suggestionItem}
+                onPress={() => handleSuggestionClick(suggestion)}
+              >
+                <Text>{suggestion}</Text>
+              </TouchableOpacity>
+            ))}
+            <TouchableOpacity
+              style={[styles.suggestionItem, styles.closeButton]}
+              onPress={() => setShowSuggestions(false)}
+            >
+              <Text style={styles.closeButtonText}>Close</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };
 
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    flexDirection: 'column',
-    justifyContent: 'space-between',
+    backgroundColor: '#fff',
+  },
+  chatMessages: {
+    flex: 1,
+  },
+  messageContainer: {
+    maxWidth: '80%',
+    padding: 12,
+    marginBottom: 12,
+    borderRadius: 18,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.22,
+    shadowRadius: 2.22,
+    elevation: 3,
+  },
+  sender: {
+    alignSelf: 'flex-end',
+    backgroundColor: '#E0EAFC',
+  },
+  receiver: {
+    alignSelf: 'flex-start',
+    backgroundColor: Color.COLORALICEBLUE,
+  },
+  messageText: {
+    fontSize: 16,
+    lineHeight: 20,
+  },
+  senderText: {
+    color: '#FFFFFF',
+  },
+  receiverText: {
+    color: '#000000',
+  },
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    backgroundColor: '#FFFFFF',
+    borderTopWidth: 1,
+    borderTopColor: '#E0E0E0',
+  },
+  input: {
+    flex: 1,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    marginRight: 12,
+    fontSize: 16,
+  },
+  sendButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#007AFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  sendIcon: {
+    color: '#FFFFFF',
   },
   loginContainer: {
     flex: 1,
@@ -243,25 +368,6 @@ const styles = StyleSheet.create({
     color: Color.colorWhite,
     fontSize: FontSize.presetsBody2_size,
   },
-  chatMessages: {
-    flex: 1,
-    backgroundColor: '#fff',
-    width : '100%',
-    alignSelf: 'center',
-  },
-  messageContainer: {
-    padding: 10,
-    marginBottom: 10,
-    borderRadius: 5
-  },
-  sender: {
-    alignSelf: 'flex-end',
-    backgroundColor: '#dcf8c6'
-  },
-  receiver: {
-    alignSelf: 'flex-start',
-    backgroundColor: '#dddd'
-  },
   send: {
     flexDirection: "row",
     alignItems: "center",
@@ -271,33 +377,57 @@ const styles = StyleSheet.create({
     borderColor: '#ddd',
     backgroundColor: '#fff'
   },
-  input: {
-    borderRadius: StyleVariable.radius200,
-    borderStyle: "solid",
-    borderColor: Color.borderDefaultDefault,
-    borderWidth: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 8,
-    paddingVertical: StyleVariable.space300,
-    width: "90%",
-    marginRight: 10,
-    marginTop: 8,
-    alignSelf: "stretch",
-    overflow: "hidden",
-    backgroundColor: Color.colorWhite,
-  },
-  sendIcon: {
-    width: 40,
-    height: 40,
-    overflow: "hidden",
-  },
   contentContainer: {
+    paddingVertical: 8,
     flexGrow: 1,
     justifyContent: 'flex-end',
     backgroundColor: Color.colorWhite
   },
+  robotIconContainer: {
+    backgroundColor: 'transparent',
+    width: 50,
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    backgroundColor: 'rgba(0, 0, 0, 0.05)',
+  },
+  suggestionsList: {
+    backgroundColor: 'white',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    padding: 20,
+  },
+  modalContainer1: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    marginBottom: 120,
+    backgroundColor: 'rgba(0, 0, 0, 0.05)',
+  },
+  suggestionsList1: {
+    position: 'absolute',
+    bottom: 35,
+    width: '80%',
+    left: 40,
+    backgroundColor: 'whitesmoke',
+    borderRadius: 20,
+    paddingVertical: 15,
+    paddingHorizontal: 20,
+  },
+  suggestionItem: {
+    padding: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+  },
+  closeButton: {
+    marginTop: 10,
+    backgroundColor: '#f0f0f0',
+    alignItems: 'center',
+  },
+  closeButtonText: {
+    color: 'red',
+    fontWeight: 'bold',
+  },
 });
 
 export default Messages;
-

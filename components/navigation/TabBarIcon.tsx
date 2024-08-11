@@ -17,9 +17,9 @@ export function TabBarIcon({ name, color, badgeCount }: TabBarIconProps) {
   return (
     <View style={[styles.container]}>
       <Ionicons name={name} size={20} color={color} />
-      {badgeCount >= 0 && (
-        <View style={styles.badge}>
-          <Text style={styles.badgeText}>
+      {badgeCount > 0 && (
+        <View style={[styles.badge,badgeCount > 99 && {  width: 18,}]}>
+          <Text style={[styles.badgeText,badgeCount > 99 && {  fontSize: 8}]}>
             {badgeCount > 99 ? '99+' : badgeCount}
           </Text>
         </View>

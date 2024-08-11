@@ -15,15 +15,9 @@ import config from '@/components/config';
 
 const Wishlist: React.FC = () => {
     const { state } = useAppContext();
-    const { favProducts,token,data, fetchFavorites,error} = useAppData();
+    const { userInfos,token,data, fetchFavorites,error} = useAppData();
     const isLoggedIn = !!state.JWT_TOKEN;
 
-    useEffect(() => {
-        const fetch = async () =>{
-            await fetchFavorites();
-        }
-        fetch()
-    }, [isLoggedIn,token ]);
 
     const removefromfavorite = async (id: string) => {
         try {
@@ -82,10 +76,10 @@ const Wishlist: React.FC = () => {
     return (
         <View style={styles.container}>
             {isLoggedIn ?
-            (favProducts.length  > 0? 
+            (userInfos.wishlist.length  > 0? 
                 <FlatList
                     renderItem={renderItem}
-                    data={favProducts}
+                    data={userInfos.wishlist}
                     keyExtractor={keyExtractor}
                     contentContainerStyle={styles.listContent}
                 />:

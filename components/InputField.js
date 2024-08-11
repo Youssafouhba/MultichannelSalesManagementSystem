@@ -1,44 +1,52 @@
-import React, { useMemo } from "react";
+import React from "react";
 import { TextInput, StyleSheet } from "react-native";
-import { FontFamily, FontSize } from "../GlobalStyles";
+import { FontFamily, FontSize, Color, StyleVariable } from "../GlobalStyles";
 
-const getStyleValue = (key, value) => {
-  if (value === undefined) return;
-  return { [key]: value === "unset" ? undefined : value };
-};
 const InputField = ({
   inputFieldPlaceholder,
   hasLabel = false,
   hasError = false,
   hasDescription = false,
   onChangeText,
-  propTop,
-  color,
+  style,
+  color = Color.textDefaultSecondary,
+  borderColor,
+  required = true,
 }) => {
-  const inputFieldStyle = useMemo(() => {
-    return {
-      ...getStyleValue("top", propTop),
-      ...getStyleValue("color", color),
-    };
-  }, [propTop]);
-//b3b3b3
   return (
     <TextInput
-      style={[styles.inputField, inputFieldStyle]}
+      style={[
+        styles.inputField,
+        hasError && styles.inputFieldError,
+        !required && styles.inputFieldOptional,
+        { color },
+        {borderColor},
+        style,
+      ]}
       placeholder={inputFieldPlaceholder}
       placeholderTextColor={color}
       onChangeText={onChangeText}
+      borderColor={borderColor}
     />
   );
 };
 
 const styles = StyleSheet.create({
   inputField: {
-    top: 272,
-    left: 30,
-    width: 312,
     fontFamily: FontFamily.presetsBody2,
     fontSize: FontSize.presetsBody2_size,
+    paddingHorizontal: StyleVariable.space300,
+    paddingVertical: StyleVariable.space200,
+    borderWidth: 1,
+    borderRadius: StyleVariable.radius200,
+    marginBottom: StyleVariable.space300,
+  },
+  inputFieldError: {
+    borderColor: Color.colorRed,
+  },
+  inputFieldOptional: {
+    borderStyle: 'dashed',
+    borderColor: Color.colorGray_200,
   },
 });
 

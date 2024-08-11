@@ -102,12 +102,11 @@ export default function OrderDetails() {
 
   const handleReorder = async () => {
     if(state.cartItemsCount==0){
-      console.log(state.cartItems)
       order?.orderItems.map((item: OrderItem)=>{
         const quantity = item.quantity
         dispatch({ type: 'ADD_TO_CART', payload: { ...item.product, quantity } });
       })
-      router.push("/Checkout?id=r")
+      navigation.navigate("Cart")
     }else{
       setAlertVisible(true)
     }

@@ -79,3 +79,16 @@ export interface Order {
   shepingDate: Date;
   orderItems: OrderItem[]
 };
+
+export interface ProductInfos {
+  product: Product,
+  comments: CommentItem[],
+  raiting: number,
+}
+
+export interface UserInfos {
+  user: UserDTO,
+  wishlist: Product[],
+  shoppingList: CartElement[],
+  myOrders: Order[],
+}

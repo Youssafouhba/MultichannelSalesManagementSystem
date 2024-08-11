@@ -59,19 +59,22 @@ function CustomMainHeader({ onMenuPress}) {
   };
 
   return (
-    <View style={styles.header}>
-   
+    pathname=="/Messages"?``
+    :
+      <View style={styles.header}>
+      
       <TouchableOpacity onPress={() => {}} style={[]}>
           <Image
             source={require("../assets/rectangle-111.png")}
           />
       </TouchableOpacity>
       
-   
+  
       <TouchableOpacity onPress={onMenuPress} style={styles.menuButton}>
         <Ionicons name="menu" size={29} color="black" />
       </TouchableOpacity>
     </View>
+
   );
 }
 

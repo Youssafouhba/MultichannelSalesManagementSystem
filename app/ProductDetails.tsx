@@ -4,8 +4,8 @@ import { StyleSheet,Image, Text, View, Pressable, TouchableOpacity, FlatList, Sa
 import { TabBarIcon } from '@/components/navigation/TabBarIcon';
 import { cardstyles, Color, FontFamily } from '@/GlobalStyles';
 import tw from 'tailwind-react-native-classnames';
-import { router, useFocusEffect, useGlobalSearchParams, useLocalSearchParams } from 'expo-router';
-import { Product } from '@/constants/Classes';
+import {  useFocusEffect, useGlobalSearchParams, useLocalSearchParams } from 'expo-router';
+import { Product, ProductInfos } from '@/constants/Classes';
 import StarRating from '@/components/StarRating';
 import { useAppContext } from '@/components/AppContext';
 import OptimizedDescription from '@/components/OptimizedDescription';
@@ -16,15 +16,20 @@ import { screenHeight } from '@/constants/GlobalsVeriables';
 import axios from 'axios';
 import ModernCustomAlert from '@/components/ModernCustomAlert';
 import { useAppData } from '@/components/AppDataProvider';
-
+import { router, useNavigation } from "expo-router";
 import config from '@/components/config';
+import { useRoute } from '@react-navigation/native';
+
+interface RouteParams {
+    payload: ProductInfos; // Replace 'any' with the actual type of payload
+}
+
 export default function ProductDetails() {
     const { state, dispatch } = useAppContext();
-    const { id } = useLocalSearchParams();
+    const route = useRoute();
     const { p } = useGlobalSearchParams();
     const [alertVisible, setAlertVisible] = useState(false);
     const [LogInAlertVisible, setLogInAlertVisible] = useState(false);
-    const [product, setProduct] = useState<Product>()
     const [pressed, setPressed] = useState<boolean>(false)
     const [isFavorite, setIsFavorite] = useState<boolean>(false);
     const [imageUrl, setImageUrl] = useState<string>('')
@@ -32,23 +37,21 @@ export default function ProductDetails() {
     const [addedItem, setAddedItem] = useState({ name: '', quantity: 0 });
     var isLoggedIn = state.JWT_TOKEN !=='';
     const { data,token} = useAppData();
-    
+    const {product,comments,raiting} = (route.params as RouteParams)?.payload;
     useFocusEffect(
         useCallback(() => {
             const fetchProduct = async () => {
-                const filtered = state?.products.find((product: Product) => product.id == id);
-                setProduct(filtered);
-                setImageUrl(filtered.imageUrls[0].url);  
+                setImageUrl(product.imageUrls[0].url);
             }
-            checkFavoriteStatus();
+           // checkFavoriteStatus();
             fetchProduct();
-        }, [id, p, state?.products])
+        }, [p,product])
     );
 
     const checkFavoriteStatus = async () => {
         if (token!=undefined) {
             try {
-                const response = await axios.get(`${config.API_BASE_URL}/api/client/isFavorite/${id}`, {
+                const response = await axios.get(`${config.API_BASE_URL}/api/client/isFavorite/${state.product.id}`, {
                     headers: { Authorization: `Bearer ${token}` },
                 });
                 console.log(response.data)
@@ -65,7 +68,7 @@ export default function ProductDetails() {
     
     const handleConfirm = () => {
         setLogInAlertVisible(false);
-        router.push(`/LoginPage?returnTo=ProductDetails&productId=${id}`);
+        router.push(`/LoginPage?returnTo=ProductDetails&productId=${product.id}`);
     };
     
     const toggleFavorite = async () => {
@@ -76,7 +79,7 @@ export default function ProductDetails() {
 
         try {
             const url = isFavorite
-                ? `${config.API_BASE_URL}/api/client/deleteFromFavorite/${id}`
+                ? `${config.API_BASE_URL}/api/client/deleteFromFavorite/${product.id}`
                 : `${config.API_BASE_URL}/api/client/addToFavorite/${id}`;
             
             const response = isFavorite? await axios.delete(url,{
@@ -104,13 +107,15 @@ export default function ProductDetails() {
 
     const renderProduct = () => (
         <View style={[tw`flex-row px-2 w-full h-60`, { backgroundColor: Color.mainbackgroundcolor, borderBottomColor: 'white', borderBottomWidth: 3 }]}>
-            <Image style={[tw`h-56 rounded`, { width: '80%' }]} source={{ uri: imageUrl }} />
+            <Image style={[tw`h-56 rounded`, { width: '80%' }]} source={{ uri: imageUrl || product.imageUrls[0].url }} />
             <View>
-                {product?.imageUrls.map((item, index) => (
+                {
+                product.imageUrls.map((item: any , index: number) => (
                     <Pressable key={index} style={[tw`mx-2`]} onPress={() => { setImageUrl(item.url) }}>
                         <Image style={[tw`w-16 h-16 rounded mt-2`]} source={{ uri: item.url }} />
                     </Pressable>
-                ))}
+                ))
+                }
             </View>
             <TouchableOpacity 
                 style={[tw`absolute -mt-2 ml-1 rounded-3xl bg-white justify-center`]} 
@@ -127,7 +132,7 @@ export default function ProductDetails() {
             <Text style={[tw`text-xl font-semibold mb-2`]}>£ {product?.price}</Text>
             <Text style={[tw`text-base mb-2`]}>{product?.quantityInStock} in Stock</Text>
             <View style={[tw`flex-row items-center mb-4`]}>
-                <StarRating rating={data?.ratings[product?.id]} />
+                <StarRating rating={parseFloat(raiting.toFixed(1))} />
                 <Text style={[tw`ml-2 text-sm text-gray-600`]}>| +1000 sold</Text>
             </View>
             <View style={[tw`mb-3`]}>
@@ -156,7 +161,8 @@ export default function ProductDetails() {
                     <Text style={[tw`text-white font-semibold`]}>Add to Cart</Text>
                 </TouchableOpacity>
             </View>
-            <CommentSystem Id={id} />
+            <CommentSystem commentsItens={comments} Id={product.id} />
+            {/**  */}
         </View>
     );
 

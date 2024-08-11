@@ -15,12 +15,15 @@ const initialState = {
   products: [],
   filtredproducts: [],
   offers: {},
+  order: null,
+  product: null,
   productId: 0,
   JWT_TOKEN: '',
   userId: '',
   wsUrl: 'http://192.168.42.88:9001',
   cartItemsCount: 0,
   notificationsCount: 0,
+  messagesCount: 0,
   cartItems: {},
 };
 
@@ -69,11 +72,17 @@ function appReducer(state, action) {
       return { ...state, JWT_TOKEN: action.payload };
     case 'SET_wsUrl':
       return { ...state, wsUrl: action.payload };
+    case 'SET_Product':
+      console.log(action.payload)
+      return { ...state, product: action.payload };
     case 'SET_USER':
       return { ...state, userId: action.payload };
     case 'SET_notificationsCount':
       const {notifscount} = action.payload;
       return { ...state, notificationsCount: notifscount };
+    case 'SET_messagesCount':
+      const {msgscount} = action.payload;
+      return { ...state, messagesCount: msgscount };
     case 'SET_filtredproducts':
       return { ...state, filtredproducts: action.payload };
     default:

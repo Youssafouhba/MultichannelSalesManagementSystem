@@ -51,6 +51,7 @@
     "react-native-classnames": "^0.1.1",
     "react-native-gesture-handler": "~2.16.1",
     "react-native-image-picker": "^7.1.2",
+    "react-native-keyboard-aware-scroll-view": "^0.9.5",
     "react-native-modal-datetime-picker": "^17.1.0",
     "react-native-paper": "^5.12.3",
     "react-native-picker-select": "^9.1.3",

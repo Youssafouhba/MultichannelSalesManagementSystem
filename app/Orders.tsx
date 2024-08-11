@@ -3,7 +3,7 @@ import { View, Text, FlatList, StyleSheet,Image, TouchableOpacity } from 'react-
 import { useNavigation ,useFocusEffect} from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { TabBarIcon } from '@/components/navigation/TabBarIcon';
-import axios from 'axios';
+import axios, { AxiosError } from 'axios';
 import { useAppContext } from '@/components/AppContext';
 import { Order, OrderStatus } from '@/constants/Classes';
 import { format, differenceInDays } from 'date-fns';
@@ -14,6 +14,12 @@ import { Route } from 'expo-router/build/Route';
 import { router, useLocalSearchParams,  } from 'expo-router';
 import LogInRequiredPage from '@/components/LogInRequiredPage';
 import { useAppData } from '@/components/AppDataProvider';
+import config from '@/components/config';
+import { Client } from '@stomp/stompjs';
+import RatingFeedbackModal from '@/components/RatingFeedbackModal';
+var SockJS = require('sockjs-client/dist/sockjs.js');
+
+
 
 type IconConfig = {
   name: string;
@@ -68,22 +74,119 @@ const badgeColor = (status: OrderStatus) => {
 const Orders: React.FC = () => {
   const navigation = useNavigation();
   const { state,dispatch } = useAppContext();
-  const { orders, fetchOrders,error} = useAppData();
+  const { fetchOrders,error,userInfos} = useAppData();
+  const [orders,setOrders] = useState<Order[]>([]);
+  const [stompClient, setStompClient] = useState<Client | null>(null);
+  const [isRatingModalVisible,setisRatingModalVisible] = useState<boolean>(false)
+  const [orderedProducts, setOrderedProducts] = useState([]);
+  const [n,setN] = useState<boolean>(false)
   const {id} = useLocalSearchParams()
   var cartItems = state.cartItems || {};
   var isLoggedIn = state.JWT_TOKEN !=='';
   var token = state.JWT_TOKEN;
 
+  useFocusEffect(
+    useCallback(()=>{
+      if(id=="Cart"){
+        setisRatingModalVisible(true)
+        setOrderedProducts(cartItems)
+        dispatch({ type: 'CLEAN_CART'});
+      }
+      return () => {
+ 
+      };
+  },[id,navigation]))
+
+  React.useEffect(()=>{
+    const fetchorders = async () =>{
+      userInfos.myOrders = await fetchOrders()
+      setOrders(userInfos.myOrders)
+    }
+    if(isLoggedIn)
+      fetchorders()
+  },[isLoggedIn])
+
+  useFocusEffect(
+    useCallback(()=>{
+
+      if (token) {
+        const client = new Client({
+            debug: (str) => { console.log(str); },
+            brokerURL: `${config.API_BASE_URL}/notifications`,
+            connectHeaders: { Authorization: `Bearer ${token}` },
+            appendMissingNULLonIncoming: true,
+            onConnect: () => onConnected(client),
+            onStompError: onError
+        });
+  
+        client.webSocketFactory = function () {
+            return new SockJS(`${state.API_BASE_URL}/notifications`);
+        }
+  
+        client.activate();
+        setStompClient(client);
+  
+        return () => {
+            if (client) {
+                client.deactivate();
+            }
+        };
+    }
+  },[isLoggedIn,token]))
+
 
   
+  const onConnected = (client: Client) => {
+    client.subscribe(`/user/${jwtDecode(token).userid}/queue/orders`, onPrivateOrderReceived, { Authorization: `Bearer ${token}` });
+  };
 
-  useEffect(()=>{
-    const fetch = async () => {
-      await fetchOrders();
-    };
+const onError = (error: any) => {
+    console.error('STOMP error:', error);
+};
+
+const onPrivateOrderReceived = (payload: any) => {
+  try {
+    const {object,action}= JSON.parse(payload.body);
+    console.log("received action : "+action)
+    console.log("received order : "+object.id)
     
-    fetch();
-  },[])
+    setOrders(prevOrders => {
+      setN(true)
+      switch (action) {
+        case 'update':
+          const indexToUpdate = prevOrders.findIndex(p => p.id === object.id);
+          if (indexToUpdate >= 0) {
+            const updatedProducts = [...prevOrders];
+            updatedProducts[indexToUpdate] = object;
+            return updatedProducts;
+          } else {
+            return [object, ...prevOrders];
+          }
+        case 'delete':
+          return prevOrders.filter(p => p.id !== object.id);
+        case 'add':
+          return [object, ...prevOrders];
+        default:
+          return prevOrders;
+      }
+
+    });
+
+  } catch (error) {
+    console.error('Error parsing order update:', error);
+  }
+};
+
+
+useEffect(()=>{
+  if(n){
+    userInfos.myOrders = orders
+    setN(false)
+  }
+  
+},[n])
+
+
 
 
   const OrderItem: React.FC<{ order: Order; onPress: () => void }> = React.memo(({ order, onPress }) => (
@@ -120,13 +223,19 @@ const Orders: React.FC = () => {
 
   return (
     <View style={styles.container}>
+      <RatingFeedbackModal
+              visible={isRatingModalVisible}
+              onClose={() => setisRatingModalVisible(false)}
+              onSubmit={()=>setisRatingModalVisible(false)}
+              products={orderedProducts}
+            />
       {!isLoggedIn ?
       (
         <LogInRequiredPage message='Please log in to view your Orders' page='Orders'/>):
       (
-        orders.length > 0?
+        userInfos.myOrders.length > 0?
       <FlatList
-        data={orders}
+        data={userInfos.myOrders}
         renderItem={renderItem}
         keyExtractor={keyExtractor}
         contentContainerStyle={styles.listContainer}

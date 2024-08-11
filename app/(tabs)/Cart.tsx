@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { View, Image, Text, FlatList, Pressable, TouchableOpacity, Alert } from "react-native";
 import { useAppContext } from "@/components/AppContext";
-import { Card, CartElement, Product } from "@/constants/Classes";
+import { Card, CartElement, Order, Product, ProductInfos } from "@/constants/Classes";
 import { Color } from "@/GlobalStyles";
 import StarRating from "@/components/StarRating";
 import tw from "tailwind-react-native-classnames";
@@ -12,26 +12,26 @@ import { jwtDecode } from "jwt-decode";
 import ModernCustomAlert from "@/components/ModernCustomAlert";
 import { useAppData } from "@/components/AppDataProvider";
 import config from "@/components/config";
-
+import { useNavigation } from '@react-navigation/native';
 
 const Cart = () => {
   const { state, dispatch } = useAppContext();
-  const { data,cartElements,error,token} = useAppData();
+  const { ProductsInfos,data,cartElements,error,token} = useAppData();
   const [sumCheckout, setSumCheckout] = useState(0);
   const [first, setFirst] = useState(false);
   const [LogInAlertVisible, setLogInAlertVisible] = useState(false);
   var cartItems = state.cartItems || {};
   var isLoggedIn = state.JWT_TOKEN !=='';
-
+  const navigation = useNavigation();
 
 
   useEffect(() => {
     const total = Object.entries(cartItems).reduce((sum, [productId, item]) => {
-      const product = state?.products.find(p => p.id == productId);
-      return sum + (product ? product.price * item.quantity : 0);
+      const productinf = ProductsInfos.find((productinfos: ProductInfos) => productinfos.product.id == productId);
+      return sum + (productinf ? productinf.product.price * item.quantity : 0);
     }, 0);
     setSumCheckout(total);
-  }, [cartItems, state?.products]);
+  }, [cartItems, ProductsInfos]);
 
 
   const updateItemQuantity = (productId: string, change: number) => {
@@ -52,27 +52,27 @@ const Cart = () => {
     dispatch({ type: 'REMOVE_FROM_CART', payload: productId });
   };
 
-  const renderCartElement = ({ item }: { item: Product }) => {
-    const quantity = cartItems[item.id]?.quantity || 0;
+  const renderCartElement = ({ item }: { item: ProductInfos }) => {
+    const quantity = cartItems[item.product.id]?.quantity || 0;
     
     return (
       <Pressable style={[styles.cardWrapper, tw`flex-row`]} onPress={() => {}}>
         <View style={styles.productImageContainer}>
           <Image
             style={styles.productImage}
-            source={{ uri: item.imageUrls[0]?.url }}
+            source={{ uri: item.product.imageUrls[0]?.url }}
           />
         </View>
         <View style={styles.productDetails}>
           <View style={styles.priceQuantityContainer}>
             <View style={styles.priceContainer}>
-              <Text style={styles.totalPrice}>£ {(item.price * quantity).toFixed(2)}</Text>
-              <Text style={styles.unitPrice}>£ {item.price.toFixed(2)}</Text>
+              <Text style={styles.totalPrice}>£ {(item.product.price * quantity).toFixed(2)}</Text>
+              <Text style={styles.unitPrice}>£ {item.product.price.toFixed(2)}</Text>
             </View>
             <View style={styles.quantityContainer}>
               <TouchableOpacity
                 style={styles.quantityButton}
-                onPress={() => updateItemQuantity(item.id, -1)}>
+                onPress={() => updateItemQuantity(item.product.id, -1)}>
                 <Image
                   style={styles.quantityIcon}
                   tintColor={'orangered'}
@@ -82,7 +82,7 @@ const Cart = () => {
               <Text style={styles.quantityText}>{quantity}</Text>
               <TouchableOpacity
                 style={styles.quantityButton}
-                onPress={() => updateItemQuantity(item.id, +1)}>
+                onPress={() => updateItemQuantity(item.product.id, +1)}>
                 <Image
                   style={styles.quantityIcon}
                   source={require("@/assets/plus.png")}
@@ -92,13 +92,13 @@ const Cart = () => {
           </View>
           <View style={styles.productNameContainer}>
             <Text style={styles.productName} numberOfLines={2} ellipsizeMode="tail">
-              {item.name}
+              {item.product.name}
             </Text>
           </View>
           <View style={styles.productInfoContainer}>
-            <StarRating rating={data?.ratings[item.id]} />
+            <StarRating rating={parseFloat(item.raiting.toFixed(1))} />
             <Text style={styles.salesText}>| +1000 vendus</Text>
-            <Pressable style={styles.deleteButton} onPress={() => removeItem(item.id)}>
+            <Pressable style={styles.deleteButton} onPress={() => removeItem(item.product.id)}>
               <Image
                 style={styles.deleteIcon}
                 source={require("@/assets/delete.png")}
@@ -140,46 +140,46 @@ const Cart = () => {
       return error.response;
     }
   }
+  const submitCard =  async () => {
+
   
-  const submitCard = async () => {
     try {
       const total = Object.entries(cartItems).reduce((sum, [productId, item]) => {
-        const product = state?.products.find(p => p.id === parseInt(productId));
-        return sum + (product ? product.price * item.quantity : 0);
+        const productinf = ProductsInfos.find(p => p.product.id === productId);
+        return sum + (productinf ? productinf.product.price * item.quantity : 0);
       }, 0);
+  
+      const Products = ProductsInfos.filter((productinf: ProductInfos) => cartItems[productinf.product.id]?.quantity > 0);
       
-      const Products = state.products.filter((product: Product) => cartItems[product.id]?.quantity > 0);
       const card: Card = {
         cartElements: [],
         total_amount: total,
         id: '',
       };
-      Products.forEach((product: Product) => {
+  
+      Products.forEach((productinf: ProductInfos) => {
         card.cartElements.push({
           id: '',
-          quantity: cartItems[product.id]?.quantity,
-          sub_total: cartItems[product.id]?.quantity * product.price,
-          product: product
+          quantity: cartItems[productinf.product.id]?.quantity,
+          sub_total: cartItems[productinf.product.id]?.quantity * productinf.product.price,
+          product: productinf.product
         });
       });
 
       if (token) {
-        if(cartElements.length){
-          router.push("/Checkout");
-        }else{
-          console.log(card)
-          const response = await apiHandler(`/api/Cart/${jwtDecode(token).userid}`, card, token);
-          if (response.status === 200) {
-            router.push("/Checkout");
-          } else {
-            Alert.alert('Error', 'Failed to submit the cart. Please try again.');
-          }
+        const response = await apiHandler(`/api/Cart/${jwtDecode(token).userid}`, card, token);
+        if (response.status === 200) {
+          // Naviguer vers la page de checkout en passant les données du panier
+          navigation.navigate('Checkout', { cartData: card });
+        } else {
+          Alert.alert('Error', 'Failed to submit the cart. Please try again.');
         }
 
       }
+   
     } catch (error) {
-      console.error('Error submitting card:', error);
-      Alert.alert('Error', 'Failed to add the cart. Please try again.');
+      console.error('Error preparing cart for checkout:', error);
+      Alert.alert('Error', 'Failed to proceed to checkout. Please try again.');
     }
   };
 
@@ -200,8 +200,8 @@ const Cart = () => {
       router.push(`/LoginPage?id=Cart`);
   };
   const cartProducts = useMemo(() => {
-    return state.products.filter((product: Product) => cartItems[product.id]?.quantity > 0);
-  }, [data?.products, cartItems]);
+    return ProductsInfos.filter((productinfos: ProductInfos) => cartItems[productinfos.product.id]?.quantity > 0);
+  }, [ProductsInfos, cartItems]);
 
 
   return (
@@ -216,9 +216,9 @@ const Cart = () => {
       {cartProducts.length > 0 ? (
         <>
           <FlatList
-            data={cartElements.length==0?cartProducts:cartElements}
+            data={cartProducts}
             renderItem={renderCartElement}
-            keyExtractor={(item) => item.id?.toString()}
+            keyExtractor={(item) => item.product.id?.toString()}
           />
           {renderCheckoutButton()}
         </>

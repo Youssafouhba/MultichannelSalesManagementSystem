@@ -33,6 +33,8 @@ function Menu({ isVisible, onClose }) {
     if (path === '/') {
       state.notificationsCount = 0;
       logout();
+      state.order=null
+      dispatch({ type: 'CLEAN_CART'});
       dispatch({ type: 'SET_JWT_TOKEN', payload: '' });
     }
     router.push(path);

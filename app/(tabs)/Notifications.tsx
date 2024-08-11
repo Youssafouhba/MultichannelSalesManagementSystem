@@ -3,7 +3,7 @@ import { useAppData } from '@/components/AppDataProvider';
 import config from '@/components/config';
 import { API_BASE_URL } from '@/constants/GlobalsVeriables';
 import { FontSize, Color } from '@/GlobalStyles';
-import { Client } from '@stomp/stompjs';
+
 import axios from 'axios';
 import { useRouter } from 'expo-router';
 import { jwtDecode } from 'jwt-decode';
@@ -11,7 +11,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { FlatList, StyleSheet, Image,Text, TouchableOpacity, View } from 'react-native';
 import { Notification } from '@/constants/Classes';
 import tw from 'tailwind-react-native-classnames';
-
+import { Client } from '@stomp/stompjs';
 var SockJS = require('sockjs-client/dist/sockjs.js');
 
 

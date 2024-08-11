@@ -1,12 +1,13 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import axios from 'axios';
-import { CartElement, CommentItem, Order, OrderItem, Product } from '@/constants/Classes';
+import { CartElement, CommentItem, Order, OrderItem, Product, ProductInfos, UserInfos } from '@/constants/Classes';
 import Config from '@/components/config';
 import { UserDTO } from '@/constants/Classes';
 import { Notification } from '@/constants/Classes';
 import LogoPage from '@/app/LogoPage';
 import { Client } from '@stomp/stompjs';
 import { set } from 'lodash';
+import { jwtDecode } from 'jwt-decode';
 var SockJS = require('sockjs-client/dist/sockjs.js');
 
 interface AppData {
@@ -21,9 +22,10 @@ interface AppDataContextType {
   cartElements: CartElement[];
   orders: Order[];
   favProducts: Product[];
-  Products: Product[];
-  BestProducts: Product[];
-  NewProducts: Product[];
+  ProductsInfos: ProductInfos[];
+  userInfos: UserInfos;
+  BestProducts: ProductInfos[];
+  NewProducts: ProductInfos[];
   user: UserDTO | null;
   isLoading: boolean;
   error: string | null;
@@ -33,7 +35,7 @@ interface AppDataContextType {
   deleteAccount: () => void;
   markNotificationAsRead: (id: any) => Promise<void>;
   fetchFavorites: ()=> Promise<void>;
-  fetchOrders: ()=> Promise<void>;
+  fetchOrders: ()=> Promise<Order[]>;
   fetchCart: ()=> Promise<void>;
   fetchdt: () => void;
   login: (tok: string) => Promise<void>;
@@ -62,12 +64,25 @@ export const AppDataProvider: React.FC<AppDataProviderProps> = ({ children }) =>
   const [error, setError] = useState<string | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [cartElements,setCartElements] = useState<CartElement[]>([]);
-  const [favProducts, setFavProducts] = useState<Product[]>([]);
-  const [NewProducts, setNewProducts] = useState<Product[]>([]);
-  const [BestProducts, setBestProducts] = useState<Product[]>([]);
-  const [Products, setProducts] = useState<Product[]>([]);
+  const [favProducts, setFavProducts] = useState<ProductInfos[]>([]);
+  const [NewProducts, setNewProducts] = useState<ProductInfos[]>([]);
+  const [BestProducts, setBestProducts] = useState<ProductInfos[]>([]);
+  const [ProductsInfos, setProductsInfos] = useState<ProductInfos[]>([]);
+  const [userInfos, setUserInfos] = useState<UserInfos>();
   const [orders, setOrders] = useState<Order[]>([]);
   const [stompClient, setStompClient] = useState<Client | null>(null);
+
+  useEffect(()=>{
+    const fetchprofile = async () => {
+      const responseAuth = await axios.get(`${Config.API_BASE_URL}/api/client/getMyProfil`,{
+        headers: {
+          Authorization: `Bearer ${token}`
+        }});
+        setUserInfos(responseAuth.data);
+    }
+    fetchprofile
+  },[])
+
  
   const fetchProductRating = async (productId: number): Promise<number> => {
     try {
@@ -84,23 +99,12 @@ export const AppDataProvider: React.FC<AppDataProviderProps> = ({ children }) =>
 
 
 
-
+  const fetchBestAnfNew = (P: ProductInfos[]) =>{
+    setBestProducts(P.filter((prinf: ProductInfos)=> prinf.product.isBestSeller))
+    setNewProducts(P.filter((prinf: ProductInfos)=> prinf.product.isNew))
+  }
 
   useEffect( () => {
-
-    const checkFavoriteStatus = async (productId: string) => {
-        if (token!=undefined) {
-            try {
-                const response = await axios.get(`${Config.API_BASE_URL}/api/client/isFavorite/${productId}`, {
-                    headers: { Authorization: `Bearer ${token}` },
-                });
-                return response.data
-            } catch (error) {
-                console.error("Error checking favorite status:", error);
-            }
-        }
-    };
-
     const fetchAppData = async () => {
       try {
         setIsLoading(true);
@@ -108,29 +112,10 @@ export const AppDataProvider: React.FC<AppDataProviderProps> = ({ children }) =>
         // Fetch products
         const productsResponse = await axios.get(`${Config.API_BASE_URL}/api/Products`);
         const products = productsResponse.data;
-        
-        // Fetch ratings
-        const ratingsPromises = products.map((product: Product) => fetchProductRating(parseInt(product.id)));
-        const ratingValues = await Promise.all(ratingsPromises);
-
-        // Filter new and best products
-        const newProductsList = products.filter((product: Product) => product.isNew);
-        const bestProductsList = products.filter((product: Product) => product.isBestSeller);
-
-        // Fetch favorite status
-        const favoriteStatusPromises = products.map(async (product: Product) => ({
-          ...product,
-          isFavorite: await checkFavoriteStatus(product.id),
-        }));
-        const productsWithFavorites = await Promise.all(favoriteStatusPromises);
-        // Update state
-        setData({
-          products: productsWithFavorites,
-          ratings: Object.fromEntries(products.map((product, index) => [parseInt(product.id), ratingValues[index]])),
-        });
-        setProducts(products);
-        setNewProducts(newProductsList);
-        setBestProducts(bestProductsList);
+        setProductsInfos(products);
+       // console.log(products.filter((prinf: ProductInfos)=> prinf.product.isBestSeller))
+        fetchBestAnfNew(products)
+   
       } catch (error) {
         setError('Failed to fetch data');
         console.error('Error fetching app data:', error);
@@ -140,33 +125,40 @@ export const AppDataProvider: React.FC<AppDataProviderProps> = ({ children }) =>
     };
 
     const onConnected = (client: Client) => {
-      console.log('Connected to WebSocket');
+      console.log('Connected to WebSocket');    
       client.subscribe('/updates/product', onPublicNotificationReceived); // Adjust the topic as needed
   };
 
 
   const onPublicNotificationReceived = (payload: any) => {
     try {
-      const { product, action } = JSON.parse(payload.body);
+      const { object, action } = JSON.parse(payload.body);
   
-      console.log('Received product update:', product, 'Action:', action);
+      console.log('Received product update:', object, 'Action:', action);
   
-      setProducts(prevProducts => {
+      setProductsInfos(prevProducts => {
         switch (action) {
           case 'update':
-            const indexToUpdate = prevProducts.findIndex(p => p.id === product.id);
+            console.log(object);
+            const indexToUpdate = prevProducts.findIndex((pinf) => pinf.product.id === object.id);
             if (indexToUpdate >= 0) {
               const updatedProducts = [...prevProducts];
-              updatedProducts[indexToUpdate] = product;
+              updatedProducts[indexToUpdate].product = object;
+              fetchBestAnfNew(updatedProducts);
               return updatedProducts;
             } else {
-              return [product, ...prevProducts];
+              const newProducts = [{ product: object, rating: 0 }, ...prevProducts];
+              fetchBestAnfNew(newProducts);
+              return newProducts;
             }
-  
           case 'delete':
-            return prevProducts.filter(p => p.id !== product.id);
+            const filteredProducts = prevProducts.filter((pinf) => pinf.product.id !== object.id);
+            fetchBestAnfNew(filteredProducts);
+            return filteredProducts;
           case 'add':
-            return [product, ...prevProducts];
+            const productsWithNewItem = [{ product: object, rating: 0 }, ...prevProducts];
+            fetchBestAnfNew(productsWithNewItem);
+            return productsWithNewItem;
           default:
             return prevProducts;
         }
@@ -189,10 +181,9 @@ export const AppDataProvider: React.FC<AppDataProviderProps> = ({ children }) =>
           // Initialize the WebSocket connection and STOMP client
           const client = new Client({
             debug: (str) => { console.log(str); },
-            brokerURL: `${Config.API_BASE_URL}/products`, // Ensure this URL is correct
-            connectHeaders: {
-                // Add headers if needed
-            },
+            brokerURL: `${Config.API_BASE_URL}/products`,
+            connectHeaders: { },
+            appendMissingNULLonIncoming: true,
             webSocketFactory: () => new SockJS(`${Config.API_BASE_URL}/products`), // Ensure this URL matches your server configuration
             onConnect: () => onConnected(client),
             onStompError: onError
@@ -203,53 +194,34 @@ export const AppDataProvider: React.FC<AppDataProviderProps> = ({ children }) =>
           }         
     }
 
+  
     websocket();
     fetchAppData();
     
   }, []);
 
   const fetchdt = async () => {
-    const ratingsPromises = data.products.map(product => fetchProductRating(parseInt(product.id)));
-    const ratingValues = await Promise.all(ratingsPromises);
-    const ratings = Object.fromEntries(data.products.map((product, index) => [parseInt(product.id), ratingValues[index]]));
-    const d = data?.ratings
-    setData({ d, ratings });
+    
   }
 
   const login = async (tok: string) => {
-    if(tok!=null)
       try {     
         setToken(tok)
         const responseAuth = await axios.get(`${Config.API_BASE_URL}/api/client/getMyProfil`,{
           headers: {
             Authorization: `Bearer ${tok}`
           }});
-          setUser(responseAuth.data);
-          try {
-            const responseFavorites = await axios.get<Product[]>(
-              `${Config.API_BASE_URL}/api/client/getMyFavoriteProducts`,
-              { headers: { Authorization: `Bearer ${tok}`}});
-            setFavProducts(responseFavorites.data);
-          } catch (err) {
-            console.error('favorites :', err);
-            setError('favorites failed');
-          }
-          fetchNotification()
-          fetchOrders()
+          responseAuth.data.myOrders = responseAuth.data.myOrders.sort((a, b) => 
+            new Date(b.creationDate).getTime() - new Date(a.creationDate).getTime()
+          );
+          setCartElements(responseAuth.data.shoppingList)
+        setUserInfos(responseAuth.data);   
       } catch (error) {
         return error;
       }
   }
 
-const fetchprofile = async () => {
-  if(token!=null){
-    const responseAuth = await axios.get(`${Config.API_BASE_URL}/api/client/getMyProfil`,{
-      headers: {
-        Authorization: `Bearer ${token}`
-      }});
-      setUser(responseAuth.data);
-  }
-}
+
 
   const fetchFavorites = async () => {
     if(token!=null)
@@ -284,7 +256,9 @@ const fetchprofile = async () => {
         const sortedOrders = response.data.sort((a, b) => 
           new Date(b.creationDate).getTime() - new Date(a.creationDate).getTime()
         );
+        //console.log(sortedOrders)
         setOrders(sortedOrders);
+        return sortedOrders
       } catch (error) {
         //console.log(error.response.data);
         return error.response;
@@ -366,7 +340,7 @@ const fetchprofile = async () => {
 
   return (
     <AppDataContext.Provider value={{ 
-      data, user,token,cartElements,orders,BestProducts,Products,NewProducts,fetchProductRating,login,fetchCart,fetchprofile,fetchNotification,markNotificationAsRead,updateProfile,fetchOrders,deleteAccount,favProducts, isLoading, error,fetchdt, logout,fetchFavorites }}>
+      data, user,token,cartElements,orders,BestProducts,ProductsInfos,NewProducts,userInfos,fetchProductRating,login,fetchCart,fetchNotification,markNotificationAsRead,updateProfile,fetchOrders,deleteAccount, isLoading, error,fetchdt, logout,fetchFavorites }}>
       {isLoading ? <LogoPage/> : children}
     </AppDataContext.Provider>
   );

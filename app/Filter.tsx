@@ -98,8 +98,10 @@ const Filter = () => {
           style={styles.picker}
           onValueChange={(itemValue) => handleFilterChange("category", "value", itemValue)}
         >
-          <Picker.Item label="LED Lighting" value="LED Lighting" />
-          <Picker.Item label="Suspended ceiling & Aluminium grid" value="Suspended ceiling & Aluminium grid" />
+          <Picker.Item label="LED Ceiling Panel" value="LED Ceiling Panel" />
+          <Picker.Item label="LED Strip Lighting " value="LED Strip Lighting " />
+          <Picker.Item label="Led Profiles" value="LED Ceiling Panel" />
+          <Picker.Item label="Suspended Ceiling & Metal Grid" value="Suspended Ceiling & Metal Grid" />
         </Picker>
       ))}
 

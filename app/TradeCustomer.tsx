@@ -1,5 +1,15 @@
 import React, { useState, useCallback, useRef } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, Dimensions, Pressable } from "react-native";
+import { 
+  View, 
+  Text, 
+  StyleSheet, 
+  TouchableOpacity, 
+  Dimensions, 
+  Pressable, 
+  ScrollView,
+  KeyboardAvoidingView,
+  Platform
+} from "react-native";
 import { Image } from "expo-image";
 import InputField from "../components/InputField";
 import { FontFamily, FontSize, Color, StyleVariable } from "../GlobalStyles";
@@ -40,7 +50,7 @@ const Inputoptions = ({ onSelectOption, selectedOption }) => {
   }, [onSelectOption]);
 
   return (
-    <View style={styles.inputoptions}>
+    <View style={[tw`mx-4`]}>
       <TouchableOpacity onPress={toggleDropdown}>
         <Text style={styles.description}>Type of Business</Text>
       </TouchableOpacity>
@@ -113,14 +123,14 @@ const TradeCustomer = () => {
   };
 
   const inputFields = [
-    { name: "companyName", label: "Company Name (if applicable)", required: true },
+    { name: "companyName", label: "Company Name (if applicable)", required: false },
     { name: "contactPerson", label: "Contact Person", required: true },
     { name: "businessAddress", label: "Business Address", required: true },
     { name: "city", label: "City", required: true },
     { name: "country", label: "Country", required: true },
     { name: "postalCode", label: "Postal Code", required: true },
-    { name: "phoneNumber", label: "Phone Number", required: true },
-    { name: "emailAddress", label: "Email Address", required: true },
+    //{ name: "phoneNumber", label: "Phone Number", required: true },
+    //{ name: "emailAddress", label: "Email Address", required: true },
     { name: "website", label: "Website (if applicable)", required: false },
   ];
 
@@ -145,76 +155,90 @@ const TradeCustomer = () => {
   };
 
   return (
-    <View style={[tw`items-center py-4`, styles.container]}>
-      {isLoggedIn ? (
-        <View>
-          <Text style={styles.title}>Open a trade account (minimum buy £500)</Text>
-          <View style={tw`flex-row justify-start items-center mt-4`}>
-            <Image
-              style={styles.icon}
-              contentFit="cover"
-              source={require("../assets/image9.png")}
-            />
-            <Text style={[styles.subtitle, tw`mx-2`]}>
-              Company/Individual Information :
-            </Text>
-          </View>
-          {inputFields.map((field, index) => (
-            <View key={field.name}>
-              <InputField
-                inputFieldPlaceholder={field.label}
-                propTop={30 + index * 20}
-                color={errors[field.name] ? 'red' : "#b3b3b3"}
-                onChangeText={(text) => handleInputChange(field.name, text)}
-                value={formData[field.name]}
-              />
-            </View>
-          ))}
-          <Inputoptions 
-            onSelectOption={(option) => handleInputChange('typeOfBusiness', option)}
-            selectedOption={formData.typeOfBusiness}
+    <KeyboardAvoidingView 
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      style={styles.container}
+    >
+      {isLoggedIn?(
+      <ScrollView contentContainerStyle={styles.scrollContainer}>
+      <View style={styles.contentContainer}>
+        <Text style={[styles.title,tw`mx-2 my-2`]}>Open a trade account (minimum buy £500)</Text>
+        <View style={tw`flex-row justify-start items-center my-2 ml-4`}>
+          <Image
+            style={styles.icon}
+            contentFit="cover"
+            source={require("../assets/image9.png")}
           />
-          {formData.typeOfBusiness === "Other" && (
-            <InputField 
-              inputFieldPlaceholder="Please Specify" 
-              propTop={225}
-              color={errors.typeOfBusiness ? 'red' : "#b3b3b3"}
-              onChangeText={(text) => handleInputChange('typeOfBusiness', text)}
-              value={formData.typeOfBusiness}
-            />
-          )}
-          <Pressable onPress={handleNextButton} style={styles.button}>
-            <Text style={styles.buttonText}>Next</Text>
-            <Image
-              style={styles.icon}
-              contentFit="cover"
-              tintColor={'white'}
-              source={require("../assets/arrow-right.png")}
-            />
-          </Pressable>
+          <Text style={[styles.subtitle, tw`mx-2`]}>
+            Company/Individual Information:
+          </Text>
         </View>
-      ) : (
+        {inputFields.map((field, index) => (
+          <View key={field.name} style={[styles.inputContainer,tw`mx-4`]}>
+            <InputField
+              inputFieldPlaceholder={field.label}
+              borderColor={errors[field.name] ? 'red' : field.required ? "#b3b3b3" : "#d3d3d3"}
+              onChangeText={(text) => handleInputChange(field.name, text)}
+              value={formData[field.name]}
+              style={field.required ? styles.requiredField : styles.optionalField}
+            />
+          </View>
+        ))}
+        <Inputoptions 
+          onSelectOption={(option) => handleInputChange('typeOfBusiness', option)}
+          selectedOption={formData.typeOfBusiness}
+        />
+        {formData.typeOfBusiness === "Other" && (
+          <InputField 
+            inputFieldPlaceholder="Please Specify" 
+            color={errors.typeOfBusiness ? 'red' : "#b3b3b3"}
+            onChangeText={(text) => handleInputChange('typeOfBusiness', text)}
+            value={formData.typeOfBusiness}
+            style={styles.requiredField}
+          />
+        )}
+        <Pressable onPress={handleNextButton} style={styles.button}>
+          <Text style={styles.buttonText}>Next</Text>
+          <Image
+            style={styles.icon}
+            contentFit="cover"
+            tintColor={'white'}
+            source={require("../assets/arrow-right.png")}
+          />
+        </Pressable>
+      </View>
+    </ScrollView>
+      ):(
         <LogInRequiredPage message='Please log in to view your trade customer page' page='TradeCustomer' />
       )}
-    </View>
+
+    </KeyboardAvoidingView>
   );
 };
 
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: Color.BackgroundBrandDefault,
     flex: 1,
-    width: "100%",
-    overflow: "hidden",
+    backgroundColor: Color.BackgroundBrandDefault,
+  },
+  scrollContainer: {
+    flexGrow: 1,
+  },
+  contentContainer: {
+
   },
   title: {
     fontSize: FontSize.size_lg,
     lineHeight: 27,
     color: "#0d2e6e",
-    fontFamily: FontFamily.interMedium,
     fontWeight: "500",
+  },
+  description: {
+    color: Color.textDefaultSecondary,
     textAlign: "left",
+    lineHeight: 22,
+    fontSize: FontSize.presetsBody2_size,
   },
   subtitle: {
     fontSize: FontSize.size_sm,
@@ -222,14 +246,22 @@ const styles = StyleSheet.create({
     color: Color.colorBlack,
     fontFamily: FontFamily.interMedium,
     fontWeight: "500",
-    textAlign: "left",
   },
   icon: {
     width: 16,
     height: 16,
   },
+  inputContainer: {
+    marginBottom: StyleVariable.space300,
+  },
+  requiredField: {
+    borderColor: Color.colorGray_100,
+  },
+  optionalField: {
+    borderColor: Color.colorGray_200,
+    borderStyle: 'dashed',
+  },
   button: {
-    top: 235,
     backgroundColor: Color.colorsBlue,
     borderRadius: StyleVariable.radius200,
     flexDirection: "row",
@@ -237,34 +269,24 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: StyleVariable.space300,
     paddingVertical: StyleVariable.space200,
-    opacity: 1,
+    marginTop: 10,
+    marginHorizontal: 16,
   },
   buttonText: {
     fontSize: FontSize.presetsBody2_size,
     lineHeight: 16,
     fontFamily: FontFamily.presetsBody2,
     color: "white",
-    textAlign: "left",
-  },
-  inputoptions: {
-    top: 220,
-  },
-  description: {
-    color: Color.textDefaultSecondary,
-    marginTop: 8,
-    textAlign: "left",
-    lineHeight: 22,
-    fontSize: FontSize.presetsBody2_size,
   },
   select: {
     height: 41,
+
     flexDirection: "row",
     alignItems: "center",
-    paddingLeft: StyleVariable.space400,
+    //marginHorizontal: 8,
     paddingTop: StyleVariable.space300,
     paddingRight: StyleVariable.space300,
     paddingBottom: StyleVariable.space300,
-    minWidth: 240,
     borderWidth: 1,
     borderColor: Color.colorGray_100,
     borderStyle: "solid",

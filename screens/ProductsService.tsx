@@ -5,49 +5,42 @@ import CeilingCalculator from "./CeillingCalculator";
 import { Color, Padding } from "@/GlobalStyles";
 import { groupecomponentstyles,headerstyles } from "@/GlobalStyles";
 import StarRating from "@/components/StarRating";
-import { useGlobalSearchParams, useRouter } from 'expo-router';
+import { useGlobalSearchParams } from 'expo-router';
 import LoadingAnimation from "@/components/LoadingAnimation";
 import { useAppContext } from "@/components/AppContext";
 import { useAppData } from "@/components/AppDataProvider";
 import { Ionicons } from "@expo/vector-icons";
-import { Product } from "@/constants/Classes";
+import { CommentItem, Product, ProductInfos } from "@/constants/Classes";
 import { debounce } from "lodash";
-import config from "@/components/config";
-import EventSource, { EventSourceListener } from "react-native-sse";
+import { router, useNavigation } from "expo-router";
 
 export default function ProductsService() {
   const { width, height } = useWindowDimensions();
   const [selectedLabel, setSelectedLabel] = useState<string | null>("Best Seller");
-  const { BestProducts,NewProducts,data,user,Products,token} = useAppData();
+  const { BestProducts,NewProducts,data,user,ProductsInfos,token} = useAppData();
   const rectangleWidth = width / 2 - 15; // 15 est la marge entre les rectangles
   const rectangleHeight =(width/height) > 0.5 ? height /4+4:height *(width/height)-124; // Ajustez cette valeur selon vos besoi28
   const imgheight = (width/height) > 0.5 ? '55%': '62%';
   const [dimensions, setDimensions] = useState(Dimensions.get('window'));
   const { state, dispatch } = useAppContext();
-  const router = useRouter();
-  const navigation = useRouter();
+  const navigation = useNavigation<any>();
   const [sug,setsug] = useState<boolean>(true)
   const [isLoading, setIsLoading] = useState(true);
   const [category, setCategory] = useState("all");
-  const [products, setProducts] = useState<Product[] | undefined>([]);
+  const [productsInfos, setProductsInfos] = useState<ProductInfos[] | undefined>(ProductsInfos);
   const [productRatings, setProductRatings] = useState<{[key: number]: number} | undefined>({});
-  const [filteredProducts, setFilteredProducts] = useState<Product[] | undefined>([]);
+  const [filteredProducts, setFilteredProducts] = useState<ProductInfos[] | undefined>([]);
   const styles = useMemo(() => createStyles(dimensions.width, dimensions.height), [dimensions]);
   const [inputsearch,setInputSearch] = useState<string>()
   const [isLoggedIn,setIsLoggedIn] = useState<boolean>(false);
   const [isRedirecting, setIsRedirecting] = useState(false);
+  const [isSuggestionsMode, setIsSuggestionsMode] = useState<boolean>(true);
   const {filter} = useGlobalSearchParams()
+  const [viewAllCache, setViewAllCache] = useState<ProductInfos[] | null>(null);
 
   const [hasNavigated, setHasNavigated] = useState(false);
-  const [id,setId] = useState<string>('')
+  const [product,setProduct] = useState<Product>()
 
-  useEffect(() => {
-    if (hasNavigated) {
-      setHasNavigated(false);
-      navigation.navigate(`/ProductDetails?id=${id}`);
-    }
-
-  }, [hasNavigated, id, navigation]);
 
 
   useEffect(() => {
@@ -65,11 +58,8 @@ export default function ProductsService() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        setProducts(Products);
-        setFilteredProducts(Products)
-        state.products = Products;
-        setProductRatings(data?.ratings)
-        console.log(data?.ratings[5])
+        setProductsInfos(ProductsInfos);
+        setFilteredProducts(ProductsInfos)
         setIsLoading(false);
       } catch (error) {
         console.error('Error fetching products:', error);
@@ -79,65 +69,68 @@ export default function ProductsService() {
 
       fetchData();
     
-  }, [filter,Products]);
+  }, [filter,productsInfos]);
 
 
-  useEffect(()=>{
-    if(products.length > 0 ){
+  useEffect(() => {
+    if (isSuggestionsMode) {
       switch (selectedLabel) {
         case "New designs":
-          setsug(true)
           setFilteredProducts(NewProducts);
           break;
         case "Best Seller":
-          setsug(true)
-          setFilteredProducts(BestProducts)
-          break
-        default:
+          setFilteredProducts(BestProducts);
           break;
+        case "Ceilling Calculator":
+          // Handle Ceiling Calculator case if needed
+          break;
+        default:
+          setFilteredProducts(BestProducts); // Default to Best Seller
       }
+    } else {
+      setFilteredProducts(productsInfos);
     }
-  },[products, selectedLabel, NewProducts, BestProducts,Products])
-
+  }, [isSuggestionsMode, selectedLabel, NewProducts, BestProducts, productsInfos]);
  
-const gotodetails = (id: string) => {
-  setId(id)
-   setHasNavigated(true)
-}
+  const gotodetails = (productinfos: ProductInfos) => {
+    const payload = {
+      ...productinfos,
+    };
+    navigation.navigate(`ProductDetails`,{payload})
+  }
  
 
-  const renderProduct = ({ item }: { item: Product }) => (
+  const renderProduct = ({ item }: { item: ProductInfos }) => (
     <View style={[{width: rectangleWidth,height: rectangleHeight},styles.productWrapper, selectedLabel === "New designs" && styles.fullWidthProduct]}>
       <Pressable 
         style={[styles.productInnerContainer, selectedLabel === "New designs" && styles.fullWidthInnerContainer]}
-        onPress={() => { gotodetails(item.id)}}
+        onPress={() => { gotodetails(item)}}
       >
         <Image
-          contentFit="cover"
           style={[styles.productImage, selectedLabel === "New designs" && styles.fullWidthImage]}
-          source={{ uri: item.imageUrls[0]?.url}}
+          source={{ uri: item.product.imageUrls[0]?.url}}
         />
         <View style={[styles.productDesc, selectedLabel === "New designs" && styles.fullWidthDesc]}>
           <Text style={[styles.productName, selectedLabel === "New designs" && styles.fullWidthName]} numberOfLines={category === "New designs"?3:2} ellipsizeMode="tail">
-            {item.name}
+            {item.product.name}
           </Text>
           <View style={[styles.infoArea, selectedLabel === "New designs" &&{marginTop: 5}]}>
             <Text style={[styles.priceText, selectedLabel === "New designs" && styles.fullWidthPrice]}>
-              £ {item.price}
+              £ {item.product.price}
             </Text>
             <Text style={[styles.stockText, selectedLabel === "New designs" && styles.fullWidthStock]}>
-              <Text style={{color: Color.colorize_gray}}>{item.quantityInStock}</Text> in stock
+              <Text style={{color: Color.colorize_gray}}>{item.product.quantityInStock}</Text> in stock
             </Text>
           </View>
           <View style={[styles.badgeArea, selectedLabel === "New designs" &&{marginTop: 5}]}>
             <View style={[styles.offerBadge,selectedLabel === "New designs" && { marginRight: 15,}]}>
               <Text style={[styles.offerText, selectedLabel === "New designs" && styles.fullWidthOfferText]}>Offer</Text>
             </View>
-            <StarRating rating={productRatings[parseInt(item.id)]} />
+            <StarRating rating={parseFloat(item.raiting.toFixed(1))} />
           </View>
         </View>
       </Pressable>
-      {item.isNew && (
+      {item.product.isNew && (
         <Image
           style={[styles.newBadge, selectedLabel === "New designs" && styles.fullWidthNewBadge]}
           source={require("../assets/badge_143875.png")}
@@ -154,7 +147,7 @@ const gotodetails = (id: string) => {
         key={selectedLabel}
         data={NewProducts} // Limiter à 4 éléments
         renderItem={renderProduct}
-        keyExtractor={(item) => item.id.toString()}
+        keyExtractor={(item) => item.product.id.toString()}
         numColumns={1}
         showsVerticalScrollIndicator={false}
         scrollEnabled={true} // Désactiver le défilement
@@ -166,7 +159,7 @@ const gotodetails = (id: string) => {
         key={selectedLabel}
         data={selectedLabel === "Best Seller"?BestProducts:filteredProducts} // Limiter à 4 éléments
         renderItem={renderProduct}
-        keyExtractor={(item) => item.id.toString()}
+        keyExtractor={(item) => item.product.id.toString()}
         numColumns={2}
         columnWrapperStyle={styles.row}
         showsVerticalScrollIndicator={false}
@@ -179,7 +172,8 @@ const gotodetails = (id: string) => {
   );
 
   const filterProducts = (categoryName: string | null) => {
-   setSelectedLabel(categoryName)
+    setSelectedLabel(categoryName);
+    setIsSuggestionsMode(categoryName !== "all");
   };
 
   const renderCategoryButton = (label: string) => (
@@ -211,51 +205,52 @@ const gotodetails = (id: string) => {
   );
 
   const renderGroupElement = () => (
-    <View style={[{backgroundColor: Color.colorWhite},tw`w-full blur-md`]}>
-    <View style={[tw`flex-row justify-between items-center text-center mx-2 pl-2 pr-2`,]}>
-      <Pressable onPress={() => {setsug(true),setSelectedLabel("Best Seller")}}>
-        <Text style={[tw`text-base text-gray-400 font-normal text-lg`,sug&&{color: 'black'}]}>
-            {`Suggestions `}
-        </Text>
-      </Pressable>
-      <Pressable onPress={() => {setSelectedLabel("all"),setFilteredProducts(products),setInputSearch(''),setsug(false)}} >
-        <View style={[styles.modelightStateenabled]}>
-          <Text style={[styles.textTypo,tw`text-base text-gray-400 font-normal text-lg`,!sug&&{color: 'black'}]}>View All</Text>
-        </View>
-      </Pressable>
+    <View style={[{backgroundColor: Color.colorWhite}, tw`w-full blur-md`]}>
+      <View style={[tw`flex-row justify-between items-center text-center mx-2 pl-2 pr-2`]}>
+        <Pressable onPress={() => filterProducts("Best Seller")}>
+          <Text style={[tw`text-base text-gray-400 font-normal text-lg`, isSuggestionsMode && {color: 'black'}]}>
+            Suggestions
+          </Text>
+        </Pressable>
+        <Pressable onPress={() => filterProducts("all")}>
+          <View style={[styles.modelightStateenabled]}>
+            <Text style={[styles.textTypo, tw`text-base text-gray-400 font-normal text-lg`, !isSuggestionsMode && {color: 'black'}]}>
+              View All
+            </Text>
+          </View>
+        </Pressable>
+      </View>
+      <View style={tw`flex-row justify-around my-2`}>
+        {renderCategoryButton("Best Seller")}
+        {renderCategoryButton("New designs")}
+        {renderCategoryButton("Ceilling Calculator")}
+      </View>
     </View>
-    <View style={tw`flex-row justify-around my-2`}>
-      {renderCategoryButton("Best Seller")}
-      {renderCategoryButton("New designs")}
-      {renderCategoryButton("Ceilling Calculator")}
-    </View>
-  </View>
-  )
+  );
 
   const debouncedSearch = useCallback(
     debounce((key: string) => {
-      if (key.trim() === '') {
-        setFilteredProducts(products);
-        setSelectedLabel('all');
-        setsug(true);
-      } else {
-        const filtered = products.filter(
-          (product) =>
-            product.name.toLowerCase().includes(key.toLowerCase()) ||
-            product.category.toLowerCase().includes(key.toLowerCase()) ||
-            product.price.toString().includes(key)
-        );
-        setFilteredProducts(filtered);
-        setSelectedLabel('all');
-        setsug(false);
-      }
+      const filtered = productsInfos?.filter(
+        (productInfos: ProductInfos) =>
+          productInfos.product.name.toLowerCase().includes(key.toLowerCase()) ||
+          productInfos.product.category.toLowerCase().includes(key.toLowerCase()) ||
+          productInfos.product.price.toString().includes(key)
+      );
+      setFilteredProducts(filtered);
+      setSelectedLabel('all');
     }, 300),
-    [filteredProducts]
+    [productsInfos]
   );
 
   const handleInputChange = (text: string) => {
     setInputSearch(text);
-    debouncedSearch(text);
+    if (text.trim() === '') {
+      setIsSuggestionsMode(true);
+      setSelectedLabel("Best Seller");
+    } else {
+      setIsSuggestionsMode(false);
+      debouncedSearch(text);
+    }
   };
 
   const searchContainer = useMemo(() => (

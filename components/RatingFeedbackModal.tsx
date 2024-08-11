@@ -74,7 +74,7 @@ const RatingFeedbackModal = ({ visible, onClose, onSubmit,products }) => {
             multiline
           />
           <View style={styles.buttonContainer}>
-            <TouchableOpacity style={styles.button} onPress={onClose}>
+            <TouchableOpacity style={[styles.cancelbutton]} onPress={onClose}>
               <Text style={styles.buttonText}>Cancel</Text>
             </TouchableOpacity>
             <TouchableOpacity 
@@ -82,7 +82,7 @@ const RatingFeedbackModal = ({ visible, onClose, onSubmit,products }) => {
               onPress={handleSubmit}
               disabled={rating === 0}
             >
-              <Text style={styles.buttonText}>Submit</Text>
+              <Text style={[styles.buttonText,{color: 'white'}]}>Submit</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -96,7 +96,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: 'rgba(0, 0, 0, 0.4)',
   },
   modalView: {
     margin: 20,
@@ -104,12 +104,12 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     padding: 35,
     alignItems: 'center',
-    shadowColor: '#000',
+    shadowColor: 'white',
     shadowOffset: {
       width: 0,
       height: 2,
     },
-    shadowOpacity: 0.25,
+    shadowOpacity: 0.5,
     shadowRadius: 4,
     elevation: 5,
     width: '80%',
@@ -139,6 +139,12 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     width: '100%',
   },
+  cancelbutton: {
+    borderRadius: 10,
+    padding: 10,
+    elevation: 1,
+    minWidth: 100,
+  },
   button: {
     borderRadius: 10,
     padding: 10,
@@ -149,7 +155,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#2196F3',
   },
   buttonText: {
-    color: 'white',
+    color: 'black',
     fontWeight: 'bold',
     textAlign: 'center',
   },

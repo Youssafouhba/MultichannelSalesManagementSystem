@@ -14,9 +14,9 @@ import { useAppData } from './AppDataProvider';
 import { Color } from '@/GlobalStyles';
 import config from './config';
 
-const CommentSystem: React.FC<{ Id: string }> = ({ Id }) => {
+const CommentSystem: React.FC<{commentsItens : CommentItem[] ,Id: string}> = ({ commentsItens,Id }) => {
   const { state, dispatch } = useAppContext();
-  const [comments, setComments] = useState<CommentItem[]>([]);
+  const [comments, setComments] = useState<CommentItem[]>(commentsItens);
   const [loginAlertVisible, setLoginAlertVisible] = useState<boolean>(false);
   const [newComment, setNewComment] = useState('');
   const [newCommentRating, setNewCommentRating] = useState(0);
@@ -25,29 +25,6 @@ const CommentSystem: React.FC<{ Id: string }> = ({ Id }) => {
   const isLoggedIn = state.JWT_TOKEN !== '';
   const token = state.JWT_TOKEN;
 
-  useEffect(() => {
-    fetchComments(Id);
-    return () => {
-      if (ws.current) {
-        ws.current.close();
-      }
-    };
-  }, [Id]);
-
-  const fetchComments = async (productId: string) => {
-    try {
-      const response = await axios.get(`${config.API_BASE_URL}/Comments/${productId}`);
-      const fetchedComments: CommentItem[] = response.data;
-      const filteredComments = fetchedComments.filter(comment => comment.first === true);
-      const sortedComments = filteredComments.sort((a, b) => 
-        new Date(b.createdDate).getTime() - new Date(a.createdDate).getTime()
-      );
-      setComments(sortedComments.slice(0, 4)); // Only keep the 4 most recent comments
-    } catch (error) {
-      console.error('Erreur lors de la récupération des commentaires:', error);
-      Alert.alert('Erreur', 'Impossible de charger les commentaires. Veuillez réessayer.');
-    }
-  };
 
   const handleAddComment = async () => {
     if (!isLoggedIn) {
@@ -123,7 +100,7 @@ const CommentSystem: React.FC<{ Id: string }> = ({ Id }) => {
       />
       <Text style={styles.sectionTitle}>Customer Reviews</Text>
       <FlatList
-        data={comments}
+        data={comments.slice(0,4)}
         renderItem={renderCommentItem}
         keyExtractor={(item) => item.id}
         ListEmptyComponent={<Text style={styles.emptyListText}>Be the first to review this product!</Text>}

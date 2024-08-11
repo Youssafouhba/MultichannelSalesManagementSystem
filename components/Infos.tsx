@@ -19,36 +19,8 @@ import { router } from "expo-router";
 import { UserDTO } from "@/constants/Classes";
 import AnimatedCustomAlert from "./AnimatedCustomAlert";
 
-const DeleteAccountAlert = ({ visible, onConfirm, onCancel }) => (
-  <Modal
-    animationType="fade"
-    transparent={true}
-    visible={visible}
-  >
-    <View style={styles.centeredView}>
-      <View style={styles.modalView}>
-        <Text style={styles.modalText}>Are you sure you want to delete your account?</Text>
-        <Text style={styles.modalSubText}>This action cannot be undone.</Text>
-        <View style={styles.buttonContainer}>
-          <TouchableOpacity
-            style={[styles.button, styles.buttonCancel]}
-            onPress={onCancel}
-          >
-            <Text style={styles.textStyle}>Cancel</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.button, styles.buttonConfirm]}
-            onPress={onConfirm}
-          >
-            <Text style={styles.textStyle}>Confirm</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    </View>
-  </Modal>
-);
 
-const Infos = ({ fullName, email, phoneNumber, dateOfCreation }: { fullName: string, email: string, phoneNumber: string, dateOfCreation: Date }) => {
+const Infos = ({ fullName, email, phoneNumber, dateOfCreation }: { fullName: string, email: string, phoneNumber: string, dateOfCreation: string | Date }) => {
   const { user,updateProfile, deleteAccount, error } = useAppData();
   
   const [nameEnabled, setNameEnabled] = useState<boolean>(true);
@@ -65,11 +37,7 @@ const Infos = ({ fullName, email, phoneNumber, dateOfCreation }: { fullName: str
 
   const ClientDateDisplay: React.FC<{ createdDate: string | Date }> = ({ createdDate }) => {
     const orderDateTime = new Date(createdDate);
-    return format(orderDateTime, 'yy-MM-dd')
-  };
-
-  const handleDeleteAccount = () => {
-    setDeleteAlertVisible(true);
+    return format(orderDateTime, 'yyyy/MM/dd')
   };
 
   const handleUpdateAccount = async () => {
@@ -81,12 +49,6 @@ const Infos = ({ fullName, email, phoneNumber, dateOfCreation }: { fullName: str
     }
     await updateProfile(userdto);
     setAlertVisible(true)
-  };
-
-  const confirmDeleteAccount = () => {
-    deleteAccount();
-    setDeleteAlertVisible(false);
-    router.navigate("/")
   };
 
   return (
@@ -133,11 +95,6 @@ const Infos = ({ fullName, email, phoneNumber, dateOfCreation }: { fullName: str
         />
         
         <View style={[tw`flex-row justify-around items-center my-4`]}>
-          <TouchableOpacity onPress={handleDeleteAccount}>
-            <Button buttonColor="red" textColor="white" style={[tw`text-base font-medium`, { color: Color.colorRed }]}>
-              DELETE ACCOUNT
-            </Button>
-          </TouchableOpacity>
           <TouchableOpacity onPress={() => {handleUpdateAccount()}}>
             <Button buttonColor="#0077b6" textColor="white" style={[tw`text-base font-medium`]}>
               Save Changes
@@ -145,12 +102,6 @@ const Infos = ({ fullName, email, phoneNumber, dateOfCreation }: { fullName: str
           </TouchableOpacity>
         </View>
       </View>
-      
-      <DeleteAccountAlert
-        visible={deleteAlertVisible}
-        onConfirm={confirmDeleteAccount}
-        onCancel={() => setDeleteAlertVisible(false)}
-      />
     </ScrollView>
   );
 };
