@@ -38,8 +38,8 @@ interface AppDataContextType {
   fetchOrders: ()=> Promise<Order[]>;
   fetchCart: ()=> Promise<void>;
   fetchdt: () => void;
-  login: (tok: string) => Promise<void>;
-  fetchNotification(): Promise<Notification[]>;
+  login: (tok: string) => void;
+  fetchNotification: (token: string) => Promise<Notification[]>;
   fetchProductRating: (productId: number) =>Promise<number>;
 }
 
@@ -62,7 +62,7 @@ export const AppDataProvider: React.FC<AppDataProviderProps> = ({ children }) =>
   const [user, setUser] = useState<UserDTO | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [token, setToken] = useState<string | null>(null);
+  var [token, setToken] = useState<string | null>(null);
   const [cartElements,setCartElements] = useState<CartElement[]>([]);
   const [favProducts, setFavProducts] = useState<ProductInfos[]>([]);
   const [NewProducts, setNewProducts] = useState<ProductInfos[]>([]);
@@ -260,7 +260,7 @@ export const AppDataProvider: React.FC<AppDataProviderProps> = ({ children }) =>
       }
   }
 
-  const fetchNotification = async () => {
+  const fetchNotification = async (token: string) => {
     if(token!=null)
       try {
           const response = await axios.get(`${Config.API_BASE_URL}/api/adMin/notification/mynotif`, {

@@ -91,4 +91,5 @@ export interface UserInfos {
   wishlist: Product[],
   shoppingList: CartElement[],
   myOrders: Order[],
+  loginResponse: {message: string,token: string}
 }

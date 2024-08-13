@@ -653,7 +653,7 @@ export const authstyles = StyleSheet.create({
   contentContainerStyle:
   {
     flexGrow: 1,
-    height: screenHeight*0.8,
+    height: screenHeight*0.83,
   },
   register: {
     backgroundColor: Color.colorWhite,

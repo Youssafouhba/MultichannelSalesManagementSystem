@@ -12,7 +12,6 @@ import { useAppData } from '@/components/AppDataProvider';
 import { baseurl } from '@/components/config';
 import tw from 'tailwind-react-native-classnames';
 import { set } from 'lodash';
-import LogInRequiredPage from '@/components/LogInRequiredPage';
 
 const SockJS = require('sockjs-client/dist/sockjs.js');
 
@@ -29,7 +28,7 @@ interface UserChat {
 
 const Messages: React.FC = () => {
   const { state,dispatch } = useAppContext();
-  const { data,userInfos, cartElements } = useAppData();
+  const { data,userInfos, cartElements, token } = useAppData();
   const [stompClient, setStompClient] = React.useState<Client | null>(null);
   const [connected, setConnected] = React.useState<boolean>(false);
   const [messages, setMessages] = React.useState<Message[]>([]);
@@ -40,6 +39,7 @@ const Messages: React.FC = () => {
   const messageInputRef = React.useRef<TextInput>(null);
   const navigation = useRouter();
 
+  const isLoggedIn = state.JWT_TOKEN !== '' && userInfos!=undefined;
   const SERVER_URL = `http://${baseurl}:9001`;
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [showSuggestions1, setShowSuggestions1] = useState(true);
@@ -49,11 +49,11 @@ const Messages: React.FC = () => {
     "Can I help you with a specific issue ?",
   ]);
 
-  const apiGetHandler = async (url: string) => {
-    if (state.JWT_TOKEN) {
-      console.log("Token present: " + state.JWT_TOKEN);
+  const apiGetHandler = async (url: string, token: string) => {
+    if (token) {
+      console.log("Token present: " + token);
       try {
-        const response = await axios.get(`${SERVER_URL}${url}`, { headers: { "Authorization": `Bearer ${state.JWT_TOKEN}` } });
+        const response = await axios.get(`${SERVER_URL}${url}`, { headers: { "Authorization": `Bearer ${token}` } });
         console.log(response.data);
         return response;
       } catch (error: any) {
@@ -64,39 +64,44 @@ const Messages: React.FC = () => {
   }
 
   useEffect(() => {
-    if(state.isLoggedIn){
-      const decodedToken = jwtDecode<{ email: string }>(state.JWT_TOKEN);
-      console.log("email is " + decodedToken.email);
-      setUsername(decodedToken.email);
-    }
+    const checkToken = async () => {
+      const storedToken = await AsyncStorage.getItem('jwtToken');
+      if (storedToken) {
+        const decodedToken = jwtDecode<{ email: string }>(storedToken);
+        console.log("email is " + decodedToken.email);
+        setUsername(decodedToken.email);
+      }
+    };
+   
     setTimeout(() => {
       setShowSuggestions1(false)
     }, 2000);
     setShowSuggestions1(true)
-  }, [state.isLoggedIn]);
+    checkToken();
+  }, []);
 
   useEffect(() => {
-    console.log(`token: ${state.JWT_TOKEN}`)
+    console.log(`token: ${token}`)
     console.log(`username: ${username}`)
-    if (state.isLoggedIn) {
+    if (isLoggedIn) {
       const client = new Client({
         debug: (str) => { console.log(str) },
         webSocketFactory: () => new SockJS(`${SERVER_URL}/secured/chat`),
-        connectHeaders: { Authorization: `Bearer ${state.JWT_TOKEN}` },
+        connectHeaders: { Authorization: `Bearer ${token}` },
         onConnect: () => onConnected(client),
         onStompError: onError
       });
 
       client.activate();
       setStompClient(client);
-      findMyChat(state.JWT_TOKEN)
+      findMyChat(token)
       return () => {
         if (client) {
           client.deactivate();
         }
       };
     }
-  }, [state.JWT_TOKEN]);
+  }, [token]);
 
   useEffect(() => {
     if (chatAreaRef.current) {
@@ -108,7 +113,7 @@ const Messages: React.FC = () => {
   const onConnected = (client: Client) => {
     setConnected(true);
     if (username) {
-      client.subscribe(`/user/${username}/queue/messages`, onMessageReceived, { Authorization: `Bearer ${state.JWT_TOKEN}` });
+      client.subscribe(`/user/${username}/queue/messages`, onMessageReceived, { Authorization: `Bearer ${token}` });
     }
   };
 
@@ -136,7 +141,7 @@ const Messages: React.FC = () => {
         content: messageContent,
       };
       console.log(joinMessage);
-      stompClient.publish({ destination: "/app/client/message", body: JSON.stringify(joinMessage), headers: { "Authorization": `Bearer ${state.JWT_TOKEN}` } });
+      stompClient.publish({ destination: "/app/client/message", body: JSON.stringify(joinMessage), headers: { "Authorization": `Bearer ${token}` } });
       setMessages(prevMessages => [...prevMessages, joinMessage]);
       setInputValue('');
     }
@@ -145,14 +150,14 @@ const Messages: React.FC = () => {
   const findMyChat = async (token: string) => {
     if (token) {
       try {
-        const userChatResponse = await apiGetHandler(`/getmyclientConversations`);
+        const userChatResponse = await apiGetHandler(`/getmyclientConversations`, token);
         console.log(userChatResponse);
         if (userChatResponse && userChatResponse.data) {
           const userChat: UserChat[] = userChatResponse.data;
           if (userChat.length > 0 && username) {
             const selectedUser = userChat[0].participants.find(part => part !== username);
             if (selectedUser) {
-              await fetchAndDisplayUserChat({ convid: userChat[0].id, userid: selectedUser });
+              await fetchAndDisplayUserChat({ convid: userChat[0].id, userid: selectedUser }, token);
             }
           }
         }
@@ -164,10 +169,13 @@ const Messages: React.FC = () => {
     }
   };
 
+  const handleLogin = () => {
+    navigation.navigate("LoginPage?id=Messages");
+  };
 
-  const fetchAndDisplayUserChat = async (selectedUser: { convid: string, userid: string }) => {
+  const fetchAndDisplayUserChat = async (selectedUser: { convid: string, userid: string }, token: string) => {
     try {
-      const userChatResponse = await apiGetHandler(`/getConversation/${selectedUser.convid}`);
+      const userChatResponse = await apiGetHandler(`/getConversation/${selectedUser.convid}`, token);
 
       if (userChatResponse && userChatResponse.data) {
         const userChat: Message[] = userChatResponse.data;
@@ -194,12 +202,18 @@ const Messages: React.FC = () => {
     setShowSuggestions(!showSuggestions);
   };
 
-  if(!state.isLoggedIn)
-    return(
-        <View style={styles.container}>
-            <LogInRequiredPage message='Please log in to view your Messages' page='Messages'/>
+  if (!isLoggedIn) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.loginContainer}>
+          <Text style={styles.loginText}>Please log in to view your Messages</Text>
+          <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
+            <Text style={styles.loginButtonText}>Log In</Text>
+          </TouchableOpacity>
         </View>
-      )
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>

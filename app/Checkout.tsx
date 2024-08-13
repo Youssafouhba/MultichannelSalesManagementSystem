@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { Pressable, StyleSheet, Text, View, TextInput, TouchableOpacity, SafeAreaView, FlatList } from "react-native";
-import { Image } from "expo-image";
+import {Image, Pressable, StyleSheet, Text, View, TextInput, TouchableOpacity, SafeAreaView, FlatList } from "react-native";
 import DateTimePickerModal from "react-native-modal-datetime-picker";
 import { CheckBox } from "@rneui/themed";
 import VariantNeutralStateHover from "../components/VariantNeutralStateHover";
@@ -12,7 +11,7 @@ import { Card, CartElement, OrderItem, Product, ProductInfos } from "@/constants
 import { Alert } from "react-native";
 import axios from "axios";
 import { Order } from "@/constants/Classes";
-import { router, useLocalSearchParams } from "expo-router";
+import { router, useLocalSearchParams, useNavigation } from "expo-router";
 import { jwtDecode } from "jwt-decode";
 import CustomAlert from "@/components/CustomAlert";
 import { useFocusEffect } from "@react-navigation/native";
@@ -22,33 +21,39 @@ import { useAppData } from "@/components/AppDataProvider";
 import { useRoute } from '@react-navigation/native';
 import config from "@/components/config";
 
+
+interface RouteParams {
+  payload: Card; // Replace 'any' with the actual type of payload
+}
+
 const Checkout = () => {
   const route = useRoute();
-  const { cartData } = route.params;
+  const navigation = useNavigation()
+  const {state, dispatch } = useAppContext();
+ // const cartData  = (route.params as RouteParams)?.payload;
   const [date, setDate] = useState(new Date());
   const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
   const [CardChecked, setCardChecked] = useState(false);
   const [CashChecked, setCashChecked] = useState(false);
-  const [adresse,setAdresse] = useState<string>('')
-  const {state, dispatch } = useAppContext();
-  const {ProductsInfos,fetchOrders,fetchdt,error,token} = useAppData();
+  const [adresse,setAdresse] = useState<string>(state.order.adresse || '')
+
+  const {ProductsInfos,fetchOrders,fetchdt,error} = useAppData();
   const [sumCheckout, setSumCheckout] = useState(0);
   const [isRatingModalVisible,setisRatingModalVisible] = useState<boolean>(false)
   const [alertVisible, setAlertVisible] = useState(false);
   const [orderedProducts, setOrderedProducts] = useState([]);
   var cartItems = state.cartItems || {};
-  var isLoggedIn = state.JWT_TOKEN !=='';
 
-  const apiHandler = async (url, payload, token) => {
+  const apiHandler = async (url: string, payload: any,) => {
     try {
       const response = await axios.post(`${config.API_BASE_URL}${url}`, payload, {
         headers: {
-          Authorization: `Bearer ${token}`
+          Authorization: `Bearer ${state.JWT_TOKEN}`
         }
       });
      // console.log(response.data);
       return response;
-    } catch (error) {
+    } catch (error: any) {
       console.log(error.response.data);
       return error.response;
     }
@@ -114,8 +119,9 @@ const Checkout = () => {
 
   const handleDismiss = async () => {
     setAlertVisible(false);
-    await fetchOrders()
-    router.navigate("/Orders?id=c")
+    dispatch({type: 'Set_previouspage',payload: "Cart"})
+    dispatch({type: 'Set_isRated',payload: true})
+    router.navigate(`Orders` as never)
   };
 
   const submitOrder = async () => {
@@ -132,14 +138,9 @@ const Checkout = () => {
       return sum + (productinf ? productinf.product.price * item.quantity : 0);
     }, 0);
 
-    
-
-
-
-
     console.log("order is "+order.totalAmount)
     try {
-      const response = await apiHandler(`/Order/${jwtDecode(token).userid}`,order,token).then(
+      const response = await apiHandler(`/Order/${jwtDecode(state.JWT_TOKEN).userid}`,order).then(
         res => {
           setAlertVisible(true);
           setOrderedProducts(cartItems)

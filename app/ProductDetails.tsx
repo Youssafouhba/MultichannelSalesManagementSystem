@@ -20,6 +20,7 @@ import { router, useNavigation } from "expo-router";
 import config from '@/components/config';
 import { useRoute } from '@react-navigation/native';
 import { Item } from 'react-native-paper/lib/typescript/components/Drawer/Drawer';
+import LoginRequiredAlert from '@/components/LoginRequiredAlert';
 
 interface RouteParams {
     payload: ProductInfos; // Replace 'any' with the actual type of payload
@@ -36,19 +37,18 @@ export default function ProductDetails() {
     const [quantity, setQuantity] = useState<number>(1)
     const navigation = useNavigation<any>();
     const [addedItem, setAddedItem] = useState({ name: '', quantity: 0 });
-    var isLoggedIn = state.JWT_TOKEN !=='';
     const [isFavorit,setIsfavorit] = useState<boolean>(false)
     
-    const { userInfos,ProductsInfos,data,token} = useAppData();
+    const { userInfos,ProductsInfos,data} = useAppData();
     const {product,comments,raiting} = (route.params as RouteParams)?.payload;
     useFocusEffect(
         useCallback(() => {
             const fetchProduct = async () => {
-                console.log(userInfos.wishlist.map(p=>p.id))
-                setIsfavorit(userInfos.wishlist.filter(p=>p.id==product.id).length > 0)
+                console.log(state.userInfos.wishlist.map((p: Product)=>p.id))
+                setIsfavorit(state.userInfos.wishlist.filter((p: Product)=>p.id==product.id).length > 0)
                 setImageUrl(product.imageUrls[0].url);
             }
-            fetchProduct();
+            if(state.isLoggedIn)fetchProduct();
         }, [product])
     );
 
@@ -62,11 +62,13 @@ export default function ProductDetails() {
         const payload = {
             ...{product,comments,raiting},
           };
+          
+          dispatch({type: 'Set_previouspage',payload: "ProductDetails"})
           navigation.navigate(`LoginPage`,{payload})
     };
     
     const toggleFavorite = async () => {
-        if (token==undefined) {
+        if (!state.isLoggedIn) {
             setLogInAlertVisible(true)
             return;
         }
@@ -77,13 +79,13 @@ export default function ProductDetails() {
                 : `${config.API_BASE_URL}/api/client/addToFavorite/${product.id}`;
             
             const response =  isFavorit? await axios.delete(url,{
-                headers: { Authorization: `Bearer ${token}` },
+                headers: { Authorization: `Bearer ${state.JWT_TOKEN}` },
             }): await axios.post(url, {}, {
-                headers: { Authorization: `Bearer ${token}` },
+                headers: { Authorization: `Bearer ${state.JWT_TOKEN}` },
             });
 
             if (response.status === 200) {
-                isFavorit?userInfos.wishlist = userInfos.wishlist.filter(p=>p.id!=product.id):userInfos.wishlist.push(product)
+                isFavorit?state.userInfos.wishlist = state.userInfos.wishlist.filter((p: Product)=>p.id!=product.id):state.userInfos.wishlist.push(product)
                setIsfavorit(!isFavorit)
 
                 console.log(isFavorit ? "Removed from favorites" : "Added to favorites");
@@ -158,7 +160,7 @@ export default function ProductDetails() {
                     <Text style={[tw`text-white font-semibold`]}>Add to Cart</Text>
                 </TouchableOpacity>
             </View>
-            <CommentSystem commentsItens={comments} Id={product.id} />
+            <CommentSystem commentsItens={comments} product={{product,comments,raiting}} />
             {/**  */}
         </View>
     );
@@ -173,12 +175,11 @@ export default function ProductDetails() {
                         quantity={addedItem.quantity}
                         onDismiss={() => setAlertVisible(false)}
                     />
-                    <ModernCustomAlert
+                    <LoginRequiredAlert
                         visible={LogInAlertVisible}
-                        title="Login Required"
-                        message="You need to be logged in to add/remove favorites."
-                        onCancel={handleCancel}
-                        onConfirm={handleConfirm}
+                        message="You need to be logged in to add/remove favorites.."
+                        onLogin={() => {handleConfirm()}}
+                        onCancel={() => setLogInAlertVisible(false)}
                     />
                     {renderProduct()}
                     {renderDetails()}

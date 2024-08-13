@@ -3,7 +3,7 @@ import { useAppData } from '@/components/AppDataProvider';
 import config from '@/components/config';
 import { API_BASE_URL } from '@/constants/GlobalsVeriables';
 import { FontSize, Color } from '@/GlobalStyles';
-
+import { Client } from '@stomp/stompjs';
 import axios from 'axios';
 import { useRouter } from 'expo-router';
 import { jwtDecode } from 'jwt-decode';
@@ -11,7 +11,8 @@ import React, { useEffect, useRef, useState } from 'react';
 import { FlatList, StyleSheet, Image,Text, TouchableOpacity, View } from 'react-native';
 import { Notification } from '@/constants/Classes';
 import tw from 'tailwind-react-native-classnames';
-import { Client } from '@stomp/stompjs';
+import LogInRequiredPage from '@/components/LogInRequiredPage';
+
 var SockJS = require('sockjs-client/dist/sockjs.js');
 
 
@@ -27,11 +28,11 @@ export default function Notifications() {
     const [stompClient, setStompClient] = useState<Client | null>(null);
     const chatAreaRef = useRef<FlatList<Notification>>(null);
     var cartItems = state.cartItems || {};
-    var isLoggedIn = state.JWT_TOKEN !=='';
+
     var token = state.JWT_TOKEN;
 
     const readonescount = async ()=>{
-        const data = await fetchNotification();
+        const data = await fetchNotification(token);
         setNotifications(data);
         const notifscount = data.filter((item: Notification) => !item.isRead).length;
         state.notificationsCount = notifscount;
@@ -49,7 +50,7 @@ export default function Notifications() {
             }
         };
     
-        if (isLoggedIn) {
+        if (state.isLoggedIn) {
             getNotifications();
         }
 
@@ -76,11 +77,7 @@ export default function Notifications() {
                 }
             };
         }
-    }, [isLoggedIn,token]);
-
-    const handleLogin = () => {
-        navigation.navigate("LoginPage?id=Notifications");
-      };
+    }, [state.isLoggedIn,token]);
 
 
     const onConnected = (client: Client) => {
@@ -139,17 +136,13 @@ export default function Notifications() {
         </TouchableOpacity>
     );
 
-    if(!isLoggedIn)
-        return(
+    if (!state.isLoggedIn) {
+        return (
             <View style={styles.container}>
-                <View style={styles.loginContainer}>
-                    <Text style={styles.loginText}>Please log in to view your Notifications</Text>
-                    <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
-                    <Text style={styles.loginButtonText}>Log In</Text>
-                    </TouchableOpacity>
-                </View>
+                <LogInRequiredPage message='Please log in to view your Notifications' page='Notifications' />
             </View>
-          )
+        );
+    }
 
     return (
         <View style={styles.container}>

@@ -14,7 +14,7 @@ import { Ionicons } from '@expo/vector-icons';
 import config from '@/components/config';
 
 const Wishlist: React.FC = () => {
-    const { state } = useAppContext();
+    const { state,dispatch } = useAppContext();
     const { userInfos,token,data, fetchFavorites,error} = useAppData();
     const isLoggedIn = !!state.JWT_TOKEN;
 
@@ -24,11 +24,17 @@ const Wishlist: React.FC = () => {
 
             const url = `${config.API_BASE_URL}/api/client/deleteFromFavorite/${id}`;
             const response = await axios.delete(url,{
-                headers: { Authorization: `Bearer ${token}` },
+                headers: { Authorization: `Bearer ${state.JWT_TOKEN}` },
             })
-
             if (response.status === 200) {
-                userInfos.wishlist = userInfos.wishlist.filter(p=>p.id!=id)
+                const payload = {
+                    user: state.userInfos.user,
+                    wishlist: state.userInfos.wishlist.filtre((p: Product)=>p.id!=id),
+                    shoppingList: state.userInfos.shoppingList,
+                    myOrders: state.userInfos.myOrders,
+                    loginResponse: state.userInfos.loginResponse,
+                }
+                dispatch({type: 'Set_userInfos_WishList',payload: payload})
                 await fetchFavorites();
             }
         } catch (error) {
@@ -68,7 +74,6 @@ const Wishlist: React.FC = () => {
                 </Pressable>
                 
         </View>
-
         </View>
     ), []);
     
@@ -77,11 +82,11 @@ const Wishlist: React.FC = () => {
 
     return (
         <View style={styles.container}>
-            {isLoggedIn ?
-            (userInfos.wishlist.length  > 0? 
+            {state.isLoggedIn ?
+            (state.userInfos.wishlist.length  > 0? 
                 <FlatList
                     renderItem={renderItem}
-                    data={userInfos.wishlist}
+                    data={state.userInfos.wishlist}
                     keyExtractor={keyExtractor}
                     contentContainerStyle={styles.listContent}
                 />:

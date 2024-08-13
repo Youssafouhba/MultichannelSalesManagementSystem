@@ -1,35 +1,22 @@
 import * as React from "react";
 import { StyleSheet, Text, View, TouchableOpacity } from "react-native";
-import { useRouter, useFocusEffect } from "expo-router";
-import { useAppContext } from "@/components/AppContext";
-import { useCallback } from "react";
-import axios from "axios";
 import Infos from "@/components/Infos";
 import { Color, FontSize } from "@/GlobalStyles";
 import LogInRequiredPage from "@/components/LogInRequiredPage";
-import { UserDTO } from "@/constants/Classes";
-import { useAppData } from "@/components/AppDataProvider";
-import { tokens } from "react-native-paper/lib/typescript/styles/themes/v3/tokens";
-
+import { useAppContext } from "@/components/AppContext";
 
 export default function Account() {
-  const { userInfos,token, deleteAccount,error } = useAppData();
-  const { state, dispatch } = useAppContext();
-  const isLoggedIn = state.JWT_TOKEN !== '';
+  const { state} = useAppContext();
 
-  React.useEffect(()=>{
-
-  },[])
-  
   
   return (
     <View style={styles.profile}>
-      {isLoggedIn ? (
+      {state.isLoggedIn? (
         <Infos
-          fullName={userInfos.user?.fullName}
-          email={userInfos.user?.email}
-          phoneNumber={userInfos.user?.phoneNumber}
-          dateOfCreation={userInfos.user.dateOfCreation}
+          fullName={state.userInfos.user?.fullName}
+          email={state.userInfos.user?.email}
+          phoneNumber={state.userInfos.user?.phoneNumber}
+          dateOfCreation={state.userInfos.user.dateOfCreation}
         />
       ) : (
         <LogInRequiredPage message='Please log in to view your profile' page='Account'/>

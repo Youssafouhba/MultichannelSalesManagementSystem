@@ -34,15 +34,15 @@ function FilterMenu({ isVisible, onClose }) {
 
 function CustomHeader({title}) {
   const { id } = useGlobalSearchParams();
-  const {pres} = useGlobalSearchParams()
-  const navigation = useNavigation();
+  const {state, dispatch } = useAppContext();
+  const {pres} = useLocalSearchParams()
+  const navigation = useNavigation<any>();
   const goBack = () => {
-
-    pres === "LoginPage" || "Orders" ? router.push("/") : navigation.dispatch(StackActions.pop());
+    navigation.navigate(state.previouspage as never);
   };
   return (
     <View style={[styles.header, { backgroundColor: Color.colorWhite }]}>
-        <TouchableOpacity onPress={() =>{id=='Cart'? router.push(`${id}`): goBack()}} style={styles.backButton}>
+        <TouchableOpacity onPress={() =>{goBack()}} style={styles.backButton}>
           <Ionicons name='chevron-back-outline' size={20} color="black" style={{ overflow: 'hidden' }} />
         </TouchableOpacity>
       <Text style={[tw`mx-2 font-medium`,{color: Color.colorsBlue}]}>{title}</Text>
@@ -53,10 +53,11 @@ function CustomHeader({title}) {
 function CustomMainHeader({ onMenuPress}) {
   const pathname = usePathname();
   const navigation = useNavigation();
+  const {state, dispatch } = useAppContext();
   const { id ,pres} = useGlobalSearchParams();
   const {filter} = useLocalSearchParams()
   const goBack = () => {
-    router.navigate("/Filter");
+    navigation.navigate(state.previouspage as never);
   };
 
   return (

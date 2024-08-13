@@ -6,23 +6,22 @@ import { Color } from "@/GlobalStyles";
 import StarRating from "@/components/StarRating";
 import tw from "tailwind-react-native-classnames";
 import { StyleSheet } from "react-native";
-import { router } from "expo-router";
+import { router, useRouter } from "expo-router";
 import axios from "axios";
 import { jwtDecode } from "jwt-decode";
 import ModernCustomAlert from "@/components/ModernCustomAlert";
 import { useAppData } from "@/components/AppDataProvider";
 import config from "@/components/config";
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 
 const Cart = () => {
   const { state, dispatch } = useAppContext();
-  const { ProductsInfos,data,cartElements,error,token} = useAppData();
+  const { ProductsInfos,data,cartElements,error} = useAppData();
   const [sumCheckout, setSumCheckout] = useState(0);
   const [first, setFirst] = useState(false);
   const [LogInAlertVisible, setLogInAlertVisible] = useState(false);
   var cartItems = state.cartItems || {};
-  var isLoggedIn = state.JWT_TOKEN !=='';
-  const navigation = useNavigation();
+  const navigation = useNavigation<any>();
 
 
   useEffect(() => {
@@ -127,22 +126,20 @@ const Cart = () => {
   );
 
 
-  const apiHandler = async (url, payload, token) => {
+  const apiHandler = async (url: string, payload: any) => {
     try {
       const response = await axios.post(`${config.API_BASE_URL}${url}`, payload, {
         headers: {
-          Authorization: `Bearer ${token}`
+          Authorization: `Bearer ${state.JWT_TOKEN}`
         }
       });
       return response;
-    } catch (error) {
+    } catch (error: any) {
       console.log(error.response.data);
       return error.response;
     }
   }
   const submitCard =  async () => {
-
-  
     try {
       const total = Object.entries(cartItems).reduce((sum, [productId, item]) => {
         const productinf = ProductsInfos.find(p => p.product.id === productId);
@@ -165,10 +162,10 @@ const Cart = () => {
           product: productinf.product
         });
       });
-      const response = await apiHandler(`/api/Cart/${jwtDecode(token).userid}`, card, token);
+      const response = await apiHandler(`/api/Cart/${jwtDecode(state.JWT_TOKEN).userid}`, card);
       if (response.status === 200) {
-        // Naviguer vers la page de checkout en passant les données du panier
-        navigation.navigate('Checkout', { cartData: card });
+        dispatch({type: 'Set_previouspage',payload: "Cart"})
+        navigation.navigate('Checkout');
       } else {
         Alert.alert('Error', 'Failed to submit the cart. Please try again.');
       }
@@ -179,7 +176,7 @@ const Cart = () => {
   };
 
   const handelcheckout = () => {
-    if (isLoggedIn) {
+    if (state.isLoggedIn) {
       submitCard();
     } else {
       setLogInAlertVisible(true);
@@ -189,10 +186,14 @@ const Cart = () => {
   const handleCancel = () => {
     setLogInAlertVisible(false);
   };
+  const goTo = (pageToGo: string,actual: string) => {
+    navigation.navigate(pageToGo as never)
+    dispatch({type: 'Set_previouspage',payload: actual})
+  }
 
   const handleConfirm = () => {
       setLogInAlertVisible(false);
-      router.push(`/LoginPage?id=Cart`);
+      goTo(`LoginPage`,`Cart`);
   };
   const cartProducts = useMemo(() => {
     return ProductsInfos.filter((productinfos: ProductInfos) => cartItems[productinfos.product.id]?.quantity > 0);

@@ -13,20 +13,21 @@ import {
   Dimensions,
   SafeAreaView
 } from "react-native";
-import { router, useLocalSearchParams, useNavigation, usePathname, useRouter } from 'expo-router';
+import { router, useGlobalSearchParams, useLocalSearchParams, useNavigation, usePathname, useRouter } from 'expo-router';
 import { useAppContext } from '@/components/AppContext';
 import { Color, FontSize, Padding, Border } from "../GlobalStyles";
 import { useAppData } from "@/components/AppDataProvider";
 import LoginError from "@/components/LoginError";
 import axios from "axios";
 import config from "@/components/config";
-import { ProductInfos } from "@/constants/Classes";
+import { ProductInfos, UserInfos } from "@/constants/Classes";
 import { useRoute } from "@react-navigation/native";
-
+import WebSocketService from "@/components/WebsocketService";
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 interface RouteParams {
   payload: ProductInfos; // Replace 'any' with the actual type of payload
 }
+
 const LoginPage = () => {
   const { id, idp } = useLocalSearchParams();
   const { login, userInfos, cartElements, token } = useAppData();
@@ -38,15 +39,29 @@ const LoginPage = () => {
   const [errorVisible, setErrorVisible] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const pathname = usePathname();
+  const {pres} = useGlobalSearchParams()
   const route = useRoute()
-  
-  const isValidEmail = (email) => {
+  const [webSocketService, setWebSocketService] = React.useState<WebSocketService | null>(null);
+  const goTo = () => {
+    const payload = {
+      ...(route.params as RouteParams)?.payload,
+    };
+    
+    dispatch({type: 'Set_previouspage',payload: "index"})
+    if(state.previouspage=="ProductDetails"){
+      navigation.navigate(state.previouspage,{payload})
+    }else{
+      navigation.navigate(state.previouspage)
+    }
+  }
+  const isValidEmail = (email: string) => {
     const emailRegex = /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,})+$/;
     return emailRegex.test(email);
   };
 
   const handleForgetPassword = () => {
-    navigation.push('/ForgetPasswordPage');
+    dispatch({type: 'Set_previouspage',payload: "LoginPage"})
+    navigation.navigate('ForgetPasswordPage');
   };
 
   const navigateAfterLogin = () => {
@@ -79,6 +94,7 @@ const LoginPage = () => {
 
 
   const handleLogin = async () => {
+   
     if (!isValidEmail(email)) {
       setErrorMessage("Invalid email format");
       setErrorVisible(true);
@@ -87,16 +103,24 @@ const LoginPage = () => {
 
     try {
       const payload = { email, password };
-      const response = await axios.post(`${config.API_BASE_URL}/api/auth/singin`, payload);
-      const { message, token } = response.data;
-      await login(token);
-      if (token) {
-        dispatch({ type: 'SET_JWT_TOKEN', payload: token });
-        navigateAfterLogin();
+      const response = await axios.post<UserInfos>(`${config.API_BASE_URL}/api/auth/singin`, payload);
+      if (response.data) {
+        dispatch({ type: 'Set_userInfos', payload: response.data });
+        /*const service = new WebSocketService(config.API_BASE_URL);
+        setWebSocketService(service);
+        
+        webSocketService?.connect(response.data.loginResponse.token);
+        webSocketService?.setOnMessageCallback((message) => {
+          // Handle incoming notifications
+          // For example, update the notifications count
+          console.log("ok")
+          console.log(webSocketService?.notificationsCount)
+        });*/
+        goTo();
       } else {
         throw new Error('No token received from server');
       }
-    } catch (error) {
+    } catch (error: any) {
       let errorMessage = 'An unexpected error occurred';
       
       if (error.response) {
@@ -113,11 +137,11 @@ const LoginPage = () => {
   const emailRef = useRef(null);
   const passwordRef = useRef(null);
 
-  const focusNextField = (nextField) => {
+  const focusNextField = (nextField: any) => {
     nextField.current.focus();
   };
 
-  const handleSubmitEditing = (field) => {
+  const handleSubmitEditing = (field: string) => {
     if (field === 'email') {
       focusNextField(passwordRef);
     } else if (field === 'password') {
@@ -209,7 +233,7 @@ const LoginPage = () => {
                   <Pressable onPress={handleForgetPassword}>
                     <Text>Forgotten password?</Text>
                   </Pressable>
-                  <Pressable onPress={() => navigation.push('/RegisterPage')}>
+                  <Pressable onPress={() =>{dispatch({type: 'Set_previouspage',payload: "LoginPage"}),navigation.navigate('RegisterPage')}}>
                     <Text style={styles.registerText}>Register</Text>
                   </Pressable>
                 </View>

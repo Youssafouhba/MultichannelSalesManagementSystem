@@ -30,7 +30,7 @@ type IconConfig = {
 const STATUS_ICON_CONFIG: Record<OrderStatus, IconConfig> = {
   delivered: { name: 'check-circle', color: 'green', Component: Icon },
   "picked up": { name: 'cube-outline', color: '#0077b6', Component: TabBarIcon },
-  Pending: { name: 'schedule', color: 'orange', Component: Icon },
+  pending: { name: 'schedule', color: 'orange', Component: Icon },
   "cancelled":{ name: 'schedule', color: 'orange', Component: Icon }
 };
 
@@ -46,13 +46,13 @@ const OrderDateDisplay: React.FC<{ orderDate: string | Date }> = ({ orderDate })
 
   let displayText;
   if (daysDifference === 0) {
-    displayText = `${format(orderDateTime, 'yy-MM-dd')} Today`;
+    displayText = `${format(orderDateTime, 'yyyy-MM-dd')} Today`;
   } else if (daysDifference <= 7) {
     displayText = `${daysDifference} Days`;
   } else if (daysDifference <= 15) {
-    displayText = `${format(orderDateTime, 'yy-MM-dd')} Last Week`;
+    displayText = `${format(orderDateTime, 'yyyy-MM-dd')} Last Week`;
   } else {
-    displayText = format(orderDateTime, 'yy-MM-dd');
+    displayText = format(orderDateTime, 'yyyy-MM-dd');
   }
 
   return <Text>{displayText}</Text>;
@@ -82,12 +82,10 @@ const Orders: React.FC = () => {
   const [n,setN] = useState<boolean>(false)
   const {id} = useLocalSearchParams()
   var cartItems = state.cartItems || {};
-  var isLoggedIn = state.JWT_TOKEN !=='';
-  var token = state.JWT_TOKEN;
 
   useFocusEffect(
     useCallback(()=>{
-      if(id=="c"){
+      if(state.isRated){
         setisRatingModalVisible(true)
         setOrderedProducts(cartItems)
         dispatch({ type: 'CLEAN_CART'});
@@ -95,49 +93,46 @@ const Orders: React.FC = () => {
       return () => {
  
       };
-  },[id,navigation]))
+  },[navigation]))
 
   React.useEffect(()=>{
     const fetchorders = async () =>{
-      userInfos.myOrders = await fetchOrders()
-      setOrders(userInfos.myOrders)
+      setOrders(state.userInfos.myOrders)
     }
-    if(isLoggedIn)
+    if(state.isLoggedIn)
       fetchorders()
-  },[isLoggedIn])
+    if (state.JWT_TOKEN) {
+      const client = new Client({
+          debug: (str) => { console.log(str); },
+          brokerURL: `${config.API_BASE_URL}/notifications`,
+          connectHeaders: { Authorization: `Bearer ${state.JWT_TOKEN}` },
+          appendMissingNULLonIncoming: true,
+          onConnect: () => onConnected(client),
+          onStompError: onError
+      });
 
-  useFocusEffect(
-    useCallback(()=>{
+      client.webSocketFactory = function () {
+          return new SockJS(`${config.API_BASE_URL}/notifications`);
+      }
 
-      if (token) {
-        const client = new Client({
-            debug: (str) => { console.log(str); },
-            brokerURL: `${config.API_BASE_URL}/notifications`,
-            connectHeaders: { Authorization: `Bearer ${token}` },
-            appendMissingNULLonIncoming: true,
-            onConnect: () => onConnected(client),
-            onStompError: onError
-        });
-  
-        client.webSocketFactory = function () {
-            return new SockJS(`${state.API_BASE_URL}/notifications`);
-        }
-  
-        client.activate();
-        setStompClient(client);
-  
-        return () => {
-            if (client) {
-                client.deactivate();
-            }
-        };
-    }
-  },[isLoggedIn,token]))
+      client.activate();
+      setStompClient(client);
+
+      return () => {
+          if (client) {
+              client.deactivate();
+          }
+      };
+  }
+  },[state.isLoggedIn])
+
+
+
 
 
   
   const onConnected = (client: Client) => {
-    client.subscribe(`/user/${jwtDecode(token).userid}/queue/orders`, onPrivateOrderReceived, { Authorization: `Bearer ${token}` });
+    client.subscribe(`/user/${jwtDecode(state.JWT_TOKEN).userid}/queue/orders`, onPrivateOrderReceived, { Authorization: `Bearer ${state.JWT_TOKEN}` });
   };
 
 const onError = (error: any) => {
@@ -180,10 +175,9 @@ const onPrivateOrderReceived = (payload: any) => {
 
 useEffect(()=>{
   if(n){
-    userInfos.myOrders = orders
+    state.userInfos.myOrders = orders
     setN(false)
   }
-  
 },[n])
 
 
@@ -225,17 +219,17 @@ useEffect(()=>{
     <View style={styles.container}>
       <RatingFeedbackModal
               visible={isRatingModalVisible}
-              onClose={() => setisRatingModalVisible(false)}
-              onSubmit={()=>setisRatingModalVisible(false)}
+              onClose={() => {setisRatingModalVisible(false),dispatch({type: 'Set_isRated',payload: false})}}
+              onSubmit={()=>{setisRatingModalVisible(false),dispatch({type: 'Set_isRated',payload: false})}}
               products={orderedProducts}
             />
-      {!isLoggedIn ?
+      {!state.isLoggedIn ?
       (
         <LogInRequiredPage message='Please log in to view your Orders' page='Orders'/>):
       (
-        userInfos.myOrders.length > 0?
+        state.userInfos.myOrders.length > 0?
       <FlatList
-        data={userInfos.myOrders}
+        data={state.userInfos.myOrders}
         renderItem={renderItem}
         keyExtractor={keyExtractor}
         contentContainerStyle={styles.listContainer}

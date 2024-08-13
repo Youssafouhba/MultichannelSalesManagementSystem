@@ -1,21 +1,14 @@
 import React, { useCallback, useMemo, useState } from 'react';
-import { View, Text, Pressable, FlatList } from 'react-native';
-import { useNavigation ,useFocusEffect} from '@react-navigation/native';
-import { Image } from 'expo-image';
+import { Image,View, Text, Pressable, FlatList } from 'react-native';
+import {useNavigation ,useFocusEffect} from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { StatusBar } from 'expo-status-bar';
 import tw from 'tailwind-react-native-classnames';
-import { router, useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useAppContext } from '@/components/AppContext';
-import { Card, Order, OrderItem } from '@/constants/Classes';
-import axios from 'axios';
-import { jwtDecode } from 'jwt-decode';
-import CustomAlert from '@/components/CustomAlert';
-
+import { Order, OrderItem, Product, ProductInfos } from '@/constants/Classes';
+import { OrderStatus } from '@/constants/Classes';
 import ModernCustomAlert from '@/components/ModernCustomAlert';
 import { useAppData } from '@/components/AppDataProvider';
-
-type OrderStatus = 'Pending' | 'Picked up' | 'Delivered';
 
 
 
@@ -51,35 +44,45 @@ const OrderStatusBadge = ({ status }: { status: OrderStatus }) => {
 };
 
 export default function OrderDetails() {
-  const navigation = useNavigation();
+  const navigation = useRouter();
+  const { ProductsInfos} = useAppData()
+  const route = useNavigation<any>()
   const { state,dispatch } = useAppContext();
   const [alertVisible, setAlertVisible] = useState(false);
   const [order, setOrder] = useState<Order | null>(null);
-  const { userInfos,token,data, fetchFavorites,error} = useAppData();
   const { id } = useLocalSearchParams();
-  const offers = state.offers || [];
 
   useFocusEffect(
     useCallback(() => {
       const fetchOrder = async () => {
-     
-        const foundOrder =userInfos.myOrders.find((item) => item.id == id);
+        const foundOrder =state.userInfos.myOrders.find((item: Product) => item.id == id);
         setOrder(foundOrder || null);
         console.log(foundOrder)
       };
       fetchOrder();
-
       return () => {
-        // Fonction de nettoyage
+        
       };
-    }, [id, offers])
+    }, [id,state.userInfos.myOrders ])
   );
  
+  const goTo = (pageToGo: string) => {
+    navigation.navigate(pageToGo as never)
+    dispatch({type: 'Set_previouspage',payload: "OrderDetails"})
+  }
+
+  const gotodetails = (itemId: string) => {    
+    const payload = {
+      ...ProductsInfos.find((prodinfos: ProductInfos)=>prodinfos.product.id== itemId),
+    };
+    dispatch({type: 'Set_previouspage',payload: "OrderDetails"})
+    route.navigate(`ProductDetails`,{payload})
+  }
 
   const renderItem = ({ item }: { item: OrderItem }) => (
     <OrderItemComponent 
       item={item} 
-      onPress={() => router.navigate(`/ProductDetails?id=${item.product.id}`)}
+      onPress={() =>gotodetails(item.product.id)}
     />
   );
 
@@ -94,7 +97,7 @@ export default function OrderDetails() {
         const quantity = item.quantity
         dispatch({ type: 'ADD_TO_CART', payload: { ...item.product, quantity } });
       })
-      router.push("/Checkout?id=r")
+      goTo("Cart")
   };
 
   const handleReorder = async () => {
@@ -103,7 +106,8 @@ export default function OrderDetails() {
         const quantity = item.quantity
         dispatch({ type: 'ADD_TO_CART', payload: { ...item.product, quantity } });
       })
-      navigation.navigate("Cart")
+      dispatch({type: "Set_Order",payload: order})
+      goTo("Cart")
     }else{
       setAlertVisible(true)
     }
