@@ -7,7 +7,7 @@ WORKDIR /app
 # Copy the current directory contents into the container at /app
 COPY . /app
 
-Run chmod +x ./mvnw
+RUN chmod +x ./mvnw
 
 # Package the application
 RUN ./mvnw clean package
