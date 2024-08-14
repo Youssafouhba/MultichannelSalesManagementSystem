@@ -1,0 +1,49 @@
+
+spring:
+    mail:
+        host : smtp.gmail.com
+        port : 465
+        username : talkhspamer@gmail.com
+        password : mfctppldsjjkdrux
+        properties :
+            mail:
+                smtp:
+                    auth: true
+                    ssl:
+                        enable: true
+    application:
+        name: Auth-ClientSide-service
+    datasource:
+        driver-class-name: org.postgresql.Driver
+        url: jdbc:postgresql://dpg-cqn9ag08fa8c73ao2ev0-a.oregon-postgres.render.com:5432/client_usnh
+        username: alkhspamer
+        password: YjFyqzkkJnlKsvyqe4Uk56onPNuD6JLJ
+        database: client_usnh
+    jpa:
+        database-platform: org.hibernate.dialect.PostgreSQLDialect
+        hibernate:
+            ddl-auto: create
+
+security:
+    jwt :
+        secretKey : 31bR29G5KVtBdCIspV11aPM7PnaOq8js
+
+server:
+    port: 9000
+
+eureka:
+    client:
+        serviceUrl:
+            defaultZone: https://discovery-blzv.onrender.com/eureka/
+
+
+client:
+    url:  http://localhost:5173
+
+
+logging:
+    level:
+        org:
+            springframework: DEBUG
+        com:
+            wholesaled : DEBUG
