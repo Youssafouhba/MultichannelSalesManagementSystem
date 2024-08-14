@@ -18,6 +18,7 @@ import { useAppContext } from '@/components/AppContext';
 import { Color, FontSize, Padding, Border } from "../GlobalStyles";
 import { useAppData } from "@/components/AppDataProvider";
 import LoginError from "@/components/LoginError";
+import { Notification } from "@/constants/Classes";
 import axios from "axios";
 import config from "@/components/config";
 import { ProductInfos, UserInfos } from "@/constants/Classes";
@@ -41,7 +42,7 @@ const LoginPage = () => {
   const pathname = usePathname();
   const {pres} = useGlobalSearchParams()
   const route = useRoute()
-  const [webSocketService, setWebSocketService] = React.useState<WebSocketService | null>(null);
+
   const goTo = () => {
     const payload = {
       ...(route.params as RouteParams)?.payload,
@@ -64,34 +65,6 @@ const LoginPage = () => {
     navigation.navigate('ForgetPasswordPage');
   };
 
-  const navigateAfterLogin = () => {
-  
-    let targetRoute = "/";
-    if ((route.params as RouteParams)?.payload) {
-      const payload = {
-        ...(route.params as RouteParams)?.payload,
-      };
-      navigation.navigate(`ProductDetails?id=${productId}&&pres=LoginPage`,{payload})
-    } else if (idp) {
-      console.log(idp)
-      targetRoute = `/${id}?p=${idp}&&pres=LoginPage`;
-    }else if(id){
-      console.log(id)
-      targetRoute = `/${id}?pres=LoginPage`;
-    }
-
-    // Check if the target route is different from the current route
-    if (targetRoute !== pathname) {
-      
-      if (targetRoute.startsWith('/')) {
-        router.push(targetRoute);
-      }
-    } else {
-      // If it's the same route, you might want to refresh the page or show a message
-      console.log("Already on the target page");
-    }
-  };
-
 
   const handleLogin = async () => {
    
@@ -106,16 +79,7 @@ const LoginPage = () => {
       const response = await axios.post<UserInfos>(`${config.API_BASE_URL}/api/auth/singin`, payload);
       if (response.data) {
         dispatch({ type: 'Set_userInfos', payload: response.data });
-        /*const service = new WebSocketService(config.API_BASE_URL);
-        setWebSocketService(service);
-        
-        webSocketService?.connect(response.data.loginResponse.token);
-        webSocketService?.setOnMessageCallback((message) => {
-          // Handle incoming notifications
-          // For example, update the notifications count
-          console.log("ok")
-          console.log(webSocketService?.notificationsCount)
-        });*/
+       
         goTo();
       } else {
         throw new Error('No token received from server');

@@ -41,33 +41,32 @@ export default function ProductDetails() {
     
     const { userInfos,ProductsInfos,data} = useAppData();
     const {product,comments,raiting} = (route.params as RouteParams)?.payload;
+
     useFocusEffect(
         useCallback(() => {
             const fetchProduct = async () => {
-                console.log(state.userInfos.wishlist.map((p: Product)=>p.id))
+                console.log("ok")
                 setIsfavorit(state.userInfos.wishlist.filter((p: Product)=>p.id==product.id).length > 0)
                 setImageUrl(product.imageUrls[0].url);
             }
-            if(state.isLoggedIn)fetchProduct();
-        }, [product])
+            if(state.isLoggedIn)
+                fetchProduct();
+        }, [state.isLoggedIn,product])
     );
 
-
-    const handleCancel = () => {
-        setLogInAlertVisible(false);
-      };
     
     const handleConfirm = () => {
         setLogInAlertVisible(false);
         const payload = {
             ...{product,comments,raiting},
           };
-          
+          dispatch({type: 'Set_Product',payload: {product,comments,raiting}})
           dispatch({type: 'Set_previouspage',payload: "ProductDetails"})
           navigation.navigate(`LoginPage`,{payload})
     };
     
     const toggleFavorite = async () => {
+        console.log(product)
         if (!state.isLoggedIn) {
             setLogInAlertVisible(true)
             return;

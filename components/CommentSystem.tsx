@@ -103,9 +103,8 @@ const CommentSystem: React.FC<{commentsItens : CommentItem[] ,product: ProductIn
     <View style={styles.container}>
       <LoginRequiredAlert
         visible={loginAlertVisible}
-        onLogin={() => {handleConfirm()}}
-        onCancel={() => setLoginAlertVisible(false)}
-      />
+        onLogin={() => { handleConfirm(); } }
+        onCancel={() => setLoginAlertVisible(false)} message={undefined}      />
       <Text style={styles.sectionTitle}>Customer Reviews</Text>
       <FlatList
         data={comments.slice(0,4)}

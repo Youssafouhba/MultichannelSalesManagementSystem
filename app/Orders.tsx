@@ -30,7 +30,7 @@ type IconConfig = {
 const STATUS_ICON_CONFIG: Record<OrderStatus, IconConfig> = {
   delivered: { name: 'check-circle', color: 'green', Component: Icon },
   "picked up": { name: 'cube-outline', color: '#0077b6', Component: TabBarIcon },
-  pending: { name: 'schedule', color: 'orange', Component: Icon },
+  Pending: { name: 'schedule', color: 'orange', Component: Icon },
   "cancelled":{ name: 'schedule', color: 'orange', Component: Icon }
 };
 
@@ -74,15 +74,9 @@ const badgeColor = (status: OrderStatus) => {
 const Orders: React.FC = () => {
   const navigation = useNavigation();
   const { state,dispatch } = useAppContext();
-  const { fetchOrders,error,userInfos} = useAppData();
-  const [orders,setOrders] = useState<Order[]>([]);
-  const [stompClient, setStompClient] = useState<Client | null>(null);
   const [isRatingModalVisible,setisRatingModalVisible] = useState<boolean>(false)
   const [orderedProducts, setOrderedProducts] = useState([]);
-  const [n,setN] = useState<boolean>(false)
-  const {id} = useLocalSearchParams()
   var cartItems = state.cartItems || {};
-
   useFocusEffect(
     useCallback(()=>{
       if(state.isRated){
@@ -94,93 +88,6 @@ const Orders: React.FC = () => {
  
       };
   },[navigation]))
-
-  React.useEffect(()=>{
-    const fetchorders = async () =>{
-      setOrders(state.userInfos.myOrders)
-    }
-    if(state.isLoggedIn)
-      fetchorders()
-    if (state.JWT_TOKEN) {
-      const client = new Client({
-          debug: (str) => { console.log(str); },
-          brokerURL: `${config.API_BASE_URL}/notifications`,
-          connectHeaders: { Authorization: `Bearer ${state.JWT_TOKEN}` },
-          appendMissingNULLonIncoming: true,
-          onConnect: () => onConnected(client),
-          onStompError: onError
-      });
-
-      client.webSocketFactory = function () {
-          return new SockJS(`${config.API_BASE_URL}/notifications`);
-      }
-
-      client.activate();
-      setStompClient(client);
-
-      return () => {
-          if (client) {
-              client.deactivate();
-          }
-      };
-  }
-  },[state.isLoggedIn])
-
-
-
-
-
-  
-  const onConnected = (client: Client) => {
-    client.subscribe(`/user/${jwtDecode(state.JWT_TOKEN).userid}/queue/orders`, onPrivateOrderReceived, { Authorization: `Bearer ${state.JWT_TOKEN}` });
-  };
-
-const onError = (error: any) => {
-    console.error('STOMP error:', error);
-};
-
-const onPrivateOrderReceived = (payload: any) => {
-  try {
-    const {object,action}= JSON.parse(payload.body);
-    console.log("received action : "+action)
-    console.log("received order : "+object.id)
-    
-    setOrders(prevOrders => {
-      setN(true)
-      switch (action) {
-        case 'update':
-          const indexToUpdate = prevOrders.findIndex(p => p.id === object.id);
-          if (indexToUpdate >= 0) {
-            const updatedProducts = [...prevOrders];
-            updatedProducts[indexToUpdate] = object;
-            return updatedProducts;
-          } else {
-            return [object, ...prevOrders];
-          }
-        case 'delete':
-          return prevOrders.filter(p => p.id !== object.id);
-        case 'add':
-          return [object, ...prevOrders];
-        default:
-          return prevOrders;
-      }
-
-    });
-
-  } catch (error) {
-    console.error('Error parsing order update:', error);
-  }
-};
-
-
-useEffect(()=>{
-  if(n){
-    state.userInfos.myOrders = orders
-    setN(false)
-  }
-},[n])
-
-
 
 
   const OrderItem: React.FC<{ order: Order; onPress: () => void }> = React.memo(({ order, onPress }) => (
@@ -221,7 +128,7 @@ useEffect(()=>{
               visible={isRatingModalVisible}
               onClose={() => {setisRatingModalVisible(false),dispatch({type: 'Set_isRated',payload: false})}}
               onSubmit={()=>{setisRatingModalVisible(false),dispatch({type: 'Set_isRated',payload: false})}}
-              products={orderedProducts}
+              products={state.orderedProducts}
             />
       {!state.isLoggedIn ?
       (

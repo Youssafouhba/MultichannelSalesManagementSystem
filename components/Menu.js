@@ -38,10 +38,12 @@ function Menu({ isVisible, onClose }) {
       dispatch({ type: 'CLEAN_Notifications'});
       dispatch({ type: 'SET_JWT_TOKEN', payload: '' });
       dispatch({ type: 'SET_isLoggedIn', payload: false });
+   
     }
     if(path=="LoginPage"){
       dispatch({type: 'Set_previouspage',payload: "LoginPage"})
     }
+    dispatch({type: 'Set_previouspage',payload: "index"})
     navigation.navigate(path);
   };
 

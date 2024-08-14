@@ -43,6 +43,7 @@ export default function FilterResult() {
     const payload = {
       ...productinfos,
     };
+    dispatch({type: 'Set_previouspage',payload: "index"})
     navigation.navigate(`ProductDetails`,{payload})
   }
 

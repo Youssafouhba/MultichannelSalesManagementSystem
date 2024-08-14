@@ -109,7 +109,9 @@ const RegisterPage = () => {
             </Text>
             <Pressable
               style={[styles.secondaryButton, { top: '1%' }]}
-              onPress={() => navigation.navigate("LoginPage")}
+              onPress={() => {
+                navigation.navigate("LoginPage")
+              }}
             >
               <Text style={[styles.here, styles.hereTypo]}>here</Text>
             </Pressable>

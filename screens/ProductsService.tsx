@@ -59,7 +59,7 @@ export default function ProductsService() {
 
     fetchData();
     
-  }, [ProductsInfos]);
+  }, [filter,ProductsInfos]);
 
 
   useEffect(() => {
@@ -84,6 +84,8 @@ export default function ProductsService() {
       ...productinfos,
     };
     navigation.navigate(`ProductDetails`,{payload})
+    const prevoius = "index" as never
+    dispatch({type: 'Set_previouspage',payload: prevoius})
   }
  
 

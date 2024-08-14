@@ -9,6 +9,7 @@ import { ScrollView } from "react-native";
 import { useAppContext } from "@/components/AppContext";
 import { Card, CartElement, OrderItem, Product, ProductInfos } from "@/constants/Classes";
 import { Alert } from "react-native";
+import { Client } from '@stomp/stompjs';
 import axios from "axios";
 import { Order } from "@/constants/Classes";
 import { router, useLocalSearchParams, useNavigation } from "expo-router";
@@ -20,6 +21,7 @@ import RatingFeedbackModal from "@/components/RatingFeedbackModal"
 import { useAppData } from "@/components/AppDataProvider";
 import { useRoute } from '@react-navigation/native';
 import config from "@/components/config";
+var SockJS = require('sockjs-client/dist/sockjs.js');
 
 
 interface RouteParams {
@@ -30,17 +32,18 @@ const Checkout = () => {
   const route = useRoute();
   const navigation = useNavigation()
   const {state, dispatch } = useAppContext();
- // const cartData  = (route.params as RouteParams)?.payload;
   const [date, setDate] = useState(new Date());
   const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
   const [CardChecked, setCardChecked] = useState(false);
   const [CashChecked, setCashChecked] = useState(false);
-  const [adresse,setAdresse] = useState<string>(state.order.adresse || '')
-
+  const [adresse,setAdresse] = useState<string>(state.order!=null?state.order.adresse:'')
+  const [stompClient, setStompClient] = useState<Client | null>(null);
   const {ProductsInfos,fetchOrders,fetchdt,error} = useAppData();
   const [sumCheckout, setSumCheckout] = useState(0);
+  const [orders,setOrders] = useState<Order[]>([]);
   const [isRatingModalVisible,setisRatingModalVisible] = useState<boolean>(false)
   const [alertVisible, setAlertVisible] = useState(false);
+  const [n,setN] = useState<boolean>(false)
   const [orderedProducts, setOrderedProducts] = useState([]);
   var cartItems = state.cartItems || {};
 
@@ -80,8 +83,6 @@ const Checkout = () => {
     setCashChecked(true);
   };
 
-
-
   const showDatePicker = () => {
     setDatePickerVisibility(true);
   };
@@ -95,9 +96,7 @@ const Checkout = () => {
     hideDatePicker();
   };
 
-  const ClearCart = () => {
-    dispatch({ type: 'CLEAN_CART'});
-  };
+
 
   const getTotalQuantity = () => {
     return state.cartItemsCount;
@@ -143,7 +142,7 @@ const Checkout = () => {
       const response = await apiHandler(`/Order/${jwtDecode(state.JWT_TOKEN).userid}`,order).then(
         res => {
           setAlertVisible(true);
-          setOrderedProducts(cartItems)
+          dispatch({type: 'Set_orderedProducts',payload: cartItems})
           setAdresse('')
           setCardChecked(false)
           setCashChecked(false)
@@ -153,6 +152,8 @@ const Checkout = () => {
     Alert.alert('Erreur', 'Échec de l\'ajout du order. Veuillez réessayer.');
   }
   }
+
+
 
   const renderCheckoutElement =({ item }: { item: ProductInfos }) => {
     const quantity = cartItems[item.product.id]?.quantity || 0;
@@ -165,7 +166,6 @@ const Checkout = () => {
       <View style={styles.productDetails}>
         <Image
           style={styles.productImage}
-          contentFit="cover"
           source={require("../assets/x2.png")}
         />
         <Text style={[tw`text-base text-sm font-medium`]}>{item.product.name}</Text>

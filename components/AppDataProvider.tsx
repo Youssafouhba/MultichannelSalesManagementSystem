@@ -62,7 +62,7 @@ export const AppDataProvider: React.FC<AppDataProviderProps> = ({ children }) =>
   const [user, setUser] = useState<UserDTO | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  var [token, setToken] = useState<string | null>(null);
+  var   [token, setToken] = useState<string | null>(null);
   const [cartElements,setCartElements] = useState<CartElement[]>([]);
   const [favProducts, setFavProducts] = useState<ProductInfos[]>([]);
   const [NewProducts, setNewProducts] = useState<ProductInfos[]>([]);
@@ -108,33 +108,52 @@ export const AppDataProvider: React.FC<AppDataProviderProps> = ({ children }) =>
     const fetchAppData = async () => {
       try {
         setIsLoading(true);
-        
-        // Fetch products
         const productsResponse = await axios.get(`${Config.API_BASE_URL}/api/Products`);
         const products = productsResponse.data;
         setProductsInfos(products);
-       // console.log(products.filter((prinf: ProductInfos)=> prinf.product.isBestSeller))
-        fetchBestAnfNew(products)
+        fetchBestAnfNew(products);
+        setData({
+          products: [],
+          ratings: Object.fromEntries(products.map((product: ProductInfos, index: number) => [parseInt(product.product.id),product.raiting])),
+        });
    
       } catch (error) {
         setError('Failed to fetch data');
-        console.error('Error fetching app data:', error);
       } finally {
         setIsLoading(false);
       }
     };
 
     const onConnected = (client: Client) => {
-      console.log('Connected to WebSocket');    
+      console.log('Connected to WebSocket');  
       client.subscribe('/updates/product', onPublicNotificationReceived); // Adjust the topic as needed
-  };
+      client.subscribe('/updates/comments', onCommentAdded); 
+    };
 
+
+    const onCommentAdded = (payload: any) => {
+      try{
+        const { object, action } = JSON.parse(payload.body);
+
+        setProductsInfos(prevProducts => {
+          const indexToUpdate = prevProducts.findIndex((pinf) => pinf.product.id === object.product.id);
+          if (indexToUpdate >= 0) {
+            const updatedProducts = [...prevProducts];
+            updatedProducts[indexToUpdate].product = object.product;
+            updatedProducts[indexToUpdate].comments = object.comments;
+            updatedProducts[indexToUpdate].raiting = object.raiting;
+            fetchBestAnfNew(updatedProducts);
+            return updatedProducts;
+          } 
+        });
+      }catch(error){
+        console.error('Error parsing Comments update:', error);
+      }
+    }
 
   const onPublicNotificationReceived = (payload: any) => {
     try {
       const { object, action } = JSON.parse(payload.body);
-  
-      console.log('Received product update:', object, 'Action:', action);
   
       setProductsInfos(prevProducts => {
         switch (action) {

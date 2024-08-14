@@ -1,127 +1,47 @@
 import { useAppContext } from '@/components/AppContext';
-import { useAppData } from '@/components/AppDataProvider';
 import config from '@/components/config';
-import { API_BASE_URL } from '@/constants/GlobalsVeriables';
 import { FontSize, Color } from '@/GlobalStyles';
-import { Client } from '@stomp/stompjs';
+import { Notification } from '@/constants/Classes';
 import axios from 'axios';
-import { useRouter } from 'expo-router';
-import { jwtDecode } from 'jwt-decode';
 import React, { useEffect, useRef, useState } from 'react';
 import { FlatList, StyleSheet, Image,Text, TouchableOpacity, View } from 'react-native';
-import { Notification } from '@/constants/Classes';
 import tw from 'tailwind-react-native-classnames';
 import LogInRequiredPage from '@/components/LogInRequiredPage';
-
-var SockJS = require('sockjs-client/dist/sockjs.js');
-
-
 
 
 
 export default function Notifications() {
     const { state, dispatch } = useAppContext();
-    const { markNotificationAsRead,fetchNotification} = useAppData();
-    const navigation = useRouter();
-    const [notifications, setNotifications] = useState<Notification[]>([]);
-    const [loading, setLoading] = useState<boolean>(true);
-    const [stompClient, setStompClient] = useState<Client | null>(null);
+    const [loading, setLoading] = useState<boolean>(false);
     const chatAreaRef = useRef<FlatList<Notification>>(null);
-    var cartItems = state.cartItems || {};
-
     var token = state.JWT_TOKEN;
 
-    const readonescount = async ()=>{
-        const data = await fetchNotification(token);
-        setNotifications(data);
-        const notifscount = data.filter((item: Notification) => !item.isRead).length;
-        state.notificationsCount = notifscount;
-        dispatch({ type: 'SET_notificationsCount', payload: { notifscount } });
+    const  markNotificationAsRead = async (id: any) => {
+        try{
+            const response = await axios.post(`${config.API_BASE_URL}/api/adMin/notification/MarAsRead/${id}`, {},{
+              headers: {
+                  Authorization: `Bearer ${token}`
+              }
+          });
+          }catch(error: any){
+            console.log(error)
+          }
     }
-
-    useEffect(() => {
-        const getNotifications = async () => {
-            try {
-                readonescount()
-            } catch (error) {
-                console.error('Error fetching notifications:', error);
-            } finally {
-                setLoading(false);
-            }
-        };
-    
-        if (state.isLoggedIn) {
-            getNotifications();
-        }
-
-        if (token) {
-            const client = new Client({
-                debug: (str) => { console.log(str); },
-                brokerURL: `${config.API_BASE_URL}/notifications`,
-                connectHeaders: { Authorization: `Bearer ${token}` },
-                appendMissingNULLonIncoming: true,
-                onConnect: () => onConnected(client),
-                onStompError: onError
-            });
-
-            client.webSocketFactory = function () {
-                return new SockJS(`${state.API_BASE_URL}/notifications`);
-            }
-
-            client.activate();
-            setStompClient(client);
-
-            return () => {
-                if (client) {
-                    client.deactivate();
-                }
-            };
-        }
-    }, [state.isLoggedIn,token]);
-
-
-    const onConnected = (client: Client) => {
-        client.subscribe('/topic/public-notifications', onPublicNotificationReceived, { Authorization: `Bearer ${token}` });
-        client.subscribe(`/user/${jwtDecode(token).userid}/queue/notifications`, onPrivateNotificationReceived, { Authorization: `Bearer ${token}` });
-    };
-
-    const onError = (error: any) => {
-        console.error('STOMP error:', error);
-    };
-
-    const onPublicNotificationReceived = (payload: any) => {
-        const notification = JSON.parse(payload.body);
-        console.log('Received public notification:', notification);
-        setNotifications(prevNotifications => [notification, ...prevNotifications]);
-        readonescount()
-    };
-
-    const onPrivateNotificationReceived = (payload: any) => {
-        console.log('Received private notification:', payload);
-        const notification = JSON.parse(payload.body);
-        setNotifications(prevNotifications => [notification, ...prevNotifications]);
-        readonescount()
-    };
-
+   
     const handleNotificationPress = async (notificationId: number) => {
-        // Mise à jour optimiste de l'état local
-        setNotifications(prevNotifications =>
-            prevNotifications.map(notification =>
+        state.userInfos.myNotifications  = state.userInfos.myNotifications.map((notification: Notification) =>
                 notification.id === notificationId
                     ? { ...notification, isRead: true }
                     : notification
             )
-        );
-       
     
+        const notifscount = state.notificationsCount - 1
+        dispatch({ type: 'SET_notificationsCount', payload: { notifscount } });
         // Appel à l'API en arrière-plan
         try {
             await markNotificationAsRead(notificationId);
-            readonescount()
         } catch (error) {
-            console.error('Error marking notification as read:', error);
-            // En cas d'échec, on pourrait revenir à l'état précédent
-            // ou afficher un message d'erreur à l'utilisateur
+           console.error('Error marking notification as read:', error);
         }
     };
 
@@ -136,6 +56,7 @@ export default function Notifications() {
         </TouchableOpacity>
     );
 
+
     if (!state.isLoggedIn) {
         return (
             <View style={styles.container}>
@@ -149,10 +70,10 @@ export default function Notifications() {
             {loading ? (
                 <Text style={styles.loadingText}>Loading...</Text>
             ) : (
-                notifications.length > 0 ?
+                state.userInfos.myNotifications.length > 0 ?
                 <FlatList
                     ref={chatAreaRef}
-                    data={notifications}
+                    data={state.userInfos.myNotifications}
                     keyExtractor={(item) => item.id.toString()}
                     renderItem={renderItem}
                     showsVerticalScrollIndicator={false} // Hide the scroll bar

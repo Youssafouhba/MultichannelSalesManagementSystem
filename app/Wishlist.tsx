@@ -15,28 +15,14 @@ import config from '@/components/config';
 
 const Wishlist: React.FC = () => {
     const { state,dispatch } = useAppContext();
-    const { userInfos,token,data, fetchFavorites,error} = useAppData();
-    const isLoggedIn = !!state.JWT_TOKEN;
-
-
+    const {data} = useAppData()
     const removefromfavorite = async (id: string) => {
+        dispatch({type: "Set_userInfos_WishList",payload: id})
         try {
-
             const url = `${config.API_BASE_URL}/api/client/deleteFromFavorite/${id}`;
             const response = await axios.delete(url,{
                 headers: { Authorization: `Bearer ${state.JWT_TOKEN}` },
             })
-            if (response.status === 200) {
-                const payload = {
-                    user: state.userInfos.user,
-                    wishlist: state.userInfos.wishlist.filtre((p: Product)=>p.id!=id),
-                    shoppingList: state.userInfos.shoppingList,
-                    myOrders: state.userInfos.myOrders,
-                    loginResponse: state.userInfos.loginResponse,
-                }
-                dispatch({type: 'Set_userInfos_WishList',payload: payload})
-                await fetchFavorites();
-            }
         } catch (error) {
             console.error("Error updating favorite status:", error);
         }

@@ -1,18 +1,16 @@
-// WebSocketService.ts
 import { Client } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
 import { jwtDecode } from 'jwt-decode';
 import config from '@/components/config';
-import { useAppContext } from './AppContext';
 
 class WebSocketService {
-  public notificationsCount = 0
   private client: Client | null = null;
   private token: string = '';
   private reconnectAttempts: number = 0;
   private maxReconnectAttempts: number = 5;
   private reconnectInterval: number = 5000;
-  private onMessageCallback: ((message: any) => void) | null = null;
+  private onNotificationReceivedCallback: ((notification: any) => void) | null = null;
+  private onOrderUpdateCallback: ((orderUpdate: any) => void) | null = null;
 
   constructor(private apiBaseUrl: string) {}
 
@@ -29,8 +27,13 @@ class WebSocketService {
     this.reconnectAttempts = 0;
   }
 
-  public setOnMessageCallback(callback: (message: any) => void): void {
-    this.onMessageCallback = callback;
+  public setNotificationCallback(callback: (notification: any) => void): void {
+    this.onPublicNotificationReceived = callback;
+  }
+
+  public setOrderUpdateCallback(callback: (orderUpdate: any) => void): void {
+
+    this.onOrderUpdateCallback = callback;
   }
 
   private initializeClient(): void {
@@ -43,10 +46,7 @@ class WebSocketService {
       heartbeatOutgoing: 4000,
     });
 
-    this.client.webSocketFactory = () => {
-      return new SockJS(`${this.apiBaseUrl}/notifications`);
-    };
-
+    this.client.webSocketFactory = () => new SockJS(`${this.apiBaseUrl}/notifications`);
     this.client.onConnect = this.onConnected.bind(this);
     this.client.onStompError = this.onError.bind(this);
 
@@ -58,8 +58,9 @@ class WebSocketService {
     this.reconnectAttempts = 0;
     if (this.client) {
       const userId = jwtDecode(this.token).userid;
-      this.client.subscribe('/topic/public-notifications', this.onMessageReceived.bind(this));
-      this.client.subscribe(`/user/${userId}/queue/notifications`, this.onMessageReceived.bind(this));
+      this.client.subscribe(`/user/${userId}/queue/orders`, this.onOrderUpdateReceived.bind(this));
+      this.client.subscribe('/topic/public-notifications', this.onPrivateNotificationReceived.bind(this));
+      this.client.subscribe(`/user/${userId}/queue/notifications`, this.onPublicNotificationReceived.bind(this));
     }
   }
 
@@ -78,14 +79,33 @@ class WebSocketService {
     }
   }
 
-  private onMessageReceived(message: any): void {
+  private onOrderUpdateReceived(message: any): void {
     const parsedMessage = JSON.parse(message.body);
-    console.log('Received message:', parsedMessage);
-    console.log(this.notificationsCount++)
-    if (this.onMessageCallback) {
-      this.onMessageCallback(parsedMessage);
+    if (this.onOrderUpdateCallback) {
+      this.onOrderUpdateCallback(parsedMessage);
     }
   }
+
+  private onPublicNotificationReceived(payload: any) {
+    const notification = JSON.parse(payload.body);
+    console.log(notification)
+    if (this.onPublicNotificationReceived) {
+      this.onPublicNotificationReceived(notification);
+    }
+    //console.log('Received public notification:', notification);
+    //this.notificationsCount = this.notificationsCount + 1
+    //setNotifications(prevNotifications => [notification, ...prevNotifications]);
+  };
+
+  private onPrivateNotificationReceived(payload: any) {
+      //console.log('Received private notification:', payload);
+      //this.notificationsCount = this.notificationsCount + 1
+      const notification = JSON.parse(payload.body);
+      if (this.onPrivateNotificationReceived) {
+        this.onPrivateNotificationReceived(notification);
+      }
+      //setNotifications(prevNotifications => [notification, ...prevNotifications]);
+  };
 
   public sendMessage(destination: string, body: any): void {
     if (this.client && this.client.connected) {

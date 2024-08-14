@@ -101,7 +101,7 @@ const EmailVerificationPage: React.FC = () => {
       } else {
         throw new Error('No token received from server');
       }
-        navigation.navigate("/" as never);
+        navigation.navigate("index" as never);
         console.log("OTP verified successfully");
       } else {
         setErrorOtp(response2.data.message);

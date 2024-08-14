@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { router, Stack, useGlobalSearchParams, useLocalSearchParams, useNavigation, usePathname, useRouter } from 'expo-router';
+import { RouteParams, router, Stack, useGlobalSearchParams, useLocalSearchParams, useNavigation, usePathname, useRouter } from 'expo-router';
 import { StyleSheet, Image, TouchableOpacity, View, Text, Pressable, FlatList, Modal, TouchableWithoutFeedback } from 'react-native';
 import { TabBarIcon } from '@/components/navigation/TabBarIcon';
 import { Ionicons } from '@expo/vector-icons';
@@ -13,6 +13,7 @@ import Menu from '@/components/Menu';
 import { AppDataProvider } from '@/components/AppDataProvider';
 import { Tabs } from 'expo-router';
 import FilterResult from './(tabs)/FilterResult';
+import { ProductInfos } from '@/constants/Classes';
 
 function FilterMenu({ isVisible, onClose }) {
   if (!isVisible) return null;
@@ -31,14 +32,31 @@ function FilterMenu({ isVisible, onClose }) {
     </View>
   );
 }
-
+interface RouteParams {
+  payload: ProductInfos; // Replace 'any' with the actual type of payload
+}
 function CustomHeader({title}) {
   const { id } = useGlobalSearchParams();
   const {state, dispatch } = useAppContext();
-  const {pres} = useLocalSearchParams()
+  const pathname = usePathname();
   const navigation = useNavigation<any>();
+  const route = useRoute()
   const goBack = () => {
-    navigation.navigate(state.previouspage as never);
+    const payload = {
+      ...(route.params as RouteParams)?.payload,
+    };
+    console.log("prevoiusepage :"+state.previouspage)
+    console.log("actualpage :"+pathname)
+    if(pathname=="/"+state.previouspage){
+      dispatch({type: 'Set_previouspage',payload: "index"})
+    }
+    if(state.previouspage=="ProductDetails"){
+
+      pathname=="/ProductDetails"?navigation.navigate("index" as never):navigation.navigate(state.previouspage as never,{payload})
+      
+      }else{
+      pathname=="/"+state.previouspage&&state.previouspage!="ProductDetails"?navigation.navigate("index" as never):navigation.navigate(state.previouspage as never,{payload});
+    }
   };
   return (
     <View style={[styles.header, { backgroundColor: Color.colorWhite }]}>
@@ -56,9 +74,7 @@ function CustomMainHeader({ onMenuPress}) {
   const {state, dispatch } = useAppContext();
   const { id ,pres} = useGlobalSearchParams();
   const {filter} = useLocalSearchParams()
-  const goBack = () => {
-    navigation.navigate(state.previouspage as never);
-  };
+
 
   return (
     pathname=="/Messages"?``
