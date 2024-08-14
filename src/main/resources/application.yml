@@ -1,0 +1,30 @@
+spring:
+    application:
+        name: messaging-service
+    kafka:
+        bootstrap-servers: localhost:9094
+    data:
+        mongodb:
+            username: Admin
+            password: TestPassword
+            host: localhost
+            port: 27017
+            database: chat_app
+            authentication-database: admin
+    jackson:
+        deserialization:
+            FAIL_ON_UNKNOWN_PROPERTIES: false
+        serialization:
+            write-dates-as-timestamps: false
+
+
+server:
+    port: 9001
+eureka:
+    client:
+        serviceUrl:
+            defaultZone: http://localhost:8761/eureka/
+
+jwt:
+    secret: 31bR29G5KVtBdCIspV11aPM7PnaOq8js
+
