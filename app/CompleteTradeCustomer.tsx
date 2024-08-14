@@ -18,7 +18,7 @@ interface RouteParams {
   payload: any; // Replace 'any' with the actual type of payload
 }
 const CompleteTradeCustomer = () => {
-  const { token } = useAppData();
+  const { state,dispatch } = useAppContext();
   const [alertVisible, setAlertVisible] = useState(false);
   const [errorVisible, setErrorVisible] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
@@ -51,12 +51,6 @@ const CompleteTradeCustomer = () => {
     if (!formData.productsOfInterest) {
       newErrors['productsOfInterest'] = 'Please select a product of interest';
     }
-    if (!formData.phoneNumber) {
-      newErrors['phoneNumber'] = 'Phone number is required';
-    }
-    if (!formData.emailAddress) {
-      newErrors['emailAddress'] = 'Email address is required';
-    }
     if (!formData.howDidYouHearAboutUs) {
       newErrors['howDidYouHearAboutUs'] = 'Please tell us how you heard about us';
     }
@@ -70,7 +64,7 @@ const CompleteTradeCustomer = () => {
         const updatedPayload = {
           ...payload,
           ...formData,
-          userId: jwtDecode(token).userid
+          userId: jwtDecode(state.JWT_TOKEN).userid
       };
       console.log(updatedPayload)
         const response = await axios.post(
@@ -78,7 +72,7 @@ const CompleteTradeCustomer = () => {
           {
             headers: {
               "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`
+              Authorization: `Bearer ${state.JWT_TOKEN}`
             },
           }
         );
@@ -218,7 +212,7 @@ const CompleteTradeCustomer = () => {
           </View>
           {errors.checkSquarechecked && <Text style={styles.errorText}>{errors.checkSquarechecked}</Text>}
 
-          <Pressable style={[tw`mt-4`, styles.buttonDanger]} onPress={handleSubmit}>
+          <Pressable style={[tw`mt-4`, styles.buttonDanger]} onPress={()=>handleSubmit()}>
             <Text style={styles.button}>SEND</Text>
           </Pressable>
         </View>

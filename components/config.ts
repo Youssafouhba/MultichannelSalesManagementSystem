@@ -2,10 +2,10 @@
 export const baseurl = '209.38.168.154'
 const Config = {
     development: {
-      API_BASE_URL: `https://${baseurl}:9000`,
+      API_BASE_URL: `http://${baseurl}:9000`,
     },
     production: {
-      API_BASE_URL: `https://${baseurl}:9000`,
+      API_BASE_URL: `http://${baseurl}:9000`,
     },
   };
   

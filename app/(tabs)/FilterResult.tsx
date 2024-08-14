@@ -192,7 +192,6 @@ export default function FilterResult() {
     },
     scrollView: {
       backgroundColor: Color.colorWhite,
-      top: -4,
       flex: 1,
       width: '100%',
     },

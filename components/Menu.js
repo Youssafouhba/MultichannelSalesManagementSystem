@@ -20,7 +20,7 @@ function Menu({ isVisible, onClose }) {
     {name: 'Filter', icon: require('@/assets/images/icons8-réglages-vertical-50.png'), path: 'Filter'},
     {name: 'My Orders', icon: require('@/assets/images/icons8-sac-de-courses-80.png'), path: 'Orders'},
     {name: 'My Favorite', icon: require('@/assets/images/icons8-coeurs-50.png'), path: 'Wishlist'},
-    {name: 'Offers', icon: require('@/assets/images/icons8-offer-58.png'), path: 'Profile'},
+    //{name: 'Offers', icon: require('@/assets/images/icons8-offer-58.png'), path: 'Profile'},
     {name: 'Trade Customer', icon: require('@/assets/images/icons8-badge-50.png'), path: 'TradeCustomer'},
     {name: !state.isLoggedIn?'Log In' :'Log Out', icon: !state.isLoggedIn?require(`@/assets/images/icons8-déconnexion-arrondi-50.png`):require(`@/assets/icons8-déconnexion-50.png`), path: !state.isLoggedIn?`LoginPage` :'index'},
   ];
@@ -34,6 +34,7 @@ function Menu({ isVisible, onClose }) {
     if (path === 'index') {
       state.notificationsCount = 0;
       logout();
+      state.messagesCount = 0;
       dispatch({ type: 'CLEAN_CART'});
       dispatch({ type: 'CLEAN_Notifications'});
       dispatch({ type: 'SET_JWT_TOKEN', payload: '' });

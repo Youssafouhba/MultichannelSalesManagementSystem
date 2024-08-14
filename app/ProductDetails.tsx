@@ -104,7 +104,7 @@ export default function ProductDetails() {
     }
 
     const renderProduct = () => (
-        <View style={[tw`flex-row px-2 w-full h-60`, { backgroundColor: Color.mainbackgroundcolor, borderBottomColor: 'white', borderBottomWidth: 3 }]}>
+        <View style={[tw`flex-row pt-4 px-2 w-full h-60`, { backgroundColor: Color.mainbackgroundcolor, borderBottomColor: 'white', borderBottomWidth: 3 }]}>
             <Image style={[tw`h-56 rounded`, { width: '80%' }]} source={{ uri: imageUrl || product.imageUrls[0].url }} />
             <View>
                 {
@@ -116,7 +116,7 @@ export default function ProductDetails() {
                 }
             </View>
             <TouchableOpacity 
-                style={[tw`absolute -mt-2 ml-1 rounded-3xl bg-white justify-center`]} 
+                style={[tw`absolute mt-2 ml-1 rounded-3xl bg-white justify-center`]} 
                 onPress={toggleFavorite}
             >
                 <TabBarIcon name={isFavorit? 'heart' : 'heart-outline'} color={'orangered'} />
@@ -184,7 +184,6 @@ export default function ProductDetails() {
                     {renderDetails()}
                 </>
             }
-            ListFooterComponent={<View style={{ height: 20 }} />} // Add footer to prevent overlap with other content
             contentContainerStyle={{ flexGrow: 1 }}
             showsVerticalScrollIndicator={false}
         />

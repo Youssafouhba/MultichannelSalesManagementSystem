@@ -31,7 +31,7 @@ const STATUS_ICON_CONFIG: Record<OrderStatus, IconConfig> = {
   delivered: { name: 'check-circle', color: 'green', Component: Icon },
   "picked up": { name: 'cube-outline', color: '#0077b6', Component: TabBarIcon },
   Pending: { name: 'schedule', color: 'orange', Component: Icon },
-  "cancelled":{ name: 'schedule', color: 'orange', Component: Icon }
+  "cancelled":{ name: 'schedule', color: 'red', Component: Icon }
 };
 
 const StatusIcon: React.FC<{ status: OrderStatus }> = React.memo(({ status }) => {
@@ -62,12 +62,12 @@ const badgeColor = (status: OrderStatus) => {
   switch (status) {
     case 'Pending':
       return 'bg-yellow-100 text-yellow-800';
-    case 'Picked up':
+    case 'picked up':
       return 'bg-blue-100 text-blue-800';
-    case 'Delivered':
+    case 'delivered':
       return 'bg-green-100 text-green-800';
     default:
-      return 'bg-gray-100 text-gray-800';
+      return 'bg-red-100 text-red-800';
   }
 };
 

@@ -276,13 +276,9 @@ const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
     alignItems: 'flex-end',
-    top: '2%',
     backgroundColor: 'transparent', // semi-transparent background
   },
-  container: {  //main header
-    top: '2%',
-    paddingTop: 6,
-    backgroundColor: Color.colorWhite,
+  container: {
     flex: 1,
   },
   header: {
@@ -290,16 +286,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     backgroundColor: '#ffffff',
-    //top: '5%',
+    top: '3%',
     height: 46,
     paddingHorizontal: 10,
   },
   backButton: {
     backgroundColor: Color.colorWhitesmoke,
-    width: 30,
-    height: 30,
+    width: 25,
+    height: 25,
     borderRadius: 50,
-    padding: 4,
+    padding: 2,
+    marginLeft: 4,
     overflow: 'hidden'
   },
   menuButton: {

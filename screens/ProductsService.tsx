@@ -49,6 +49,7 @@ export default function ProductsService() {
     const fetchData = async () => {
       try {
         setProductsInfos(ProductsInfos);
+        //console.log()
         setFilteredProducts(ProductsInfos)
         setIsLoading(false);
       } catch (error) {
@@ -59,7 +60,7 @@ export default function ProductsService() {
 
     fetchData();
     
-  }, [filter,ProductsInfos]);
+  }, []);
 
 
   useEffect(() => {
@@ -76,7 +77,9 @@ export default function ProductsService() {
         default:
           break
       }
-    } 
+    }else{
+      setFilteredProducts(ProductsInfos);
+    }
   }, [isSuggestionsMode, selectedLabel,ProductsInfos]);
  
   const gotodetails = (productinfos: ProductInfos) => {
@@ -326,7 +329,6 @@ export default function ProductsService() {
     },
     scrollView: {
       backgroundColor: Color.colorWhite,
-      top: -4,
       flex: 1,
       width: '100%',
     },

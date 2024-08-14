@@ -40,7 +40,7 @@ const Messages: React.FC = () => {
   const messageInputRef = React.useRef<TextInput>(null);
   const navigation = useRouter();
 
-  const SERVER_URL = `http://${baseurl}:9001`;
+  const SERVER_URL = `http://139.59.197.2:9001`;
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [showSuggestions1, setShowSuggestions1] = useState(true);
   const [suggestions] = useState([
