@@ -1,0 +1,49 @@
+
+spring:
+    main:
+        allow-bean-definition-overriding: true
+    mail:
+        host : smtp.gmail.com
+        port : 465
+        username : talkhspamer@gmail.com
+        password : mfctppldsjjkdrux
+        properties :
+            mail:
+                smtp:
+                    auth: true
+                    ssl:
+                        enable: true
+    application:
+        name: Auth-ClientSide-service
+    datasource:
+        driver-class-name: org.postgresql.Driver
+        url: jdbc:postgresql://db:5432/Client1
+        username: ${SPRING_DATASOURCE_USERNAME}
+        password: ${SPRING_DATASOURCE_PASSWORD}
+    jpa:
+        database-platform: org.hibernate.dialect.PostgreSQLDialect
+        hibernate:
+            ddl-auto: update
+
+security:
+    jwt :
+        secretKey : 31bR29G5KVtBdCIspV11aPM7PnaOq8js
+
+server:
+    port: 9000
+
+eureka:
+    client:
+        serviceUrl:
+            defaultZone: http://localhost:8761/eureka/
+
+client:
+    url:  http://localhost:8082
+
+
+logging:
+    level:
+        org:
+            springframework: DEBUG
+        com:
+            wholesaled : DEBUG

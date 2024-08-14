@@ -1,0 +1,25 @@
+<component name="libraryTable">
+  <library name="cloud.altemista.fwk.batch.altemistafwk.core" type="repository">
+    <properties maven-id="cloud.altemista.fwk.batch:cloud-altemistafwk-core-batch:3.1.0.RELEASE" />
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/lib/cloud-altemistafwk-core-batch-3.1.0.RELEASE.jar!/" />
+      <root url="jar://$PROJECT_DIR$/lib/cloud-altemistafwk-common-3.1.0.RELEASE.jar!/" />
+      <root url="jar://$PROJECT_DIR$/lib/terasoluna-gfw-common-5.5.0.RELEASE.jar!/" />
+      <root url="jar://$PROJECT_DIR$/lib/spring-context-support-5.0.8.RELEASE.jar!/" />
+      <root url="jar://$PROJECT_DIR$/lib/spring-beans-5.0.8.RELEASE.jar!/" />
+      <root url="jar://$PROJECT_DIR$/lib/spring-context-5.0.8.RELEASE.jar!/" />
+      <root url="jar://$PROJECT_DIR$/lib/spring-aop-5.0.8.RELEASE.jar!/" />
+      <root url="jar://$PROJECT_DIR$/lib/spring-expression-5.0.8.RELEASE.jar!/" />
+      <root url="jar://$PROJECT_DIR$/lib/spring-core-5.0.8.RELEASE.jar!/" />
+      <root url="jar://$PROJECT_DIR$/lib/spring-jcl-5.0.8.RELEASE.jar!/" />
+      <root url="jar://$PROJECT_DIR$/lib/guava-20.0.jar!/" />
+      <root url="jar://$PROJECT_DIR$/lib/commons-lang3-3.9.jar!/" />
+      <root url="jar://$PROJECT_DIR$/lib/commons-io-2.6.jar!/" />
+      <root url="jar://$PROJECT_DIR$/lib/commons-collections4-4.1.jar!/" />
+      <root url="jar://$PROJECT_DIR$/lib/jcl-over-slf4j-1.7.30.jar!/" />
+      <root url="jar://$PROJECT_DIR$/lib/slf4j-api-1.7.30.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>
