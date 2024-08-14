@@ -1,0 +1,38 @@
+spring:
+    application:
+        name: Auth-Admin-service
+    datasource:
+        driver-class-name: org.postgresql.Driver
+        url: jdbc:postgresql://dpg-cqneaeij1k6c73ao84jg-a.oregon-postgres.render.com/admin_s4ob
+        username: alkhspamer
+        password: PzfmyF3RiBW70eB7YLrRPwoqXqp8co3n
+        database: admin_s4ob
+    jpa:
+        database-platform: org.hibernate.dialect.PostgreSQLDialect
+        hibernate:
+            ddl-auto: update
+
+security:
+    jwt :
+        secretKey : 31bR29G5KVtBdCIspV11aPM7PnaOq8js
+
+server:
+    port: 9999
+
+eureka:
+    client:
+        serviceUrl:
+            defaultZone: https://discovery-blzv.onrender.com/eureka/
+
+
+client:
+    url:  http://localhost:8082
+
+logging:
+    level:
+        org:
+            springframework: DEBUG
+        com:
+            wholesaled : DEBUG
+
+
