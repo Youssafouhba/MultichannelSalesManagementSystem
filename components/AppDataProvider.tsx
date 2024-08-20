@@ -150,6 +150,29 @@ export const AppDataProvider: React.FC<AppDataProviderProps> = ({ children }) =>
         console.error('Error parsing Comments update:', error);
       }
     }
+      client.subscribe('/updates/comments', onCommentAdded); 
+    };
+
+
+    const onCommentAdded = (payload: any) => {
+      try{
+        const { object, action } = JSON.parse(payload.body);
+
+        setProductsInfos(prevProducts => {
+          const indexToUpdate = prevProducts.findIndex((pinf) => pinf.product.id === object.product.id);
+          if (indexToUpdate >= 0) {
+            const updatedProducts = [...prevProducts];
+            updatedProducts[indexToUpdate].product = object.product;
+            updatedProducts[indexToUpdate].comments = object.comments;
+            updatedProducts[indexToUpdate].raiting = object.raiting;
+            fetchBestAnfNew(updatedProducts);
+            return updatedProducts;
+          } 
+        });
+      }catch(error){
+        console.error('Error parsing Comments update:', error);
+      }
+    }
 
   const onPublicNotificationReceived = (payload: any) => {
     try {

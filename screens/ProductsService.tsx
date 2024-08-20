@@ -30,6 +30,7 @@ export default function ProductsService() {
   const [filteredProducts, setFilteredProducts] = useState<ProductInfos[] | undefined>([]);
   const styles = useMemo(() => createStyles(dimensions.width, dimensions.height), [dimensions]);
 
+
   const {filter} = useGlobalSearchParams()
   const [inputSearch, setInputSearch] = useState('');
   const [isSearching, setIsSearching] = useState(false);

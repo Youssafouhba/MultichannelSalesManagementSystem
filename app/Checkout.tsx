@@ -8,6 +8,7 @@ import tw from "tailwind-react-native-classnames";
 import { useAppContext } from "@/components/AppContext";
 import { Card,ProductInfos } from "@/constants/Classes";
 import { Alert } from "react-native";
+import { Client } from '@stomp/stompjs';
 import axios from "axios";
 import { Order } from "@/constants/Classes";
 import { router } from "expo-router";
@@ -15,6 +16,12 @@ import { jwtDecode } from "jwt-decode";
 import AnimatedCustomAlert from "@/components/AnimatedCustomAlert";
 import { useAppData } from "@/components/AppDataProvider";
 import config from "@/components/config";
+var SockJS = require('sockjs-client/dist/sockjs.js');
+
+
+interface RouteParams {
+  payload: Card; // Replace 'any' with the actual type of payload
+}
 
 
 interface RouteParams {
@@ -40,9 +47,11 @@ const Checkout = () => {
       const response = await axios.post(`${config.API_BASE_URL}${url}`, payload, {
         headers: {
           Authorization: `Bearer ${state.JWT_TOKEN}`
+          Authorization: `Bearer ${state.JWT_TOKEN}`
         }
       });
       return response;
+    } catch (error: any) {
     } catch (error: any) {
       console.log(error.response.data);
       return error.response;
