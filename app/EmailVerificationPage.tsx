@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import axios, { AxiosResponse, AxiosError } from "axios";
-import { Image } from "expo-image";
-import { StyleSheet, Text, TextInput, View } from "react-native";
+import { StyleSheet,Image, Text, TextInput, View } from "react-native";
 import { Button } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { authstyles, Border, Color, FontSize, Padding } from "../GlobalStyles";
@@ -11,12 +10,12 @@ import tw from "tailwind-react-native-classnames";
 import * as Animatable from "react-native-animatable";
 import AnimatedCustomAlert from "@/components/AnimatedCustomAlert";
 import config from '@/components/config';
-import { AsyncStorage } from 'react-native';
 import { useAppData } from '@/components/AppDataProvider';
 import { router } from 'expo-router';
+import { UserInfos } from '@/constants/Classes';
 
 type RootStackParamList = {
-  EmailVerificationPage: { mail: string };
+  EmailVerificationPage: { mail: string,password: string };
 };
 
 type EmailVerificationPageRouteProp = RouteProp<RootStackParamList, 'EmailVerificationPage'>;
@@ -28,10 +27,11 @@ interface ApiResponse {
 
 const EmailVerificationPage: React.FC = () => {
   const { state, dispatch } = useAppContext();
+  const {login} = useAppData()
   const route = useRoute<EmailVerificationPageRouteProp>();
   const navigation = useNavigation();
   const email = route.params?.mail || null;
-  const { login, fetchdt, cartElements, token } = useAppData();
+  const password = route.params?.password || null;
   const [errorOtp, setErrorOtp] = useState<string>("");
   const [otp, setOtp] = useState<string>("");
   const [apiResponse, setApiResponse] = useState<AxiosResponse<ApiResponse> | null>(null);
@@ -41,11 +41,11 @@ const EmailVerificationPage: React.FC = () => {
     setAlertVisible(false);
   };
 
-  const apiHandler = async (url: string, payload: any, token: string): Promise<AxiosResponse<ApiResponse>> => {
+  const apiHandler = async (url: string, payload: any): Promise<AxiosResponse<ApiResponse>> => {
     try {
       const response = await axios.post<ApiResponse>(`${config.API_BASE_URL}${url}`, payload, {
         headers: {
-          Authorization: `Bearer ${token}`
+          Authorization: `Bearer ${state.JWT_TOKEN}`
         }
       });
       console.log(response.data);
@@ -61,10 +61,10 @@ const EmailVerificationPage: React.FC = () => {
 
   useEffect(() => {
     const checkTokenAndRequestOtp = async () => {
-      if (token && email) {
+      if (state.JWT_TOKEN && email) {
         setAlertVisible(true);
         const payload = { email: email };
-        const response = await apiHandler("/api/auth-client/otp/request-otp", payload, token);
+        const response = await apiHandler("/api/auth-client/otp/request-otp", payload);
         if (response.data.message === "OTP sent successfully") {
           setApiResponse(response);
         }
@@ -72,7 +72,7 @@ const EmailVerificationPage: React.FC = () => {
     };
 
     checkTokenAndRequestOtp();
-  }, [email, token]);
+  }, [email, state.JWT_TOKEN]);
 
   const handleOtp = (otp: string) => {
     setOtp(otp);
@@ -85,27 +85,23 @@ const EmailVerificationPage: React.FC = () => {
         otp: otp
       };
       console.log(payload);
-      const response2 = await apiHandler("/api/auth-client/otp/verify-otp", payload, token);
+      const response2 = await apiHandler("/api/auth-client/otp/verify-otp", payload);
       console.log(response2.data);
       if (response2.data.message === "OTP verified successfully") {
-        const { message, token } = response2.data;
-      await login(token);
-      if (token) {
-        await login(token);
-        dispatch({ type: 'SET_JWT_TOKEN', payload: token });
-        await AsyncStorage.setItem('jwtToken', token);
+        if (state.JWT_TOKEN) {
+          login(state.JWT_TOKEN);
+          const payload = { email, password };
+          const response = await axios.post<UserInfos>(`http://209.38.168.154:9000/api/auth/singin`, payload);
+          if (response.data) {
+            dispatch({ type: 'Set_userInfos', payload: response.data });
+            navigation.navigate("index" as never);
+          } else {
+            throw new Error('No token received from server');
+          }
         
-        cartElements?.forEach((item) => {
-          const { product, quantity } = item;
-          dispatch({ type: 'ADD_TO_CART', payload: { ...product, quantity } });
-        });
-        
-        router.navigate("/");
-      } else {
-        throw new Error('No token received from server');
-      }
-        navigation.navigate("/" as never);
-        console.log("OTP verified successfully");
+        } else {
+          throw new Error('No token received from server');
+        }
       } else {
         setErrorOtp(response2.data.message);
       }
@@ -126,7 +122,6 @@ const EmailVerificationPage: React.FC = () => {
         />
         <Image
           style={authstyles.iphone1415ProMax6Child}
-          contentFit="cover"
           source={require("../assets/rectangle-2.png")}
         />
         <SafeAreaView style={[tw`justify-center items-center`]}>

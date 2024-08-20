@@ -2,7 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import { View, Text, Modal, Animated, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
-const LoginRequiredAlert = ({ visible, onLogin, onCancel }) => {
+const LoginRequiredAlert = ({ visible, onLogin, onCancel,message }) => {
   const scaleAnim = useRef(new Animated.Value(0.8)).current;
   const opacityAnim = useRef(new Animated.Value(0)).current;
 
@@ -54,8 +54,8 @@ const LoginRequiredAlert = ({ visible, onLogin, onCancel }) => {
           <View style={styles.iconContainer}>
             <Ionicons name="lock-closed" size={40} color="#3498db" />
           </View>
-          <Text style={styles.title}>Login Required</Text>
-          <Text style={styles.message}>You need to be logged in to proceed to checkout.</Text>
+          <Text style={styles.title}>Login Required</Text>{/**You need to be logged in to proceed to checkout */}
+          <Text style={styles.message}>{message}.</Text>
           <View style={styles.buttonContainer}>
             <TouchableOpacity 
               style={[styles.button, styles.cancelButton]} 

@@ -130,4 +130,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default React.memo(LoginError);
+export default LoginError;

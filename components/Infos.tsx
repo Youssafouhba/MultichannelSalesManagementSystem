@@ -8,8 +8,8 @@ import {
   Pressable,
   ScrollView,
   Modal,
+  Image
 } from "react-native";
-import { Image } from "expo-image";
 import { Color } from "../GlobalStyles";
 import { Ionicons } from "@expo/vector-icons";
 import { TextInput, Text, Button } from "react-native-paper";

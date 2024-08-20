@@ -14,13 +14,13 @@ export default function TabLayout() {
   return (
     <Tabs
       sceneContainerStyle={{
-        backgroundColor: Color.mainbackgroundcolor,
+        marginTop: "3%",
       }}
       screenOptions={{
         tabBarActiveTintColor: 'red',
         headerShown: false,
         tabBarStyle: {
-          height: 51,
+          height: 40,
         },
       }}
     >

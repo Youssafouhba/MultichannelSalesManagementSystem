@@ -12,7 +12,7 @@ interface DecodedToken {
   // Add any other fields that are in your JWT payload
 }
 
-const JWTDecoder: React.FC = () => {
+const JWTDecoder = () => {
   const { state } = useAppContext();
   const [decodedToken, setDecodedToken] = useState<DecodedToken | null>(null);
 

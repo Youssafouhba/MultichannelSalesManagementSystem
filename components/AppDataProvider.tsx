@@ -38,8 +38,8 @@ interface AppDataContextType {
   fetchOrders: ()=> Promise<Order[]>;
   fetchCart: ()=> Promise<void>;
   fetchdt: () => void;
-  login: (tok: string) => Promise<void>;
-  fetchNotification(): Promise<Notification[]>;
+  login: (tok: string) => void;
+  fetchNotification: (token: string) => Promise<Notification[]>;
   fetchProductRating: (productId: number) =>Promise<number>;
 }
 
@@ -62,7 +62,7 @@ export const AppDataProvider: React.FC<AppDataProviderProps> = ({ children }) =>
   const [user, setUser] = useState<UserDTO | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [token, setToken] = useState<string | null>(null);
+  var   [token, setToken] = useState<string | null>(null);
   const [cartElements,setCartElements] = useState<CartElement[]>([]);
   const [favProducts, setFavProducts] = useState<ProductInfos[]>([]);
   const [NewProducts, setNewProducts] = useState<ProductInfos[]>([]);
@@ -108,33 +108,52 @@ export const AppDataProvider: React.FC<AppDataProviderProps> = ({ children }) =>
     const fetchAppData = async () => {
       try {
         setIsLoading(true);
-        
-        // Fetch products
-        const productsResponse = await axios.get(`${Config.API_BASE_URL}/api/Products`);
+        const productsResponse = await axios.get(`http://209.38.168.154:9000/api/Products`);
         const products = productsResponse.data;
         setProductsInfos(products);
-       // console.log(products.filter((prinf: ProductInfos)=> prinf.product.isBestSeller))
-        fetchBestAnfNew(products)
+        fetchBestAnfNew(products);
+        setData({
+          products: [],
+          ratings: Object.fromEntries(products.map((product: ProductInfos, index: number) => [parseInt(product.product.id),product.raiting])),
+        });
    
       } catch (error) {
         setError('Failed to fetch data');
-        console.error('Error fetching app data:', error);
       } finally {
         setIsLoading(false);
       }
     };
 
     const onConnected = (client: Client) => {
-      console.log('Connected to WebSocket');    
+      console.log('Connected to WebSocket');  
       client.subscribe('/updates/product', onPublicNotificationReceived); // Adjust the topic as needed
-  };
+      client.subscribe('/updates/comments', onCommentAdded); 
+    };
 
+
+    const onCommentAdded = (payload: any) => {
+      try{
+        const { object, action } = JSON.parse(payload.body);
+
+        setProductsInfos(prevProducts => {
+          const indexToUpdate = prevProducts.findIndex((pinf) => pinf.product.id === object.product.id);
+          if (indexToUpdate >= 0) {
+            const updatedProducts = [...prevProducts];
+            updatedProducts[indexToUpdate].product = object.product;
+            updatedProducts[indexToUpdate].comments = object.comments;
+            updatedProducts[indexToUpdate].raiting = object.raiting;
+            fetchBestAnfNew(updatedProducts);
+            return updatedProducts;
+          } 
+        });
+      }catch(error){
+        console.error('Error parsing Comments update:', error);
+      }
+    }
 
   const onPublicNotificationReceived = (payload: any) => {
     try {
       const { object, action } = JSON.parse(payload.body);
-  
-      console.log('Received product update:', object, 'Action:', action);
   
       setProductsInfos(prevProducts => {
         switch (action) {
@@ -176,10 +195,10 @@ export const AppDataProvider: React.FC<AppDataProviderProps> = ({ children }) =>
           // Initialize the WebSocket connection and STOMP client
           const client = new Client({
             debug: (str) => { console.log(str); },
-            brokerURL: `${Config.API_BASE_URL}/products`,
+            brokerURL: `http://209.38.168.154:9000/products`,
             connectHeaders: { },
             appendMissingNULLonIncoming: true,
-            webSocketFactory: () => new SockJS(`${Config.API_BASE_URL}/products`), // Ensure this URL matches your server configuration
+            webSocketFactory: () => new SockJS(`http://209.38.168.154:9000/products`), // Ensure this URL matches your server configuration
             onConnect: () => onConnected(client),
             onStompError: onError
         });
@@ -260,7 +279,7 @@ export const AppDataProvider: React.FC<AppDataProviderProps> = ({ children }) =>
       }
   }
 
-  const fetchNotification = async () => {
+  const fetchNotification = async (token: string) => {
     if(token!=null)
       try {
           const response = await axios.get(`${Config.API_BASE_URL}/api/adMin/notification/mynotif`, {

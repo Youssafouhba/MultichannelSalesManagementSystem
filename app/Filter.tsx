@@ -8,7 +8,6 @@ import { useAppData } from "@/components/AppDataProvider";
 import { Product, ProductInfos } from "@/constants/Classes";
 import { useAppContext } from "@/components/AppContext";
 import { useRouter } from "expo-router";
-import tw from "tailwind-react-native-classnames";
 
 const Filter = () => {
   const { ProductsInfos,data } = useAppData();
@@ -35,12 +34,12 @@ const Filter = () => {
       const { price, category, size } = filters;
       return (
         (!price.enabled || (productinf.product.price >= price.range[0] && productinf.product.price <= price.range[1])) &&
-        (!category.enabled || productinf.product.category.toLowerCase().includes(category.value.toLowerCase())) &&
-        (!size.enabled || (productinf.product.size >= size.range[0] && productinf.product.size <= size.range[1]))
+        (!category.enabled || productinf.product.category.toLowerCase().includes(category.value.toLowerCase()))
       );
     });
 
     dispatch({ type: 'SET_filtredproducts', payload: filteredProducts });
+    dispatch({type: 'Set_previouspage',payload: "Filter"})
     navigation.navigate(`/FilterResult?filter=applied`);
     filteredProducts?.map((item)=>console.log(item.product.price))
   }, [filters, data, dispatch, navigation]);
@@ -103,37 +102,6 @@ const Filter = () => {
           <Picker.Item label="Suspended Ceiling & Metal Grid" value="Suspended Ceiling & Metal Grid" />
         </Picker>
       ))}
-
-      {renderFilterSection("Size", "size", (
-        <>
-          <MultiSlider
-            values={filters.size.range}
-            onValuesChange={(values) => handleRangeChange("size", values)}
-            min={0}
-            max={100}
-            step={1}
-            selectedStyle={{ backgroundColor: Color.colorsBlue }}
-            markerStyle={styles.sliderMarker}
-            containerStyle={styles.sliderContainer}
-          />
-          <View style={styles.inputRow}>
-            {filters.size.range.map((value, index) => (
-              <TextInput
-                key={index}
-                style={styles.input}
-                value={value.toString()}
-                keyboardType="numeric"
-                onChangeText={(text) => {
-                  const newRange = [...filters.size.range];
-                  newRange[index] = Number(text);
-                  handleRangeChange("size", newRange);
-                }}
-              />
-            ))}
-          </View>
-        </>
-      ))}
-
       <Pressable style={styles.button} onPress={submitFiltering}>
         <Text style={styles.buttonText}>Done</Text>
       </Pressable>

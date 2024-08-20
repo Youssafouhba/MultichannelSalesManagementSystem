@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { router, Stack, useGlobalSearchParams, useLocalSearchParams, useNavigation, usePathname, useRouter } from 'expo-router';
+import { RouteParams, router, Stack, useGlobalSearchParams, useLocalSearchParams, useNavigation, usePathname, useRouter } from 'expo-router';
 import { StyleSheet, Image, TouchableOpacity, View, Text, Pressable, FlatList, Modal, TouchableWithoutFeedback } from 'react-native';
 import { TabBarIcon } from '@/components/navigation/TabBarIcon';
 import { Ionicons } from '@expo/vector-icons';
@@ -13,6 +13,7 @@ import Menu from '@/components/Menu';
 import { AppDataProvider } from '@/components/AppDataProvider';
 import { Tabs } from 'expo-router';
 import FilterResult from './(tabs)/FilterResult';
+import { ProductInfos } from '@/constants/Classes';
 
 function FilterMenu({ isVisible, onClose }) {
   if (!isVisible) return null;
@@ -31,18 +32,35 @@ function FilterMenu({ isVisible, onClose }) {
     </View>
   );
 }
-
+interface RouteParams {
+  payload: ProductInfos; // Replace 'any' with the actual type of payload
+}
 function CustomHeader({title}) {
   const { id } = useGlobalSearchParams();
-  const {pres} = useGlobalSearchParams()
-  const navigation = useNavigation();
+  const {state, dispatch } = useAppContext();
+  const pathname = usePathname();
+  const navigation = useNavigation<any>();
+  const route = useRoute()
   const goBack = () => {
+    const payload = {
+      ...(route.params as RouteParams)?.payload,
+    };
+    console.log("prevoiusepage :"+state.previouspage)
+    console.log("actualpage :"+pathname)
+    if(pathname=="/"+state.previouspage){
+      dispatch({type: 'Set_previouspage',payload: "index"})
+    }
+    if(state.previouspage=="ProductDetails"){
 
-    pres === "LoginPage" || "Orders" ? router.push("/") : navigation.dispatch(StackActions.pop());
+      pathname=="/ProductDetails"?navigation.navigate("index" as never):navigation.navigate(state.previouspage as never,{payload})
+      
+      }else{
+      pathname=="/"+state.previouspage&&state.previouspage!="ProductDetails"?navigation.navigate("index" as never):navigation.navigate(state.previouspage as never,{payload});
+    }
   };
   return (
     <View style={[styles.header, { backgroundColor: Color.colorWhite }]}>
-        <TouchableOpacity onPress={() =>{id=='Cart'? router.push(`${id}`): goBack()}} style={styles.backButton}>
+        <TouchableOpacity onPress={() =>{goBack()}} style={styles.backButton}>
           <Ionicons name='chevron-back-outline' size={20} color="black" style={{ overflow: 'hidden' }} />
         </TouchableOpacity>
       <Text style={[tw`mx-2 font-medium`,{color: Color.colorsBlue}]}>{title}</Text>
@@ -53,11 +71,10 @@ function CustomHeader({title}) {
 function CustomMainHeader({ onMenuPress}) {
   const pathname = usePathname();
   const navigation = useNavigation();
+  const {state, dispatch } = useAppContext();
   const { id ,pres} = useGlobalSearchParams();
   const {filter} = useLocalSearchParams()
-  const goBack = () => {
-    router.navigate("/Filter");
-  };
+
 
   return (
     pathname=="/Messages"?``
@@ -259,13 +276,9 @@ const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
     alignItems: 'flex-end',
-    top: '2%',
     backgroundColor: 'transparent', // semi-transparent background
   },
-  container: {  //main header
-    top: '2%',
-    paddingTop: 6,
-    backgroundColor: Color.colorWhite,
+  container: {
     flex: 1,
   },
   header: {
@@ -273,16 +286,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     backgroundColor: '#ffffff',
-    //top: '5%',
+    top: '3%',
     height: 46,
     paddingHorizontal: 10,
   },
   backButton: {
     backgroundColor: Color.colorWhitesmoke,
-    width: 30,
-    height: 30,
+    width: 25,
+    height: 25,
     borderRadius: 50,
-    padding: 4,
+    padding: 2,
+    marginLeft: 4,
     overflow: 'hidden'
   },
   menuButton: {

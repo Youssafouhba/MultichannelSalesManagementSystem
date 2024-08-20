@@ -31,13 +31,14 @@ const STATUS_ICON_CONFIG: Record<OrderStatus, IconConfig> = {
   delivered: { name: 'check-circle', color: 'green', Component: Icon },
   "picked up": { name: 'cube-outline', color: '#0077b6', Component: TabBarIcon },
   Pending: { name: 'schedule', color: 'orange', Component: Icon },
-  "cancelled":{ name: 'schedule', color: 'orange', Component: Icon }
+  "cancelled":{ name: 'schedule', color: 'red', Component: Icon }
 };
 
-const StatusIcon: React.FC<{ status: OrderStatus }> = React.memo(({ status }) => {
+const StatusIcon: React.FC<{ status?: OrderStatus }> = React.memo(({ status = 'pending' }) => {
   const { name, color, Component } = STATUS_ICON_CONFIG[status];
   return <Component name={name} color={color} size={24} />;
 });
+
 
 const OrderDateDisplay: React.FC<{ orderDate: string | Date }> = ({ orderDate }) => {
   const today = new Date();
@@ -46,13 +47,13 @@ const OrderDateDisplay: React.FC<{ orderDate: string | Date }> = ({ orderDate })
 
   let displayText;
   if (daysDifference === 0) {
-    displayText = `${format(orderDateTime, 'yy-MM-dd')} Today`;
+    displayText = `${format(orderDateTime, 'yyyy-MM-dd')} Today`;
   } else if (daysDifference <= 7) {
     displayText = `${daysDifference} Days`;
   } else if (daysDifference <= 15) {
-    displayText = `${format(orderDateTime, 'yy-MM-dd')} Last Week`;
+    displayText = `${format(orderDateTime, 'yyyy-MM-dd')} Last Week`;
   } else {
-    displayText = format(orderDateTime, 'yy-MM-dd');
+    displayText = format(orderDateTime, 'yyyy-MM-dd');
   }
 
   return <Text>{displayText}</Text>;
@@ -62,32 +63,24 @@ const badgeColor = (status: OrderStatus) => {
   switch (status) {
     case 'Pending':
       return 'bg-yellow-100 text-yellow-800';
-    case 'Picked up':
+    case 'picked up':
       return 'bg-blue-100 text-blue-800';
-    case 'Delivered':
+    case 'delivered':
       return 'bg-green-100 text-green-800';
     default:
-      return 'bg-gray-100 text-gray-800';
+      return 'bg-red-100 text-red-800';
   }
 };
 
 const Orders: React.FC = () => {
   const navigation = useNavigation();
   const { state,dispatch } = useAppContext();
-  const { fetchOrders,error,userInfos} = useAppData();
-  const [orders,setOrders] = useState<Order[]>([]);
-  const [stompClient, setStompClient] = useState<Client | null>(null);
   const [isRatingModalVisible,setisRatingModalVisible] = useState<boolean>(false)
   const [orderedProducts, setOrderedProducts] = useState([]);
-  const [n,setN] = useState<boolean>(false)
-  const {id} = useLocalSearchParams()
   var cartItems = state.cartItems || {};
-  var isLoggedIn = state.JWT_TOKEN !=='';
-  var token = state.JWT_TOKEN;
-
   useFocusEffect(
     useCallback(()=>{
-      if(id=="c"){
+      if(state.isRated){
         setisRatingModalVisible(true)
         setOrderedProducts(cartItems)
         dispatch({ type: 'CLEAN_CART'});
@@ -95,98 +88,7 @@ const Orders: React.FC = () => {
       return () => {
  
       };
-  },[id,navigation]))
-
-  React.useEffect(()=>{
-    const fetchorders = async () =>{
-      userInfos.myOrders = await fetchOrders()
-      setOrders(userInfos.myOrders)
-    }
-    if(isLoggedIn)
-      fetchorders()
-  },[isLoggedIn])
-
-  useFocusEffect(
-    useCallback(()=>{
-
-      if (token) {
-        const client = new Client({
-            debug: (str) => { console.log(str); },
-            brokerURL: `${config.API_BASE_URL}/notifications`,
-            connectHeaders: { Authorization: `Bearer ${token}` },
-            appendMissingNULLonIncoming: true,
-            onConnect: () => onConnected(client),
-            onStompError: onError
-        });
-  
-        client.webSocketFactory = function () {
-            return new SockJS(`${state.API_BASE_URL}/notifications`);
-        }
-  
-        client.activate();
-        setStompClient(client);
-  
-        return () => {
-            if (client) {
-                client.deactivate();
-            }
-        };
-    }
-  },[isLoggedIn,token]))
-
-
-  
-  const onConnected = (client: Client) => {
-    client.subscribe(`/user/${jwtDecode(token).userid}/queue/orders`, onPrivateOrderReceived, { Authorization: `Bearer ${token}` });
-  };
-
-const onError = (error: any) => {
-    console.error('STOMP error:', error);
-};
-
-const onPrivateOrderReceived = (payload: any) => {
-  try {
-    const {object,action}= JSON.parse(payload.body);
-    console.log("received action : "+action)
-    console.log("received order : "+object.id)
-    
-    setOrders(prevOrders => {
-      setN(true)
-      switch (action) {
-        case 'update':
-          const indexToUpdate = prevOrders.findIndex(p => p.id === object.id);
-          if (indexToUpdate >= 0) {
-            const updatedProducts = [...prevOrders];
-            updatedProducts[indexToUpdate] = object;
-            return updatedProducts;
-          } else {
-            return [object, ...prevOrders];
-          }
-        case 'delete':
-          return prevOrders.filter(p => p.id !== object.id);
-        case 'add':
-          return [object, ...prevOrders];
-        default:
-          return prevOrders;
-      }
-
-    });
-
-  } catch (error) {
-    console.error('Error parsing order update:', error);
-  }
-};
-
-
-useEffect(()=>{
-  if(n){
-    userInfos.myOrders = orders
-    setN(false)
-  }
-  
-},[n])
-
-
+  },[navigation]))
 
 
   const OrderItem: React.FC<{ order: Order; onPress: () => void }> = React.memo(({ order, onPress }) => (
@@ -225,17 +127,17 @@ useEffect(()=>{
     <View style={styles.container}>
       <RatingFeedbackModal
               visible={isRatingModalVisible}
-              onClose={() => setisRatingModalVisible(false)}
-              onSubmit={()=>setisRatingModalVisible(false)}
-              products={orderedProducts}
+              onClose={() => {setisRatingModalVisible(false),dispatch({type: 'Set_isRated',payload: false})}}
+              onSubmit={()=>{setisRatingModalVisible(false),dispatch({type: 'Set_isRated',payload: false})}}
+              products={state.orderedProducts}
             />
-      {!isLoggedIn ?
+      {!state.isLoggedIn ?
       (
         <LogInRequiredPage message='Please log in to view your Orders' page='Orders'/>):
       (
-        userInfos.myOrders.length > 0?
+        state.userInfos.myOrders.length > 0?
       <FlatList
-        data={userInfos.myOrders}
+        data={state.userInfos.myOrders}
         renderItem={renderItem}
         keyExtractor={keyExtractor}
         contentContainerStyle={styles.listContainer}
@@ -300,4 +202,4 @@ const styles = StyleSheet.create({
 });
 
 
-export default React.memo(Orders);
+export default Orders;

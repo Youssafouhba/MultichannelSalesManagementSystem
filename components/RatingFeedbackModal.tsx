@@ -1,22 +1,25 @@
 import React, { useState } from 'react';
 import { Modal, View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { AntDesign } from '@expo/vector-icons'; // Make sure to install @expo/vector-icons
-import {Comment, Product} from '@/constants/Classes'
+import {Comment, Product, ProductInfos} from '@/constants/Classes'
 import { useAppContext } from './AppContext';
 import axios from 'axios';
 import { jwtDecode } from 'jwt-decode';
+import config from './config';
+import { useAppData } from './AppDataProvider';
 const RatingFeedbackModal = ({ visible, onClose, onSubmit,products }) => {
 
   const { state, dispatch } = useAppContext();
+  const {ProductsInfos} = useAppData()
   var token = state.JWT_TOKEN;
 
   const [rating, setRating] = useState(0);
   const [content, setContent] = useState<string>('');
 
   const handleSubmit = async () => {
-    onSubmit(rating, content);
-    const Products = state.products.filter((product: Product) => products[product.id]?.quantity > 0);
- 
+    onSubmit(rating, content);   
+    const Products = ProductsInfos.filter((product: ProductInfos) => products[product.product.id]?.quantity > 0);
+
     try {
       const comment: Comment = {
         id: '',
@@ -24,12 +27,14 @@ const RatingFeedbackModal = ({ visible, onClose, onSubmit,products }) => {
         first: true,
         rating: rating // Include the rating
       };
-      Products.map(async (product: Product)=>{
-        const response = await axios.post(`${state.API_BASE_URL}/Comments/${jwtDecode(token).userid}/${product.id}/0`, comment,{
+      Products.map(async (product: ProductInfos)=>{
+        
+        const response = await axios.post(`${config.API_BASE_URL}/Comments/${jwtDecode(token).userid}/${product.product.id}/0`, comment,{
           headers: {
             Authorization: `Bearer ${token}`
           }
         });
+
       })
 
     }catch (error) {
@@ -79,7 +84,7 @@ const RatingFeedbackModal = ({ visible, onClose, onSubmit,products }) => {
             </TouchableOpacity>
             <TouchableOpacity 
               style={[styles.button, styles.submitButton]} 
-              onPress={handleSubmit}
+              onPress={()=>handleSubmit()}
               disabled={rating === 0}
             >
               <Text style={[styles.buttonText,{color: 'white'}]}>Submit</Text>

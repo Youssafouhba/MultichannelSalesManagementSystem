@@ -2,30 +2,39 @@ import React, { useState, useEffect, useRef } from 'react';
 import { View, Image, Text, TextInput, FlatList, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { useAppContext } from './AppContext';
 import axios from 'axios';
-import { Comment, CommentItem } from '@/constants/Classes';
+import { Comment, CommentItem, Product, ProductInfos } from '@/constants/Classes';
 import tw from 'tailwind-react-native-classnames';
 import { Ionicons } from '@expo/vector-icons';
 import GivStarRating from './GivStarRating';
 import { jwtDecode } from 'jwt-decode';
-import { router } from 'expo-router';
+import { router, useNavigation } from 'expo-router';
 import LoginRequiredAlert from "@/components/LoginRequiredAlert"
 import StarRating from './StarRating';
 import { useAppData } from './AppDataProvider';
 import { Color } from '@/GlobalStyles';
 import config from './config';
 
-const CommentSystem: React.FC<{commentsItens : CommentItem[] ,Id: string}> = ({ commentsItens,Id }) => {
+const CommentSystem: React.FC<{commentsItens : CommentItem[] ,product: ProductInfos}> = ({ commentsItens,product }) => {
   const { state, dispatch } = useAppContext();
   const [comments, setComments] = useState<CommentItem[]>(commentsItens);
   const [loginAlertVisible, setLoginAlertVisible] = useState<boolean>(false);
   const [newComment, setNewComment] = useState('');
   const [newCommentRating, setNewCommentRating] = useState(0);
-  const { data,fetchdt } = useAppData();
-  const ws = useRef<WebSocket | null>(null);
-  const isLoggedIn = state.JWT_TOKEN !== '';
+  const isLoggedIn = state.isLoggedIn;
   const token = state.JWT_TOKEN;
+  const navigation = useNavigation<any>()
 
 
+
+  const handleConfirm = () => {
+    setLoginAlertVisible(false);
+    const payload = {
+        ...product,
+      };
+      
+      dispatch({type: 'Set_previouspage',payload: "ProductDetails"})
+      navigation.navigate(`LoginPage`,{payload})
+};
   const handleAddComment = async () => {
     if (!isLoggedIn) {
       setLoginAlertVisible(true);
@@ -41,7 +50,7 @@ const CommentSystem: React.FC<{commentsItens : CommentItem[] ,Id: string}> = ({ 
         rating: newCommentRating
       };
       try {
-        const endpoint = `${config.API_BASE_URL}/Comments/${jwtDecode(token).userid}/${Id}/0`;
+        const endpoint = `${config.API_BASE_URL}/Comments/${jwtDecode(token).userid}/${product.product.id}/0`;
         const response = await axios.post(endpoint, comment, {
           headers: {
             Authorization: `Bearer ${token}`
@@ -60,7 +69,6 @@ const CommentSystem: React.FC<{commentsItens : CommentItem[] ,Id: string}> = ({ 
 
         setNewComment('');
         setNewCommentRating(0);
-        fetchdt()
       } catch (error) {
         console.error('Erreur lors de l\'envoi du commentaire:', error);
         Alert.alert('Erreur', 'Échec de l\'envoi du commentaire. Veuillez réessayer.');
@@ -95,9 +103,8 @@ const CommentSystem: React.FC<{commentsItens : CommentItem[] ,Id: string}> = ({ 
     <View style={styles.container}>
       <LoginRequiredAlert
         visible={loginAlertVisible}
-        onLogin={() => router.push(`/LoginPage?returnTo=ProductDetails&productId=${Id}`)}
-        onCancel={() => setLoginAlertVisible(false)}
-      />
+        onLogin={() => { handleConfirm(); } }
+        onCancel={() => setLoginAlertVisible(false)} message={undefined}      />
       <Text style={styles.sectionTitle}>Customer Reviews</Text>
       <FlatList
         data={comments.slice(0,4)}

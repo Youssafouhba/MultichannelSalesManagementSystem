@@ -14,23 +14,15 @@ import { Ionicons } from '@expo/vector-icons';
 import config from '@/components/config';
 
 const Wishlist: React.FC = () => {
-    const { state } = useAppContext();
-    const { userInfos,token,data, fetchFavorites,error} = useAppData();
-    const isLoggedIn = !!state.JWT_TOKEN;
-
-
+    const { state,dispatch } = useAppContext();
+    const {data} = useAppData()
     const removefromfavorite = async (id: string) => {
+        dispatch({type: "Set_userInfos_WishList",payload: id})
         try {
-
             const url = `${config.API_BASE_URL}/api/client/deleteFromFavorite/${id}`;
             const response = await axios.delete(url,{
-                headers: { Authorization: `Bearer ${token}` },
+                headers: { Authorization: `Bearer ${state.JWT_TOKEN}` },
             })
-
-            if (response.status === 200) {
-                userInfos.wishlist = userInfos.wishlist.filter(p=>p.id!=id)
-                await fetchFavorites();
-            }
         } catch (error) {
             console.error("Error updating favorite status:", error);
         }
@@ -68,7 +60,6 @@ const Wishlist: React.FC = () => {
                 </Pressable>
                 
         </View>
-
         </View>
     ), []);
     
@@ -77,11 +68,11 @@ const Wishlist: React.FC = () => {
 
     return (
         <View style={styles.container}>
-            {isLoggedIn ?
-            (userInfos.wishlist.length  > 0? 
+            {state.isLoggedIn ?
+            (state.userInfos.wishlist.length  > 0? 
                 <FlatList
                     renderItem={renderItem}
-                    data={userInfos.wishlist}
+                    data={state.userInfos.wishlist}
                     keyExtractor={keyExtractor}
                     contentContainerStyle={styles.listContent}
                 />:

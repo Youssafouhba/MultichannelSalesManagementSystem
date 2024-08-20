@@ -11,6 +11,7 @@ import { useAppData } from "@/components/AppDataProvider";
 import { Ionicons } from "@expo/vector-icons";
 import { Product, ProductInfos } from "@/constants/Classes";
 import { debounce } from "lodash";
+import { useNavigation } from "@react-navigation/native";
 
 export default function FilterResult() {
   const { width, height } = useWindowDimensions();
@@ -22,7 +23,7 @@ export default function FilterResult() {
   const [dimensions, setDimensions] = useState(Dimensions.get('window'));
   const { state, dispatch } = useAppContext();
   const router = useRouter();
-  const navigation = useRouter();
+  const navigation = useNavigation<any>();
   const [sug,setsug] = useState<boolean>(true)
   const [isLoading, setIsLoading] = useState(true);
   const [filteredProducts, setFilteredProducts] = useState<ProductInfos[] | undefined>([]);
@@ -38,21 +39,27 @@ export default function FilterResult() {
     return () => subscription?.remove();
   }, []);
 
+  const gotodetails = (productinfos: ProductInfos) => {
+    const payload = {
+      ...productinfos,
+    };
+    dispatch({type: 'Set_previouspage',payload: "index"})
+    navigation.navigate(`ProductDetails`,{payload})
+  }
+
   useEffect(() => {
     setIsLoading(true);
     if (filter === 'applied') {
       setFilteredProducts(state.filtredproducts);
-    } else {
-      setFilteredProducts(ProductsInfos.map(P=>P.product));
     }
     setIsLoading(false);
-  }, [filter, state.filtredproducts, data?.products]);
+  }, [filter, state.filtredproducts,ProductsInfos]);
 
   const renderProduct = ({ item }: { item: ProductInfos }) => (
     <View style={[{ width: width / 2 - 15, height: height * 0.3 }, styles.productWrapper]}>
       <Pressable 
         style={styles.productInnerContainer}
-        onPress={() => router.navigate(`/ProductDetails?id=${item.product.id}`)}
+        onPress={() => gotodetails(item)}
       >
         <Image
           style={styles.productImage}
@@ -185,7 +192,6 @@ export default function FilterResult() {
     },
     scrollView: {
       backgroundColor: Color.colorWhite,
-      top: -4,
       flex: 1,
       width: '100%',
     },

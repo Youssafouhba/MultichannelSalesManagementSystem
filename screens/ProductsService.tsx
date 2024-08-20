@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo, useCallback } from "react";
-import {Image, View, Text, Pressable, StyleSheet, FlatList, Dimensions, ScrollView, TouchableOpacity, SafeAreaView, useWindowDimensions, TextInput } from "react-native";
+import {Image, View, Text, Pressable, StyleSheet, FlatList, Dimensions, ScrollView, TouchableOpacity, SafeAreaView, useWindowDimensions, TextInput, ActivityIndicator } from "react-native";
 import tw from 'tailwind-react-native-classnames';
 import CeilingCalculator from "./CeillingCalculator";
 import { Color, Padding } from "@/GlobalStyles";
@@ -17,26 +17,24 @@ import { router, useNavigation } from "expo-router";
 export default function ProductsService() {
   const { width, height } = useWindowDimensions();
   const [selectedLabel, setSelectedLabel] = useState<string | null>("Best Seller");
-  const { BestProducts,NewProducts,data,user,ProductsInfos,token} = useAppData();
+  const { BestProducts,NewProducts,data,ProductsInfos,token} = useAppData();
   const rectangleWidth = width / 2 - 15; // 15 est la marge entre les rectangles
   const rectangleHeight =(width/height) > 0.5 ? height /4+4:height *(width/height)-124; // Ajustez cette valeur selon vos besoi28
   const imgheight = (width/height) > 0.5 ? '55%': '62%';
   const [dimensions, setDimensions] = useState(Dimensions.get('window'));
   const { state, dispatch } = useAppContext();
   const navigation = useNavigation<any>();
-  const [sug,setsug] = useState<boolean>(true)
   const [isLoading, setIsLoading] = useState(true);
   const [category, setCategory] = useState("all");
   const [productsInfos, setProductsInfos] = useState<ProductInfos[] | undefined>(ProductsInfos);
-  const [productRatings, setProductRatings] = useState<{[key: number]: number} | undefined>({});
   const [filteredProducts, setFilteredProducts] = useState<ProductInfos[] | undefined>([]);
   const styles = useMemo(() => createStyles(dimensions.width, dimensions.height), [dimensions]);
-  const [inputsearch,setInputSearch] = useState<string>()
-  const [isLoggedIn,setIsLoggedIn] = useState<boolean>(false);
-  const [isRedirecting, setIsRedirecting] = useState(false);
-  const [isSuggestionsMode, setIsSuggestionsMode] = useState<boolean>(true);
-  const {filter} = useGlobalSearchParams()
 
+  const {filter} = useGlobalSearchParams()
+  const [inputSearch, setInputSearch] = useState('');
+  const [isSearching, setIsSearching] = useState(false);
+  const [isSuggestionsMode, setIsSuggestionsMode] = useState(true);
+  
 
   useEffect(() => {
     const subscription = Dimensions.addEventListener('change', ({ window }) => {
@@ -46,14 +44,12 @@ export default function ProductsService() {
     return () => subscription?.remove();
   }, []);
 
-  useEffect(()=>{
-    setIsLoading(true)
-  },[state.JWT_TOKEN])
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         setProductsInfos(ProductsInfos);
+        console.log(ProductsInfos)
         setFilteredProducts(ProductsInfos)
         setIsLoading(false);
       } catch (error) {
@@ -62,9 +58,9 @@ export default function ProductsService() {
       }
     };
 
-      fetchData();
+    fetchData();
     
-  }, [filter,ProductsInfos]);
+  }, []);
 
 
   useEffect(() => {
@@ -77,21 +73,22 @@ export default function ProductsService() {
           setFilteredProducts(BestProducts);
           break;
         case "Ceilling Calculator":
-          // Handle Ceiling Calculator case if needed
           break;
         default:
-          setFilteredProducts(BestProducts); // Default to Best Seller
+          break
       }
-    } else {
+    }else{
       setFilteredProducts(ProductsInfos);
     }
-  }, [isSuggestionsMode, selectedLabel, NewProducts, BestProducts, ProductsInfos]);
+  }, [isSuggestionsMode, selectedLabel,ProductsInfos]);
  
   const gotodetails = (productinfos: ProductInfos) => {
     const payload = {
       ...productinfos,
     };
     navigation.navigate(`ProductDetails`,{payload})
+    const prevoius = "index" as never
+    dispatch({type: 'Set_previouspage',payload: prevoius})
   }
  
 
@@ -152,7 +149,7 @@ export default function ProductsService() {
       <FlatList
         style={{ flex: 1 }}
         key={selectedLabel}
-        data={selectedLabel === "Best Seller"?BestProducts:ProductsInfos} // Limiter à 4 éléments
+        data={selectedLabel === "Best Seller"?BestProducts:productsInfos} // Limiter à 4 éléments
         renderItem={renderProduct}
         keyExtractor={(item) => item.product.id.toString()}
         numColumns={2}
@@ -223,16 +220,24 @@ export default function ProductsService() {
     </View>
   );
 
+
   const debouncedSearch = useCallback(
     debounce((key: string) => {
-      const filtered = productsInfos?.filter(
-        (productInfos: ProductInfos) =>
-          productInfos.product.name.toLowerCase().includes(key.toLowerCase()) ||
-          productInfos.product.category.toLowerCase().includes(key.toLowerCase()) ||
-          productInfos.product.price.toString().includes(key)
-      );
-      setFilteredProducts(filtered);
-      setSelectedLabel('all');
+      setIsSearching(true);
+      if (key.trim() == '') {
+        setIsSearching(false);
+        setSelectedLabel("Best Seller")
+      } else {
+        const filtered = ProductsInfos.filter(
+          (product: ProductInfos) =>
+            product.product.name.toLowerCase().includes(key.toLowerCase()) ||
+            product.product.category.toLowerCase().includes(key.toLowerCase()) ||
+            product.product.price.toString().includes(key)
+        );
+        setProductsInfos(filtered);
+        setIsSearching(false);
+      }
+
     }, 300),
     [productsInfos]
   );
@@ -242,6 +247,7 @@ export default function ProductsService() {
     if (text.trim() === '') {
       setIsSuggestionsMode(true);
       setSelectedLabel("Best Seller");
+      setFilteredProducts(productsInfos || []);
     } else {
       setIsSuggestionsMode(false);
       debouncedSearch(text);
@@ -253,21 +259,24 @@ export default function ProductsService() {
       <View style={tw`flex-row w-80 items-center px-4 py-2 bg-gray-100 rounded-full`}>
         <TextInput
           placeholder="Search..."
-          value={inputsearch}
+          value={inputSearch}
           onChangeText={handleInputChange}
           style={tw`flex-1 text-base`}
           numberOfLines={1}
         />
-        <Ionicons name="search" size={25} color="gray" style={tw`ml-3`} />
+        {isSearching ? (
+          <ActivityIndicator size="small" color="gray" style={tw`ml-3`} />
+        ) : (
+          <Ionicons name="search" size={25} color="gray" style={tw`ml-3`} />
+        )}
       </View>
-      {isLoggedIn && (
+      {state.isLoggedIn && (
       <View style={[tw``,{right: '35%'}]}>
-        <Text style={tw`text-blue-400 text-sm`}>Hi Youssef</Text>
+        <Text style={tw`text-blue-400 text-sm`}>Hi {state.user?.name || 'User'}</Text>
       </View>
       )}
-       
     </View>
-  ), [inputsearch, user, handleInputChange]);
+  ), [inputSearch, state.user, handleInputChange, isSearching]);
 
   return (
     <View style={styles.container}>
@@ -320,7 +329,6 @@ export default function ProductsService() {
     },
     scrollView: {
       backgroundColor: Color.colorWhite,
-      top: -4,
       flex: 1,
       width: '100%',
     },
