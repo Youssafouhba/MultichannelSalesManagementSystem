@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "ecomerce",
-    "slug": "wholesaled",
+    "slug": "wholesaledltd",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/image-3.png",
@@ -25,17 +25,17 @@
       "favicon": "./assets/image-3.png"
     },
     "plugins": [
-  "expo-router",
-  "expo-font",
-  [
-    "expo-build-properties",
-    {
-      "android": {
-        "usesCleartextTraffic": true
-      }
-    }
-  ]
-],
+      "expo-router",
+      "expo-font",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "usesCleartextTraffic": true
+          }
+        }
+      ]
+    ],
     "experiments": {
       "typedRoutes": true
     },
@@ -44,9 +44,9 @@
         "origin": false
       },
       "eas": {
-        "projectId": "af1a43f8-cc11-4250-b671-3fac1bb77ba5"
+        "projectId": "5ff7b536-e012-4192-beb2-4fe2ee710b05"
       }
     },
-    "owner": "blacker02"
+    "owner": "youssef2001"
   }
 }
