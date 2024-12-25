@@ -157,10 +157,10 @@ This project is licensed under the MIT License - see the `LICENSE` file for deta
 
 Need help? We've got you covered!
 
-📧 **Email Support**: support@your-organization.com  
-📚 **Documentation**: [link-to-docs]  
-🐛 **Issue Tracking**: [link-to-issues]  
-💭 **Community Chat**: [link-to-chat]
+📧 **Email Support**: youssefouhba@gmail.com  
+📚 **Documentation**: https://quickref.me/  
+🐛 **Issue Tracking**: https://quickref.me/  
+💭 **Community Chat**: https://app.daily.dev/
 
 ## 🌟 Acknowledgments
 
